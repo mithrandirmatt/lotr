@@ -16,7 +16,7 @@ tools:
   - run_tests
   - pr_manager
   - issue_tracker
-  - shell
+  - execute
 tool_definitions:
   repo_browser:
     description: "Read repository files and directories; return paths and snippets."
