@@ -10,12 +10,8 @@ models:
     parameters:
       temperature: 0.2
 tools:
-  - name: repo_browser
-    description: Read files and directories in the repository.
-    type: file
-  - name: issue_tracker
-    description: Create or query repository issues (if configured).
-    type: http
+  - repo_browser
+  - issue_tracker
 prompts:
   system: |
     You are a repository-aware assistant. Use repository context and safety best practices.
