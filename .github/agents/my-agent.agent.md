@@ -1,8 +1,6 @@
 ---
 ---
 name: my-agent
----
-name: my-agent
 display_name: My Agent
 description: |
   A repository-scoped custom agent template. Edit `name`, `description`, `tools`, and `prompts`.
