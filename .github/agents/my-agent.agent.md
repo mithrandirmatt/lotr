@@ -11,7 +11,36 @@ models:
       temperature: 0.2
 tools:
   - repo_browser
+  - code_search
+  - file_editor
+  - run_tests
+  - pr_manager
   - issue_tracker
+  - shell
+tool_definitions:
+  repo_browser:
+    description: "Read repository files and directories; return paths and snippets."
+    type: file
+  code_search:
+    description: "Search repository files and return matches."
+    type: file
+  file_editor:
+    description: "Produce file edits as unified diffs; used to propose changes."
+    type: file
+  run_tests:
+    description: "Run test commands and report results."
+    type: command
+    command: pytest
+  pr_manager:
+    description: "Create or update pull requests with patches."
+    type: http
+  issue_tracker:
+    description: "Create or query issues in this repository."
+    type: http
+  shell:
+    description: "Execute restricted shell commands (use cautiously)."
+    type: shell
+    restricted: true
 prompts:
   system: |
     You are a repository-aware coding assistant for this repository. Follow these rules when generating code or proposing changes:
