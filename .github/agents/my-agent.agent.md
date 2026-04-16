@@ -1,5 +1,4 @@
 ---
----
 name: my-agent
 display_name: My Agent
 description: |
