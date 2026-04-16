@@ -1,8 +1,6 @@
 ---
-system: 'You are a repository-aware assistant. Use repository context and safety best
-  practices.
-
-  '
+---
+name: my-agent
 ---
 name: my-agent
 display_name: My Agent
@@ -33,4 +31,7 @@ prompts:
       prompt: |
         Provide a concise summary of the repository's purpose and suggestions for contributors.
 ---
-  user: 'You are the `my-agent` custom agent. Follow the repository conventions and
+
+# Instructions / Notes
+
+This is a template agent profile created for this repository. Edit the frontmatter fields above and commit to the default branch so the agent will appear in the GitHub Copilot agents dropdown.
