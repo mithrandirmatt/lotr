@@ -44,6 +44,25 @@
 			"type": "shell",
 			"command": "powershell -NoProfile -Command \"Set-Content -Path '.github/agent-rules.md' -Value @'\n---\n# Shared agent rules (fallback)\nrules:\n  - id: no_commandline_search\n    summary: \"Do not search the workspace using command-line tools.\"\n    detail: |\n      Agents must not execute shell commands like `grep`, `find`, `rg`, or `ls` to search repository files.\n      Use the `repo_browser` or `code_search` tools to find files and contents instead.\n  - id: use_search_tools\n    summary: \"Use dedicated search tools for code discovery.\"\n    detail: |\n      Use `code_search` or `repo_browser` to locate files and cite paths/line ranges.\n  - id: no_unrestricted_shell\n    summary: \"Avoid running unrestricted shell commands.\"\n    detail: |\n      The `shell` tool is restricted; only run commands when explicitly allowed by maintainers.\n  - id: minimal_changes\n    summary: \"Prefer minimal, style-consistent edits.\"\n    detail: |\n      Provide small, well-tested changes matching repository style. Include tests and run instructions.\n  - id: no_secrets\n    summary: \"Never expose secrets or credentials.\"\n    detail: |\n      Do not read, include, or store any secrets; redact or refuse if necessary.\n  - id: verify_with_tests\n    summary: \"Include/Update tests for non-trivial changes.\"\n    detail: |\n      Add or update tests and include commands to run them locally.\n---\n'@ -Encoding UTF8\"",
 			"args": []
+		},
+		{
+			"label": "create-agent-profiles",
+			"type": "shell",
+			"command": "echo creating agent profiles",
+			"args": [],
+			"isBackground": false
+		},
+		{
+			"label": "write-agent-profiles",
+			"type": "shell",
+			"command": "powershell -NoProfile -Command \"Add-Content -Path '.github/agents/my-agent.agent.md' -Value 'writing'\"",
+			"isBackground": false
+		},
+		{
+			"label": "write-my-agent",
+			"type": "shell",
+			"command": "powershell -NoProfile -Command \"Set-Content -Path '.github/agents/my-agent.agent.md' -Value @'\n---\nname: my-agent\ndisplay_name: my-agent\ndescription: \"Worker agent — performs edits on explicit user requests; asks only when multiple choices exist.\"\nmodels:\n  - name: gpt-5-mini\n    type: llm\ntools:\n  - repo_browser\n  - editor\n  - git\nprompts:\n  system: |\n    You are the repository worker agent. When the user explicitly requests you to read, create, or edit files in this workspace, proceed immediately and perform the requested operations without asking for approval or confirmation.\n    Only ask the user for clarification or explicit confirmation if the task has multiple clearly different reasonable options that require weighing trade-offs, or if the requested change is destructive or security-sensitive.\n    Do not emit a preamble before actions. After completing actions, provide a concise summary of what you changed and why (2–3 sentences), and list files modified.\n    Always follow repository rules in `.github/agent-rules.md` (no command-line searching, no secrets, prefer minimal changes, add tests).\n  user: |\n    Perform the requested task. If multiple approaches exist, list them concisely and wait for selection; otherwise act and report changes.\n---\n'@ -Encoding UTF8\"",
+			"isBackground": false
 		}
 	]
 }
