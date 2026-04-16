@@ -1,0 +1,49 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Add make target create_lotr_dabase",
+			"type": "shell",
+			"command": "echo 'noop'"
+		},
+		{
+			"label": "Add agent rules file",
+			"type": "shell",
+			"command": "echo 'noop'",
+			"args": []
+		},
+		{
+			"label": "Create shared agent rules file",
+			"type": "shell",
+			"command": "echo creating file",
+			"args": []
+		},
+		{
+			"label": "Create .github/agent/rules.md via editor",
+			"type": "shell",
+			"command": "python - << 'PY'\nfrom pathlib import Path\np=Path('..').resolve().joinpath('c:/Users/matth/Desktop/git/lotr/.github/agent/rules.md')\nprint('noop')\nPY"
+		},
+		{
+			"label": "(skip) create file",
+			"type": "shell",
+			"command": "echo skip",
+			"args": []
+		},
+		{
+			"label": "noop",
+			"type": "shell",
+			"command": "echo noop"
+		},
+		{
+			"label": "Create rules file using workspace path",
+			"type": "shell",
+			"command": "powershell -NoProfile -Command \"Set-Content -Path '.github/agent/rules.md' -Value @'\n---\n# Shared agent rules for repository-scoped agents\nrules:\n  - id: no_commandline_search\n    summary: \"Do not search the workspace using command-line tools.\"\n    detail: |\n      Agents must not execute shell commands like `grep`, `find`, `rg`, or `ls` to search repository files.\n      Use the `repo_browser` or `code_search` tools to find files and contents instead.\n  - id: use_search_tools\n    summary: \"Use dedicated search tools for code discovery.\"\n    detail: |\n      Use `code_search` or `repo_browser` to locate files and cite paths/line ranges.\n  - id: no_unrestricted_shell\n    summary: \"Avoid running unrestricted shell commands.\"\n    detail: |\n      The `shell` tool is restricted; only run commands when explicitly allowed by maintainers.\n  - id: minimal_changes\n    summary: \"Prefer minimal, style-consistent edits.\"\n    detail: |\n      Provide small, well-tested changes matching repository style. Include tests and run instructions.\n  - id: no_secrets\n    summary: \"Never expose secrets or credentials.\"\n    detail: |\n      Do not read, include, or store any secrets; redact or refuse if necessary.\n  - id: verify_with_tests\n    summary: \"Include/Update tests for non-trivial changes.\"\n    detail: |\n      Add or update tests and include commands to run them locally.\n---\n'@ -Encoding UTF8\""
+		},
+		{
+			"label": "Create fallback .github/agent-rules.md",
+			"type": "shell",
+			"command": "powershell -NoProfile -Command \"Set-Content -Path '.github/agent-rules.md' -Value @'\n---\n# Shared agent rules (fallback)\nrules:\n  - id: no_commandline_search\n    summary: \"Do not search the workspace using command-line tools.\"\n    detail: |\n      Agents must not execute shell commands like `grep`, `find`, `rg`, or `ls` to search repository files.\n      Use the `repo_browser` or `code_search` tools to find files and contents instead.\n  - id: use_search_tools\n    summary: \"Use dedicated search tools for code discovery.\"\n    detail: |\n      Use `code_search` or `repo_browser` to locate files and cite paths/line ranges.\n  - id: no_unrestricted_shell\n    summary: \"Avoid running unrestricted shell commands.\"\n    detail: |\n      The `shell` tool is restricted; only run commands when explicitly allowed by maintainers.\n  - id: minimal_changes\n    summary: \"Prefer minimal, style-consistent edits.\"\n    detail: |\n      Provide small, well-tested changes matching repository style. Include tests and run instructions.\n  - id: no_secrets\n    summary: \"Never expose secrets or credentials.\"\n    detail: |\n      Do not read, include, or store any secrets; redact or refuse if necessary.\n  - id: verify_with_tests\n    summary: \"Include/Update tests for non-trivial changes.\"\n    detail: |\n      Add or update tests and include commands to run them locally.\n---\n'@ -Encoding UTF8\"",
+			"args": []
+		}
+	]
+}
