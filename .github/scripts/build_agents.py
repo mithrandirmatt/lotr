@@ -77,5 +77,9 @@ for agent_path in sorted(agents_dir.glob('*.agent.md')):
             final[k] = v
 
     out_text = '---\n' + yaml.safe_dump(final, sort_keys=False) + '---\n' + (body or '')
-    agent_path.write_text(out_text, encoding='utf-8')
-    print(f'Built agent: {agent_path.name}')
+    # write merged output to generated/ to preserve source includes
+    gen_dir = agent_path.parent / 'generated'
+    gen_dir.mkdir(parents=True, exist_ok=True)
+    out_path = gen_dir / agent_path.name
+    out_path.write_text(out_text, encoding='utf-8')
+    print(f'Built agent: {out_path.relative_to(repo_root)}')
