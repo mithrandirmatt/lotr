@@ -213,3 +213,12 @@
 2026-04-27T14:29:34.5600349-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
 2026-04-27T14:29:34.5664800-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
 2026-04-27T14:29:34.5677450-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-27T16:11:56.9794528-04:00	Container session ended.
+2026-04-27T16:11:56.9812025-04:00	docker.ps1 done.
+2026-04-27T16:12:15.1971758-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-27T16:12:15.3171029-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T16:12:15.3171029-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T16:12:15.3223857-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-27T16:12:15.3223857-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-27T16:12:15.3278655-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-27T16:12:15.3288736-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
