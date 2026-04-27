@@ -1,6 +1,10 @@
 
-include ./makefiles/utils.mk
-include ../agents/agent.mk
+include ./makefiles/common.mk
 
 
-all: update_agent
+all:
+	$(call log_build,** Calling $@... **)
+
+
+
+	$(call log_ok,Finished $@.)

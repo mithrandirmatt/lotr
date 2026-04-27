@@ -1,0 +1,63 @@
+2026-04-27T08:51:54.6388075-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T08:51:54.7689348-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T08:51:54.7739715-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T08:51:54.7739715-04:00	Building image 'lotr-dev:latest' ...
+2026-04-27T08:52:02.5347118-04:00	Build FAILED (exit 1).
+2026-04-27T08:52:59.6742857-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T08:52:59.7943741-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T08:52:59.7943741-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T08:52:59.7943741-04:00	Building image 'lotr-dev:latest' ...
+2026-04-27T08:54:10.2749724-04:00	Build FAILED (exit 1).
+2026-04-27T08:54:41.1557807-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T08:54:41.2772668-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T08:54:41.2782696-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T08:54:41.2802676-04:00	Building image 'lotr-dev:latest' ...
+2026-04-27T08:54:42.8980745-04:00	Build FAILED (exit 1).
+2026-04-27T08:55:11.5709414-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T08:55:11.6889311-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T08:55:11.6889311-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T08:55:11.6889311-04:00	Building image 'lotr-dev:latest' ...
+2026-04-27T08:55:15.9279054-04:00	Build FAILED (exit 1).
+2026-04-27T08:55:49.4703982-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T08:55:49.5912511-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T08:55:49.5923306-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T08:55:49.5944901-04:00	Building image 'lotr-dev:latest' ...
+2026-04-27T08:57:37.5027905-04:00	Image 'lotr-dev:latest' built successfully.
+2026-04-27T08:57:37.5053052-04:00	docker.ps1 done.
+2026-04-27T09:00:04.9720766-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T09:00:05.0923144-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T09:00:05.0923144-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T09:00:05.1011953-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-27T09:00:05.1021997-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-27T09:01:50.5219999-04:00	Container session ended.
+2026-04-27T09:01:50.5239985-04:00	docker.ps1 done.
+2026-04-27T09:02:36.1177968-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T09:02:36.2277542-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T09:02:36.2388105-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T09:02:36.2388105-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-27T09:02:36.2388105-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-27T09:06:42.9005174-04:00	Container session ended.
+2026-04-27T09:06:42.9010205-04:00	docker.ps1 done.
+2026-04-27T09:08:00.6011564-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T09:08:00.7209951-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T09:08:00.7230011-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T09:08:00.7250051-04:00	Building image 'lotr-dev:latest' ...
+2026-04-27T09:08:02.0200448-04:00	Build FAILED (exit 1).
+2026-04-27T09:08:26.9554726-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest
+2026-04-27T09:08:27.0754030-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T09:08:27.0764718-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T09:08:27.0784502-04:00	Building image 'lotr-dev:latest' ...
+2026-04-27T09:11:20.7465244-04:00	Image 'lotr-dev:latest' built successfully.
+2026-04-27T09:11:20.7485224-04:00	docker.ps1 done.
+2026-04-27T09:19:41.2144680-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-27T09:19:41.3352397-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T09:19:41.3357451-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T09:19:41.3357451-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-27T09:19:41.3357451-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-27T10:04:57.7629278-04:00	Container session ended.
+2026-04-27T10:04:57.7663381-04:00	docker.ps1 done.
+2026-04-27T10:05:06.6587559-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=True
+2026-04-27T10:05:06.7798822-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-27T10:05:06.7808814-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-27T10:05:06.7818837-04:00	Building image 'lotr-dev:latest' ...
+2026-04-27T10:05:06.7837154-04:00	Fresh build: Docker layer cache disabled.

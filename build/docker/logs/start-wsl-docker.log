@@ -1,0 +1,39 @@
+2026-04-27T08:28:48.7287794-04:00	Starting start-wsl-docker.ps1 for distro lotr-docker-service
+2026-04-27T08:28:48.7890345-04:00	Distro 'lotr-docker-service' not found. Create or import it first.
+2026-04-27T08:32:49.3899330-04:00	Starting start-wsl-docker.ps1 for distro lotr-docker-service
+2026-04-27T08:32:49.4761781-04:00	Distro lotr-docker-service already running
+2026-04-27T08:32:50.7735957-04:00	systemd not detected. Using start wrapper fallback (/usr/local/bin/lotr-start-docker.sh).
+2026-04-27T08:32:50.8360662-04:00	
+2026-04-27T08:32:50.8385689-04:00	Checking docker availability (attempt 1/15)
+2026-04-27T08:32:53.0400963-04:00	Checking docker availability (attempt 2/15)
+2026-04-27T08:32:55.1444709-04:00	Checking docker availability (attempt 3/15)
+2026-04-27T08:32:57.2463637-04:00	Checking docker availability (attempt 4/15)
+2026-04-27T08:32:59.3553505-04:00	Checking docker availability (attempt 5/15)
+2026-04-27T08:33:01.4547430-04:00	Checking docker availability (attempt 6/15)
+2026-04-27T08:33:03.5629243-04:00	Checking docker availability (attempt 7/15)
+2026-04-27T08:33:05.6614467-04:00	Checking docker availability (attempt 8/15)
+2026-04-27T08:33:07.7634514-04:00	Checking docker availability (attempt 9/15)
+2026-04-27T08:33:09.8684113-04:00	Checking docker availability (attempt 10/15)
+2026-04-27T08:33:11.9829702-04:00	Checking docker availability (attempt 11/15)
+2026-04-27T08:33:14.0962400-04:00	Checking docker availability (attempt 12/15)
+2026-04-27T08:33:16.1977787-04:00	Checking docker availability (attempt 13/15)
+2026-04-27T08:33:18.2934951-04:00	Checking docker availability (attempt 14/15)
+2026-04-27T08:33:20.3990530-04:00	Checking docker availability (attempt 15/15)
+2026-04-27T08:33:22.4958179-04:00	Docker did not become ready after 15 attempts
+2026-04-27T08:41:36.5106478-04:00	Starting start-wsl-docker.ps1 for distro lotr-docker-service
+2026-04-27T08:41:36.5914142-04:00	Distro lotr-docker-service already running
+2026-04-27T08:41:36.7994793-04:00	systemd not detected. Launching dockerd via persistent Windows process (keeps WSL session alive).
+2026-04-27T08:41:36.8882722-04:00	dockerd started as background Windows process.
+2026-04-27T08:41:36.8912721-04:00	Checking docker availability (attempt 1/15)
+2026-04-27T08:41:39.0999854-04:00	Checking docker availability (attempt 2/15)
+2026-04-27T08:41:39.2087469-04:00	Docker is running in lotr-docker-service
+2026-04-27T08:41:39.3056738-04:00	
+2026-04-27T08:41:39.3081853-04:00	NoPause specified; not waiting for key press
+2026-04-27T08:41:50.5020913-04:00	Starting start-wsl-docker.ps1 for distro lotr-docker-service
+2026-04-27T08:41:50.5823494-04:00	Distro lotr-docker-service already running
+2026-04-27T08:41:50.6362314-04:00	systemd not detected. Launching dockerd via persistent Windows process (keeps WSL session alive).
+2026-04-27T08:41:50.7000645-04:00	dockerd socket already present, skipping start.
+2026-04-27T08:41:50.7020645-04:00	Checking docker availability (attempt 1/15)
+2026-04-27T08:41:50.8021059-04:00	Docker is running in lotr-docker-service
+2026-04-27T08:41:50.9022469-04:00	
+2026-04-27T08:41:55.0890052-04:00	User pressed key; exiting start script
