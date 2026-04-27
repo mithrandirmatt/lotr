@@ -27,7 +27,10 @@ param(
     [string]$DistroName = 'lotr-docker-service',
     [string]$Tag        = 'lotr-dev:latest',
     [switch]$Fresh,
-    [switch]$NoPause
+    [switch]$NoPause,
+
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$ExtraArgs = @()
 )
 
 Set-StrictMode -Version Latest
@@ -53,7 +56,7 @@ function Write-Log {
 # script from shells that expect GNU-style flags while preserving backward
 # compatibility with `-Fresh`.
 $IsFresh = $Fresh.IsPresent
-if ($args -and ($args | Where-Object { $_ -match '^--fresh$' })) {
+if ($ExtraArgs -contains '--fresh') {
     $IsFresh = $true
 }
 
@@ -125,15 +128,33 @@ if ($Command -eq 'run') {
     Write-Log ("Running interactive shell in image '{0}' ..." -f $Tag)
     Write-Log ("Mounting {0} -> /workspace" -f $wslRepoRoot)
 
+# Resolve Windows SSH key folder as a WSL path for the volume mount
+$sshWinPath  = Join-Path $env:USERPROFILE ".ssh"
+$sshDrive    = $sshWinPath.Substring(0, 1).ToLower()
+$sshRelPath  = $sshWinPath.Substring(2) -replace '\\', '/'
+$wslSshPath  = ("/mnt/{0}{1}" -f $sshDrive, $sshRelPath)
+
+Write-Log ("SSH keys (WSL):   {0}" -f $wslSshPath)
+
+# Resolve Windows .gitconfig as a WSL path for the volume mount
+$gitconfigWinPath = Join-Path $env:USERPROFILE ".gitconfig"
+$gitconfigDrive   = $gitconfigWinPath.Substring(0, 1).ToLower()
+$gitconfigRelPath = $gitconfigWinPath.Substring(2) -replace '\\', '/'
+$wslGitconfigPath = ("/mnt/{0}{1}" -f $gitconfigDrive, $gitconfigRelPath)
+
+Write-Log ("Git config (WSL): {0}" -f $wslGitconfigPath)
+
     # -it: interactive + pseudo-TTY
     # --rm: remove container on exit
-    # -v:   bind-mount repo root into /workspace
+    # -v:   bind-mount repo root into /workspace, SSH keys into /root/.ssh, git config into /root/.gitconfig
     # -w:   set working directory inside container
     wsl -d $DistroName -u root -- docker run `
         --rm `
         --interactive `
         --tty `
         --volume  "${wslRepoRoot}:/workspace" `
+        --volume  "${wslSshPath}:/root/.ssh:rw" `
+        --volume  "${wslGitconfigPath}:/root/.gitconfig:ro" `
         --workdir "/workspace/build" `
         $Tag `
         /bin/bash

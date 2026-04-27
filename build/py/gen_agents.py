@@ -51,6 +51,10 @@ def parse_frontmatter(text):
 def render_frontmatter(data, body):
     """Reconstruct the file with YAML frontmatter + body."""
     fm = yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    # Guard: strip a leading '---' line from body to prevent double-separator
+    stripped = body.lstrip("\n")
+    if stripped.startswith("---"):
+        body = stripped[3:].lstrip("\n")
     return f"---\n{fm}---\n{body}"
 
 
@@ -69,18 +73,20 @@ def deep_merge(base, override):
     return base
 
 
-def resolve_includes(data, source_path):
+def resolve_includes(data, body, source_path):
     """
     Pop the `includes:` list from data, load each file relative to the
-    source file's directory, and merge their content into data.
-    Returns the merged data dict.
+    source file's directory, merge their YAML content into data, and
+    concatenate their markdown bodies before the source body.
+    Returns (merged_data, combined_body).
     """
     includes = data.pop("includes", None)
     if not includes:
-        return data
+        return data, body
 
     source_dir = os.path.dirname(os.path.abspath(source_path))
     merged = copy.deepcopy(data)
+    extra_bodies = []
 
     for rel_path in includes:
         abs_path = os.path.normpath(os.path.join(source_dir, rel_path))
@@ -89,11 +95,17 @@ def resolve_includes(data, source_path):
             continue
         with open(abs_path, encoding="utf-8") as fh:
             content = fh.read()
-        inc_data, _ = parse_frontmatter(content)
+        inc_data, inc_body = parse_frontmatter(content)
         if inc_data:
             deep_merge(merged, inc_data)
+        inc_body = inc_body.strip()
+        if inc_body:
+            extra_bodies.append(inc_body)
 
-    return merged
+    combined_body = "\n\n".join(extra_bodies + [body.strip()])
+    if combined_body:
+        combined_body = "\n" + combined_body + "\n"
+    return merged, combined_body
 
 
 def process_agent(source_path, generated_path, dry_run=False):
@@ -107,7 +119,7 @@ def process_agent(source_path, generated_path, dry_run=False):
         # No frontmatter or yaml unavailable — copy verbatim
         result = text
     else:
-        data = resolve_includes(data, source_path)
+        data, body = resolve_includes(data, body, source_path)
         result = render_frontmatter(data, body)
 
     if dry_run:

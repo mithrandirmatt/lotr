@@ -47,6 +47,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Fetch / networking
     curl wget ca-certificates \
     apt-transport-https gnupg \
+    # SSH client + agent (ssh, ssh-add, ssh-keygen) + PuTTY key converter
+    openssh-client \
+    putty-tools \
     # Terminal utilities
     less file tree jq \
     bash-completion \
@@ -179,6 +182,8 @@ RUN echo '' >> /root/.bashrc && \
 
 # Copy project aliases into the image
 COPY build/docker/.bash_aliases /root/.bash_aliases
+COPY build/docker/ssh-add.sh   /usr/local/bin/ssh-add.sh
+RUN  chmod +x /usr/local/bin/ssh-add.sh
 # ------------------------------------------------------------
 # Working directory
 # Mount the project root here when running the container:

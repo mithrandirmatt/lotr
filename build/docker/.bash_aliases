@@ -9,3 +9,4 @@ alias gp='git pull'
 alias gps='git push origin HEAD'
 alias gs='git status'
 
+alias sa='source /usr/local/bin/ssh-add.sh'
