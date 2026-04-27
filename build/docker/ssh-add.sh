@@ -10,7 +10,7 @@
 # calling interactive shell and cause it to exit on any non-zero command.
 
 PPK_SRC="/root/.ssh/id_rsa.ppk"
-OPENSSH_KEY="/tmp/id_openssh"
+OPENSSH_KEY="/root/.ssh_keys/id_openssh"
 
 # 1. Start agent
 eval "$(ssh-agent -s)"

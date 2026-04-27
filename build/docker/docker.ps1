@@ -146,7 +146,9 @@ Write-Log ("Git config (WSL): {0}" -f $wslGitconfigPath)
 
     # -it: interactive + pseudo-TTY
     # --rm: remove container on exit
-    # -v:   bind-mount repo root into /workspace, SSH keys into /root/.ssh, git config into /root/.gitconfig
+    # -v:   repo -> /workspace; Windows .ssh (ppk source) -> /root/.ssh:rw;
+    #        named volume lotr-ssh-keys -> /root/.ssh_keys (Linux fs, chmod works, persistent);
+    #        .gitconfig -> /root/.gitconfig:ro
     # -w:   set working directory inside container
     wsl -d $DistroName -u root -- docker run `
         --rm `
@@ -154,6 +156,7 @@ Write-Log ("Git config (WSL): {0}" -f $wslGitconfigPath)
         --tty `
         --volume  "${wslRepoRoot}:/workspace" `
         --volume  "${wslSshPath}:/root/.ssh:rw" `
+        --volume  "lotr-ssh-keys:/root/.ssh_keys" `
         --volume  "${wslGitconfigPath}:/root/.gitconfig:ro" `
         --workdir "/workspace/build" `
         $Tag `
