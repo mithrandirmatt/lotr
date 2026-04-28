@@ -17,6 +17,31 @@ OUTPUT_PATH = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'card
 sys.path.insert(0, PYUTILS_DIR)
 from utils.progress import ProgressBar
 
+# Static set-to-format membership. A card belongs to every format whose
+# set range includes its set_num. Set 0 (Promos) is Open/Standard only.
+SET_FORMATS = {
+    0:  ['Open'],
+    1:  ['Fellowship Block', 'Open'],
+    2:  ['Fellowship Block', 'Open'],
+    3:  ['Fellowship Block', 'Open'],
+    4:  ['Tower Block', 'Open'],
+    5:  ['Tower Block', 'Open'],
+    6:  ['Tower Block', 'Open'],
+    7:  ['King Block', 'Open'],
+    8:  ['King Block', 'Open'],
+    9:  ['King Block', 'Open'],
+    10: ['Expanded', 'Standard', 'Open'],
+    11: ['Expanded', 'Standard', 'Open'],
+    12: ['Expanded', 'Standard', 'Open'],
+    13: ['Expanded', 'Standard', 'Open'],
+    14: ['Standard', 'Open'],
+    15: ['Standard', 'Open'],
+    16: ['Standard', 'Open'],
+    17: ['Standard', 'Open'],
+    18: ['Standard', 'Open'],
+    19: ['Standard', 'Open'],
+}
+
 
 def strip_tags(text):
     """Remove HTML tags, unescape entities, and collapse whitespace."""
@@ -137,6 +162,7 @@ def parse_card(html_path, card_id, set_names):
         'collector_info': collector_info,
         'set_num':        set_num,
         'set_name':       set_name,
+        'formats':        SET_FORMATS.get(set_num, ['Open']),
         'kind':           get_str('Kind'),
         'culture':        get_str('Culture'),
         'twilight':       get_numeric('Twilight'),

@@ -19,8 +19,9 @@ sys.path.insert(0, os.path.join(repo_root, 'pyutils'))
 # Import the web utilities
 from web.utils import download_html, download_binary, get_filename_from_url
 
-ASSETS_DIR = os.path.abspath(os.path.join(script_dir, '..', '..', 'do', 'assets', 'wiki'))
-CARDS_DIR  = os.path.abspath(os.path.join(script_dir, '..', '..', 'do', 'assets', 'cards'))
+ASSETS_DIR   = os.path.abspath(os.path.join(script_dir, '..', '..', 'do', 'assets', 'wiki'))
+CARDS_DIR    = os.path.abspath(os.path.join(script_dir, '..', '..', 'do', 'assets', 'cards'))
+STARTERS_DIR = os.path.abspath(os.path.join(script_dir, '..', '..', 'do', 'assets', 'wiki', 'starters'))
 
 def load_wiki_config():
     """Load wiki source URLs from build.ini configuration file."""
@@ -50,6 +51,32 @@ def get_base_url(wiki_sources):
         if 'lotrtcgwiki.com' in parsed.netloc:
             return f"{parsed.scheme}://{parsed.netloc}"
     return None
+
+def get_pc_base_url(wiki_sources):
+    """Return the scheme+host for the wiki.lotrtcgpc.net source."""
+    for url in wiki_sources.values():
+        parsed = urlparse(url)
+        if 'lotrtcgpc.net' in parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    return None
+
+def detect_starter_block_urls(starter_html_path, pc_base_url):
+    """
+    Parse the downloaded Starter_Decks.html and return a dict of
+    {block_slug: full_url} for each Starter_Decks/Block sub-page.
+    E.g. {"Fellowship_Block": "https://wiki.lotrtcgpc.net/wiki/Starter_Decks/Fellowship_Block"}
+    """
+    with open(starter_html_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    seen = set()
+    blocks = {}
+    for path in re.findall(r'href="(/wiki/Starter_Decks/([^"#]+))"', content):
+        full_path, slug = path
+        if slug not in seen:
+            seen.add(slug)
+            blocks[slug] = pc_base_url + full_path
+    return blocks
 
 def detect_set_urls(html_path, base_url):
     """
@@ -177,9 +204,10 @@ def download_cards(base_url):
 
     return failures
 
-def download_wiki_pages(wiki_sources, label="Downloading wiki pages"):
+def download_wiki_pages(wiki_sources, label="Downloading wiki pages", output_dir=None):
     """Download HTML content for each wiki source and save locally."""
-    os.makedirs(ASSETS_DIR, exist_ok=True)
+    dest = output_dir or ASSETS_DIR
+    os.makedirs(dest, exist_ok=True)
 
     print(f"{label}...")
 
@@ -190,7 +218,7 @@ def download_wiki_pages(wiki_sources, label="Downloading wiki pages"):
         if not filename.endswith('.html'):
             filename += '.html'
 
-        save_path = os.path.join(ASSETS_DIR, filename)
+        save_path = os.path.join(dest, filename)
 
         if os.path.exists(save_path):
             print(f"    Skipping (already exists): {filename}")
@@ -230,6 +258,25 @@ def main():
                     print("No set pages detected in start.html.")
             else:
                 print("start.html not found — skipping set page detection.")
+
+            # Download starter deck block pages from PC wiki
+            starter_html = os.path.join(ASSETS_DIR, 'Starter_Decks.html')
+            if os.path.exists(starter_html):
+                pc_base = get_pc_base_url(wiki_sources)
+                if pc_base:
+                    block_sources = detect_starter_block_urls(starter_html, pc_base)
+                    if block_sources:
+                        download_wiki_pages(
+                            block_sources,
+                            label=f"Downloading {len(block_sources)} starter block pages",
+                            output_dir=STARTERS_DIR
+                        )
+                    else:
+                        print("No starter block pages detected in Starter_Decks.html.")
+                else:
+                    print("PC wiki base URL not found — skipping starter block download.")
+            else:
+                print("Starter_Decks.html not found — skipping starter block download.")
 
             # Download all card pages + images detected from grand.html
             grand_html = os.path.join(ASSETS_DIR, 'grand.html')

@@ -76,7 +76,7 @@ Build a fully playable digital implementation of **The Lord of the Rings Trading
 | 3 — Engine | Core game engine (single-player, local test) |
 | 4 — Card Text | Game text parser and executor for all cards |
 | 5 — AI | Basic CPU opponent |
-| 6 — Multiplayer | Online 2-player matches |
+| 6 — Multiplayer | Online 2–4 player matches (1 FP, up to 3 Shadow) |
 | 7 — Accounts | User accounts, collections, saved decks |
 | 8 — Polish | UI, sound, animations, performance |
 
