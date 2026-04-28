@@ -1,3 +1,9 @@
+# do directory
+build/do
+
+# logs
+build/**/logs
+
 # Godot 4+ specific ignores
 .godot/
 .nomedia

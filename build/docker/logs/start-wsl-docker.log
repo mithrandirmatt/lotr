@@ -37,3 +37,12 @@
 2026-04-27T08:41:50.8021059-04:00	Docker is running in lotr-docker-service
 2026-04-27T08:41:50.9022469-04:00	
 2026-04-27T08:41:55.0890052-04:00	User pressed key; exiting start script
+2026-04-28T13:27:53.6011424-04:00	Starting start-wsl-docker.ps1 for distro lotr-docker-service
+2026-04-28T13:27:53.6907538-04:00	Distro lotr-docker-service already running
+2026-04-28T13:27:53.7522186-04:00	systemd not detected. Launching dockerd via persistent Windows process (keeps WSL session alive).
+2026-04-28T13:27:53.8401002-04:00	dockerd started as background Windows process.
+2026-04-28T13:27:53.8431011-04:00	Checking docker availability (attempt 1/15)
+2026-04-28T13:27:55.9476207-04:00	Checking docker availability (attempt 2/15)
+2026-04-28T13:27:56.0587612-04:00	Docker is running in lotr-docker-service
+2026-04-28T13:27:56.1609464-04:00	
+2026-04-28T13:27:57.6416852-04:00	User pressed key; exiting start script
