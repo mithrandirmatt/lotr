@@ -1,6 +1,21 @@
-# LotR TCG Comprehensive Rules Reference (v4.2)
+# LotR TCG Comprehensive Rules Reference (v4.2 / v5.0)
 
-Source: `build/do/assets/wiki/Comprehensive_Rules_4.2.html`
+Sources:
+- v4.2 (Decipher): `build/do/assets/wiki/Comprehensive_Rules_4.2.html`
+- v5.0 (Player's Council): `build/do/assets/wiki/Comprehensive_Rules_5.0.html`
+
+---
+
+## v5.0 / Player's Council Changes
+
+The following rules changes apply in **Player's Council (PC) formats** (Open, Standard, and PC Block formats). v4.2 is the Decipher base; v5.0 supersedes it for PC play.
+
+1. **PC Errata in effect** — All Player's Council errata are enforced in PC formats.
+2. **"Item"** — New term meaning "Artifact or Possession." Card text using "item" refers to either type.
+3. **"Here" on site text** — Shorthand for "while the fellowship is at this site." Functionally equivalent.
+4. **Win condition timing** — The game ends when the Shadow player is *about to reconcile* (start of reconciliation), not at the start of the Regroup phase. Regroup actions may still be performed before the game ends.
+5. **Discard piles are public** — All discard piles are face-up and visible to all players at all times. You may look through your own freely; you cannot physically search an opponent's, but you can see all cards in it.
+6. **"Cannot" overrides "Can"** — Explicit priority rule: any game text stating something "cannot happen" takes precedence over any text stating it "can happen."
 
 ---
 
@@ -213,7 +228,7 @@ Mulligan available (from Tournament Guidelines).
 
 ## Winning and Losing
 
-- **Win**: Fellowship reaches site 9 and Ring-bearer survives all skirmishes. No regroup phase on final turn.
+- **Win**: Fellowship reaches site 9 and Ring-bearer survives all skirmishes. **(v4.2)** No regroup phase on final turn. **(v5.0/PC)** Regroup actions may still occur; game ends when the Shadow player is about to reconcile their hand.
 - **Lose (Ring-bearer killed)**: Ring-bearer dies. Another character may take over if game text allows.
 - **Lose (corrupted)**: Ring-bearer's resistance reaches 0 from burdens.
 - **Eliminated player**: Remove all their cards; replace their sites on the adventure path.
@@ -242,6 +257,9 @@ Mulligan available (from Tournament Guidelines).
 | **Unique** | Only one copy with same title in play at a time; dead pile blocks replay. |
 | **When / Each Time / While** | Triggers: When=once, Each Time=repeatable, While=continuous. |
 | **Response** | Optional action taken immediately after a trigger; not a phase action. |
+| **Item** *(v5.0)* | Synonym for "Artifact or Possession" in card text. |
+| **Here** *(v5.0, site text)* | Shorthand for "while the fellowship is at this site." |
+| **Cannot > Can** *(v5.0)* | Priority rule: "cannot happen" game text overrides "can happen" game text. |
 
 ---
 
@@ -254,4 +272,4 @@ Mulligan available (from Tournament Guidelines).
 
 ---
 
-*This reference covers Section One (Overview) and key terms from Section Two (Glossary) of Comprehensive Rules 4.2. For individual card rulings see Section Three of the source file.*
+*This reference covers Section One (Overview) and key terms from Section Two (Glossary) of Comprehensive Rules 4.2, annotated with changes from v5.0 (Player's Council). For individual card rulings see Section Three of the respective source file.*
