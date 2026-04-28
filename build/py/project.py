@@ -2,6 +2,9 @@
 """project.py -- project-level automation for the lotr repo."""
 
 import argparse
+import os
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -20,12 +23,37 @@ from pyutils.utils       import git
 
 INI_PATH = BUILD_DIR / "build.ini"
 
+_PPK_SRC     = "/root/.ssh/id_rsa.ppk"
+_OPENSSH_KEY = "/root/.ssh_keys/id_openssh"
+
+
+def ensure_ssh_agent():
+    """Mirror the 'sa' alias: start ssh-agent, convert .ppk if needed, ssh-add."""
+    result = subprocess.run(["ssh-agent", "-s"], capture_output=True, text=True)
+    for line in result.stdout.splitlines():
+        m = re.match(r'^(SSH_AUTH_SOCK|SSH_AGENT_PID)=([^;]+);', line)
+        if m:
+            os.environ[m.group(1)] = m.group(2)
+
+    if not os.path.exists(_OPENSSH_KEY):
+        pi("Converting PuTTY key to OpenSSH format...")
+        subprocess.run(
+            ["puttygen", _PPK_SRC, "-O", "private-openssh", "-o", _OPENSSH_KEY,
+             "--new-passphrase", "/dev/null"],
+            check=True
+        )
+        os.chmod(_OPENSSH_KEY, 0o600)
+
+    subprocess.run(["ssh-add", _OPENSSH_KEY], check=True)
+
 
 # ---------------------------------------------------------------------------
 # commit_project
 # ---------------------------------------------------------------------------
 
 def cmd_commit_project(args):
+    ensure_ssh_agent()
+
     cfg   = read_ini(str(INI_PATH))
     repos = get_section(cfg, "REPOS")
 
