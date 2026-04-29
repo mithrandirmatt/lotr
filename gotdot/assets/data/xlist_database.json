@@ -1,0 +1,591 @@
+{
+  "lotr01040": {
+    "card_name": "Elrond, Lord of Rivendell",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      }
+    ]
+  },
+  "lotr01045": {
+    "card_name": "Galadriel, Lady of Light",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr01080": {
+    "card_name": "Ottar, Man of Laketown",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      }
+    ]
+  },
+  "lotr01108": {
+    "card_name": "No Stranger to the Shadows",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      }
+    ]
+  },
+  "lotr01139": {
+    "card_name": "Savagery to Match Their Numbers",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      }
+    ]
+  },
+  "lotr01234": {
+    "card_name": "Ulaire Nertea, Messenger of Dol Guldur",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr01248": {
+    "card_name": "Forces of Mordor",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      }
+    ]
+  },
+  "lotr01313": {
+    "card_name": "Sting",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr02032": {
+    "card_name": "Flaming Brand",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      }
+    ]
+  },
+  "lotr02101": {
+    "card_name": "Filibert Bolger, Wily Rascal",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "May 4, 2004",
+        "notes": "Removed when it was ruled that Ringbearer skirmishes could not be cancelled"
+      }
+    ]
+  },
+  "lotr02108": {
+    "card_name": "O Elbereth! Gilthoniel!",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "May 4, 2004",
+        "notes": "Removed when it was ruled that Ringbearer skirmishes could not be cancelled"
+      }
+    ]
+  },
+  "lotr03038": {
+    "card_name": "Aragorn, Heir to the White City",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr03042": {
+    "card_name": "Horn of Boromir",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr03068": {
+    "card_name": "Saruman, Keeper of Isengard",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr04192": {
+    "card_name": "Uruk Regular",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "March 25, 2003",
+        "date_removed": "January 12, 2004",
+        "notes": "Removed after Deep of Helm was no longer on the site path."
+      }
+    ]
+  },
+  "lotr01195": {
+    "card_name": "Relics of Moria",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "January 12, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added to take some power away from Moria once RotK was released. Removed when Fellowship Block Rotated out of Standard Format"
+      }
+    ]
+  },
+  "lotr03067": {
+    "card_name": "The Palantir of Orthanc",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "January 12, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr03108": {
+    "card_name": "Frying Pan",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "January 12, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added as a counter to removing Relics of MoriaRemoved when Fellowship Block Rotated out of Standard Format"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr03106": {
+    "card_name": "Bill The Pony",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "January 12, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Removed when Fellowship Block Rotated out of Standard Format"
+      }
+    ]
+  },
+  "lotr07049": {
+    "card_name": "Steadfast Champion",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "July 6, 2004",
+        "date_removed": null,
+        "notes": "Added due to interactions with Treebeard, Keeper of the Watchwood"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr07096": {
+    "card_name": "Gondorian Captain",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "July 6, 2004",
+        "date_removed": "November 10, 2004",
+        "notes": "Added due to interactions with Base of Mindolluin, removed when Shadows Sites became legal"
+      }
+    ]
+  },
+  "lotr08001": {
+    "card_name": "Aggression",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "July 6, 2004",
+        "date_removed": null,
+        "notes": "Added due to being under-costed"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr10091": {
+    "card_name": "Mordor Fiend",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "July 15, 2004",
+        "date_removed": null,
+        "notes": "Added the day after the set released, before he would have been legal to use in a deck."
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr10002": {
+    "card_name": "Memories of Darkness",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "August 3, 2004",
+        "date_removed": null,
+        "notes": null
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr01138": {
+    "card_name": "Saruman's Snows",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added prior to Shadows Release date before rotation was introduced"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr02075": {
+    "card_name": "Bill Ferny, Swarthy Sneering Fellow",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added prior to Shadows Release date before rotation was introduced"
+      }
+    ]
+  },
+  "lotr01311": {
+    "card_name": "Sam, Son of Hamfast",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added prior to Shadows Release date before rotation was introduced"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr01316": {
+    "card_name": "A Talent for Not Being Seen",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added prior to Shadows Release date before rotation was introduced"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr02121": {
+    "card_name": "Gimli, Dwarf of the Mountain Race",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added prior to Shadows Release date before rotation was introduced. Deemed to be abusive with the focus on site path introduced in Shadows"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr03017": {
+    "card_name": "Galadriel, Lady of the Golden Wood",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added prior to Shadows Release date before rotation was introduced. Granted easy site path manipulation without cultural enforcement"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr03113": {
+    "card_name": "The Shire Countryside",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "March 25, 2005",
+        "notes": "Added prior to Shadows Release date before rotation was introduced"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr04073": {
+    "card_name": "Legolas, Dauntless Hunter",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "June 9, 2006",
+        "notes": "Added prior to Shadows Release date before rotation was introduced. Abusive with the new unbound hobbits released in Shadows"
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr04276": {
+    "card_name": "Fortress Never Fallen",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "June 9, 2006",
+        "notes": "Added prior to Shadows Release date before rotation was introduced"
+      }
+    ]
+  },
+  "lotr04304": {
+    "card_name": "Get On and Get Away",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to November 3, 2004",
+        "date_removed": "June 9, 2006",
+        "notes": "Added prior to Shadows Release date before rotation was introduced. Provided too much site path manipulation."
+      }
+    ]
+  },
+  "lotr10011": {
+    "card_name": "Galadriel, Lady Redeemed",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "January 18, 2005",
+        "date_removed": null,
+        "notes": null
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr11031": {
+    "card_name": "Final Account",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "January 18, 2005",
+        "date_removed": null,
+        "notes": null
+      },
+      {
+        "format": "Expanded",
+        "date_added": "March 25, 2005",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr11114": {
+    "card_name": "Demoralized",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "Prior to May 22, 2006",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr13188": {
+    "card_name": "Courtyard Parapet",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "January 29, 2007",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr15064": {
+    "card_name": "Madril, Defender of Osgiliath",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "January 29, 2007",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr11100": {
+    "card_name": "Strange Looking Men",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "August 13, 2007",
+        "date_removed": null,
+        "notes": null
+      },
+      {
+        "format": "Expanded",
+        "date_added": "August 13, 2007",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  },
+  "lotr11132": {
+    "card_name": "Orkish Smith",
+    "formats": [
+      {
+        "format": "Standard",
+        "date_added": "August 13, 2007",
+        "date_removed": null,
+        "notes": null
+      },
+      {
+        "format": "Expanded",
+        "date_added": "August 13, 2007",
+        "date_removed": null,
+        "notes": null
+      }
+    ]
+  }
+}

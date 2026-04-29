@@ -4,6 +4,9 @@ build/do
 # logs
 build/**/logs
 
+# Godot game assets — card images are large, synced via make wiki_game_asset_creation
+gotdot/assets/cards/
+
 # Godot 4+ specific ignores
 .godot/
 .nomedia

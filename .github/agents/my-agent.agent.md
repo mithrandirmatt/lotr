@@ -1,7 +1,6 @@
 ---
 name: my-agent
 description: "Worker agent (overview). Keeps includes to shared logic and permissions."
-model: devstral
 tools:
   - read
   - search
@@ -9,6 +8,41 @@ tools:
   - execute
   - todo
   - agent
+  # lotr-mcp tools
+  - read_file
+  - write_file
+  - list_directory
+  - search_files
+  - git_status
+  - git_log
+  - git_diff
+  - git_add
+  - git_commit
+  - run_command
+  - pg_query
+  - pg_execute
+  - memory_set
+  - memory_get
+  - memory_list
+  - memory_delete
+  - task_list
+  - task_add
+  - task_complete
+  - task_move_to_in_progress
+  - agent_send
+  - agent_receive
+  - agent_queue_status
+  # new tools
+  - pg_schema
+  - redis_get
+  - redis_set
+  - redis_keys
+  - redis_del
+  - ollama_generate
+  - card_search
+  - godot_run
+  - make_target
+  - run_pytest
 includes:
   - ../agent/base.prompts.md
 ---

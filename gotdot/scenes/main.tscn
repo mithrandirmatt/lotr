@@ -1,0 +1,82 @@
+[gd_scene load_steps=7 format=3 uid="uid://lotr_main_001"]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+
+; Dark blue-tinted background with ambient fill — suits a fantasy card game aesthetic.
+[sub_resource type="Environment" id="Env_1"]
+background_mode = 1
+background_color = Color(0.05, 0.07, 0.15, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.2, 0.25, 0.4, 1)
+ambient_light_energy = 0.8
+
+[sub_resource type="PlaneMesh" id="Plane_1"]
+size = Vector2(20.0, 20.0)
+
+[sub_resource type="StandardMaterial3D" id="Mat_ground"]
+albedo_color = Color(0.18, 0.32, 0.14, 1)
+
+[sub_resource type="BoxMesh" id="Box_1"]
+size = Vector3(1.5, 1.5, 1.5)
+
+[sub_resource type="StandardMaterial3D" id="Mat_cube"]
+albedo_color = Color(0.85, 0.65, 0.08, 1)
+
+; ── Root ────────────────────────────────────────────────────────────────────
+; Control fills the window. SubViewportContainer renders the 3D world.
+; CanvasLayer sits on top for 2D sprites and UI — the core 2.5D pattern.
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+; ── 3D Background (SubViewport) ──────────────────────────────────────────────
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+size = Vector2i(1280, 720)
+
+[node name="World3D" type="Node3D" parent="SubViewportContainer/SubViewport"]
+
+[node name="WorldEnv" type="WorldEnvironment" parent="SubViewportContainer/SubViewport/World3D"]
+environment = SubResource("Env_1")
+
+; Sun: positioned at 45-degree elevation from front-right, shadows enabled.
+[node name="Sun" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/World3D"]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 0, 0)
+light_energy = 1.5
+shadow_enabled = true
+
+; Camera: positioned at (0, 5, 8), pitched ~30 degrees down toward the origin.
+[node name="Camera3D" type="Camera3D" parent="SubViewportContainer/SubViewport/World3D"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 5, 8)
+
+[node name="Ground" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World3D"]
+mesh = SubResource("Plane_1")
+surface_material_override/0 = SubResource("Mat_ground")
+
+; Gold cube spun each frame by main.gd — placeholder for card/character sprites.
+[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+mesh = SubResource("Box_1")
+surface_material_override/0 = SubResource("Mat_cube")
+
+; ── 2D Overlay (CanvasLayer) ─────────────────────────────────────────────────
+; layer = 1 ensures 2D content always draws above the SubViewport.
+
+; CanvasLayer reserved for in-game 2D sprites and HUD (added in later phases).
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 1

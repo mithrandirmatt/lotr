@@ -1,0 +1,79 @@
+[gd_scene load_steps=2 format=3 uid="uid://lotr_menu"]
+
+[ext_resource type="Script" path="res://scripts/menu.gd" id="1_menu"]
+
+; ── Main menu scene ───────────────────────────────────────────────────────────
+; Placeholder menu.  Buttons are disabled until their target phases are built.
+;   New Game     -> Phase 3 (game engine)
+;   Deck Builder -> Phase 2 (deck builder UI)
+;   Settings     -> Phase 8 (polish/settings)
+;   Quit         -> available now
+
+[node name="Menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.07, 0.15, 1)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer"]
+offset_left = 0.0
+offset_top = 80.0
+offset_right = 1280.0
+offset_bottom = 170.0
+text = "LotR TCG"
+theme_override_font_sizes/font_size = 72
+horizontal_alignment = 1
+
+[node name="MenuBox" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 490.0
+offset_top = 210.0
+offset_right = 790.0
+offset_bottom = 560.0
+theme_override_constants/separation = 12
+
+[node name="NewGameBtn" type="Button" parent="CanvasLayer/MenuBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 55)
+text = "New Game"
+disabled = true
+
+[node name="DeckBuilderBtn" type="Button" parent="CanvasLayer/MenuBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 55)
+text = "Deck Builder"
+disabled = true
+
+[node name="SettingsBtn" type="Button" parent="CanvasLayer/MenuBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 55)
+text = "Settings"
+disabled = true
+
+[node name="Separator" type="HSeparator" parent="CanvasLayer/MenuBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 16)
+
+[node name="QuitBtn" type="Button" parent="CanvasLayer/MenuBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 55)
+text = "Quit"
+
+[connection signal="pressed" from="CanvasLayer/MenuBox/NewGameBtn" to="." method="_on_new_game_pressed"]
+[connection signal="pressed" from="CanvasLayer/MenuBox/DeckBuilderBtn" to="." method="_on_deck_builder_pressed"]
+[connection signal="pressed" from="CanvasLayer/MenuBox/SettingsBtn" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="CanvasLayer/MenuBox/QuitBtn" to="." method="_on_quit_pressed"]

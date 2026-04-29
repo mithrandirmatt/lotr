@@ -56,6 +56,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     putty-tools \
     # Terminal utilities
     less file tree jq \
+    rsync \
     bash-completion \
     # Python 3
     python3 python3-pip python3-venv python3-dev \

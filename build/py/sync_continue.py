@@ -88,6 +88,30 @@ def extract_mission(game_plan_text: str) -> str:
     return "\n".join(result).strip()
 
 
+_MCP_TOOLS = (
+    "read_file, write_file, list_directory, search_files, "
+    "git_status, git_log, git_diff, git_add, git_commit, run_command, "
+    "memory_set, memory_get, memory_list, memory_delete, "
+    "task_list, task_add, task_complete, task_move_to_in_progress, "
+    "agent_send, agent_receive, agent_queue_status, "
+    "pg_schema, pg_query, pg_execute, "
+    "redis_get, redis_set, redis_keys, redis_del, "
+    "ollama_generate, card_search, "
+    "godot_run, make_target, run_pytest"
+)
+
+TOOL_RULE = (
+    f"TOOL USE IS MANDATORY. You have MCP tools available: {_MCP_TOOLS}. "
+    "When asked to read a file you MUST call read_file. "
+    "When asked to edit or write a file you MUST call write_file with the complete new file content. "
+    "NEVER say you cannot modify files - use write_file instead. "
+    "File paths must be workspace-relative (e.g. build/docker/.bash_aliases). "
+    "Use memory_set/memory_get to persist facts across sessions. "
+    "Use task_* tools to update todo.md. "
+    "Use agent_send/agent_receive to coordinate between agents via the handoff queue."
+)
+
+
 def build_system_message(game_plan: str, todo: str) -> str:
     mission = extract_mission(game_plan)
     phase_table = extract_phase_table(game_plan)
@@ -140,29 +164,68 @@ def indent_block(text: str, indent: str = "      ") -> str:
 def update_config(config_path: Path, system_message: str, dry_run: bool) -> None:
     config_text = config_path.read_text(encoding="utf-8")
 
-    # Match the existing systemMessage literal block scalar
-    pattern = re.compile(
+    # Strategy 1: existing systemMessage literal block scalar (4-space indent)
+    sm_pattern = re.compile(
         r"(    systemMessage: \|\n)((?:(?:      .*|)\n)*)",
-        re.MULTILINE
+        re.MULTILINE,
     )
+    indented_sm = indent_block(system_message) + "\n"
+    replacement_sm = f"    systemMessage: |\n{indented_sm}"
 
-    indented = indent_block(system_message) + "\n"
-    replacement = f"    systemMessage: |\n{indented}"
+    # Strategy 2: replace the first item in a top-level rules: list.
+    # The first rule holds the system/context message.
+    rules_first_pattern = re.compile(
+        r"(?m)^(rules:\n)(  -[ \t].*?)(\n  -[ \t]|\n[a-zA-Z])",
+        re.DOTALL,
+    )
+    indented_rules = "\n".join(
+        "    " + line if line.strip() else ""
+        for line in system_message.splitlines()
+    )
+    replacement_first_item = f"  - |\n{indented_rules}"
 
-    if pattern.search(config_text):
-        new_config = pattern.sub(lambda _: replacement, config_text)
+    # Also keep the second rule (tool-list) in sync.
+    # It is the first `>-` scalar that mentions "TOOL USE IS MANDATORY".
+    tool_rule_pattern = re.compile(
+        r"(  - >-\n)((?:    .*\n)*)",
+        re.MULTILINE,
+    )
+    indented_tool = "\n".join("    " + line for line in TOOL_RULE.splitlines()) + "\n"
+    replacement_tool_item = f"  - >-\n{indented_tool}"
+
+    if sm_pattern.search(config_text):
+        new_config = sm_pattern.sub(lambda _: replacement_sm, config_text)
+    elif rules_first_pattern.search(config_text):
+        m = rules_first_pattern.search(config_text)
+        new_config = (
+            config_text[: m.start()]
+            + m.group(1)
+            + replacement_first_item
+            + m.group(3)
+            + config_text[m.end() :]
+        )
     else:
-        print("ERROR: Could not find 'systemMessage: |' block in config.yaml", file=sys.stderr)
-        sys.exit(1)
+        print(
+            f"[WARNING] sync_continue: could not find 'systemMessage: |' or 'rules:' block"
+            f" in {config_path} — skipping (not an error).",
+            file=sys.stderr,
+        )
+        return
+
+    # Update the tool-list rule if present
+    if tool_rule_pattern.search(new_config):
+        new_config = tool_rule_pattern.sub(replacement_tool_item, new_config, count=1)
 
     if dry_run:
         print("=== DRY RUN: new systemMessage would be ===")
         print(system_message)
         print("===========================================")
+        print("=== DRY RUN: new tool rule would be ===")
+        print(TOOL_RULE)
         return
 
     config_path.write_text(new_config, encoding="utf-8")
-    print(f"Updated systemMessage in {config_path}")
+    print(f"Updated systemMessage and tool rule in {config_path}")
 
 
 def main():

@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=3 uid="uid://lotr_startup"]
+
+[ext_resource type="Script" path="res://scripts/startup.gd" id="1_startup"]
+
+; ── Startup / splash scene ───────────────────────────────────────────────────
+; Displays the game title on a dark background for 1 second, then transitions
+; to the main menu.  No 3D world is loaded here — keeps startup instant.
+
+[node name="Startup" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_startup")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.07, 0.15, 1)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="TitleBox" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 200.0
+offset_top = 270.0
+offset_right = 1080.0
+offset_bottom = 460.0
+alignment = 1
+
+[node name="GameTitle" type="Label" parent="CanvasLayer/TitleBox"]
+layout_mode = 2
+text = "The Lord of the Rings"
+theme_override_font_sizes/font_size = 64
+horizontal_alignment = 1
+
+[node name="GameSubtitle" type="Label" parent="CanvasLayer/TitleBox"]
+layout_mode = 2
+text = "Trading Card Game - Digital Edition"
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 1.0
+one_shot = true
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
