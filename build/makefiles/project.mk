@@ -10,5 +10,5 @@ project_update:
 
 project_commit:
 	$(call log_build,** Calling $@... **)
-	cd $(REPO_ROOT) && python3 build/py/project.py commit_project
+	@cd $(REPO_ROOT) && python3 build/py/project.py commit_project
 	$(call log_ok,Finished $@.)

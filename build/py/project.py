@@ -158,6 +158,9 @@ def cmd_commit_project(args):
 
     pok("All repos committed.")
 
+    pb("Git status:")
+    subprocess.run(["git", "status"], cwd=str(REPO_ROOT))
+
 
 # ---------------------------------------------------------------------------
 # CLI
