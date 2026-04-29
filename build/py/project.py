@@ -48,6 +48,66 @@ def ensure_ssh_agent():
 
 
 # ---------------------------------------------------------------------------
+# lib submodule helpers
+# ---------------------------------------------------------------------------
+
+def _lib_rel_path(abs_path: Path) -> str:
+    """Path of a lib relative to REPO_ROOT as a POSIX string (for git)."""
+    return abs_path.relative_to(REPO_ROOT).as_posix()
+
+
+def _is_registered_submodule(rel_path: str) -> bool:
+    """Return True if rel_path is already listed in .gitmodules."""
+    result = subprocess.run(
+        ["git", "submodule", "status", "--", rel_path],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
+def _ensure_lib_submodule(name: str, abs_path: Path) -> bool:
+    """Ensure a LIBS entry is a clean git repo registered as a submodule.
+
+    Returns True if ready to proceed, False on any blocking problem.
+    """
+    if not git.is_git_repo(str(abs_path)):
+        pe(f"[{name}] not a git repo — cannot register as submodule.")
+        return False
+
+    if git.is_dirty(str(abs_path)):
+        pe(f"[{name}] has local modifications at {abs_path}")
+        pe(f"  Stash or discard changes before running project_commit.")
+        return False
+
+    rel_path = _lib_rel_path(abs_path)
+
+    if _is_registered_submodule(rel_path):
+        psi(f"[{name}] already a submodule ({rel_path}) — ok.")
+        return True
+
+    remote_url = git.get_remote_url(str(abs_path))
+    if not remote_url:
+        pe(f"[{name}] no remote URL found — cannot add as submodule.")
+        return False
+
+    pb(f"[{name}] registering submodule: {rel_path}  ->  {remote_url}")
+    result = subprocess.run(
+        ["git", "submodule", "add", "--force", remote_url, rel_path],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        pe(f"[{name}] git submodule add failed:\n{result.stderr.strip()}")
+        return False
+
+    pok(f"[{name}] registered as submodule.")
+    return True
+
+
+# ---------------------------------------------------------------------------
 # commit_project
 # ---------------------------------------------------------------------------
 
@@ -56,6 +116,17 @@ def cmd_commit_project(args):
 
     cfg   = read_ini(str(INI_PATH))
     repos = get_section(cfg, "REPOS")
+
+    # Ensure every [LIBS] entry is registered as a clean submodule first.
+    libs = get_section(cfg, "LIBS")
+    if libs:
+        pb("Checking LIBS submodules...")
+        for name, rel in libs.items():
+            abs_path = (BUILD_DIR / rel).resolve()
+            if not _ensure_lib_submodule(name, abs_path):
+                pe("Aborting — resolve LIBS issues above before committing.")
+                sys.exit(1)
+        pok("LIBS submodules ok.")
 
     # Resolve paths relative to BUILD_DIR (where build.ini lives)
     resolved = {name: (BUILD_DIR / rel).resolve() for name, rel in repos.items()}

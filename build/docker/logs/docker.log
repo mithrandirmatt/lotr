@@ -281,3 +281,85 @@
 2026-04-28T13:28:01.0031247-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
 2026-04-28T13:28:01.0096503-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
 2026-04-28T13:28:01.0106491-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-28T20:22:14.6246366-04:00	Container exited with code 2.
+2026-04-28T20:22:23.8577774-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-28T20:22:23.9879233-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-28T20:22:23.9899184-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-28T20:22:23.9909192-04:00	Building image 'lotr-dev:latest' ...
+2026-04-28T20:22:34.9358258-04:00	Image 'lotr-dev:latest' built successfully.
+2026-04-28T20:22:34.9378243-04:00	docker.ps1 done.
+2026-04-28T20:22:39.7139936-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-28T20:22:39.8381242-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-28T20:22:39.8391207-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-28T20:22:39.8408920-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-28T20:22:39.8428955-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-28T20:22:39.8458998-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-28T20:22:39.8474088-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-29T10:23:18.2961049-04:00	Container exited with code 2.
+2026-04-29T10:30:29.5125218-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T10:30:29.6903069-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T10:30:29.6923093-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T10:30:29.6943088-04:00	Building image 'lotr-dev:latest' ...
+2026-04-29T10:34:00.9677226-04:00	Image 'lotr-dev:latest' built successfully.
+2026-04-29T10:34:00.9769502-04:00	docker.ps1 done.
+2026-04-29T10:34:14.1234136-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T10:34:14.4129147-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T10:34:14.4154229-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T10:34:14.4164229-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-29T10:34:14.4184247-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-29T10:34:14.4214219-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-29T10:34:14.4224232-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-29T11:52:06.3625565-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T11:52:06.5882496-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T11:52:06.5902515-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T11:52:06.5922505-04:00	Building image 'lotr-dev:latest' ...
+2026-04-29T11:52:08.6515088-04:00	Image 'lotr-dev:latest' built successfully.
+2026-04-29T11:52:08.6530188-04:00	docker.ps1 done.
+2026-04-29T11:52:14.0963897-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T11:52:14.2359237-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T11:52:14.2369277-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T11:52:14.2391161-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-29T11:52:14.2401142-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-29T11:52:14.2431135-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-29T11:52:14.2451158-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-29T11:53:32.8146560-04:00	Container exited with code 2.
+2026-04-29T11:53:34.2176040-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T11:53:34.3547833-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T11:53:34.3567888-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T11:53:34.3587853-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-29T11:53:34.3597862-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-29T11:53:34.3627864-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-29T11:53:34.3642889-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-29T12:11:39.6559899-04:00	Container exited with code 2.
+2026-04-29T12:11:41.6382973-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T12:11:41.7771365-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T12:11:41.7791360-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T12:11:41.7811321-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-29T12:11:41.7821360-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-29T12:11:41.7851341-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-29T12:11:41.7861337-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-29T12:11:41.7881733-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-04-29T12:14:40.8546903-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T12:14:40.9905025-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T12:14:40.9930161-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T12:14:40.9950138-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-29T12:14:40.9963622-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-29T12:14:40.9993694-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-29T12:14:41.0003691-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-29T12:14:41.0028785-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-04-29T12:14:58.2568342-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T12:14:58.3939129-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T12:14:58.3952473-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T12:14:58.3972461-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-29T12:14:58.3982458-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-29T12:14:58.4012473-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-29T12:14:58.4022474-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-29T12:14:58.4042470-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-04-29T12:50:36.5045122-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-04-29T12:50:36.6662871-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-04-29T12:50:36.6682863-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-04-29T12:50:36.6702829-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-04-29T12:50:36.6717936-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-04-29T12:50:36.6747158-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-04-29T12:50:36.6767136-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-04-29T12:50:36.6777164-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue

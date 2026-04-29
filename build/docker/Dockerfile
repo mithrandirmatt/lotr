@@ -6,7 +6,7 @@
 #   - C/C++ build toolchain (gcc, clang, cmake, scons, ninja)
 #   - Godot 4 build & export dependencies
 #   - Git + GUI (gitk) + Python git tooling
-#   - Python web-crawling stack
+#   - Python web-crawling + image-processing stack (Pillow)
 #   - Common CI/scripting utilities
 #
 # Build:
@@ -18,6 +18,10 @@
 FROM ubuntu:24.04
 
 ARG GODOT_VERSION=4.4.1-stable
+# Set GODOT_EDITOR=1 at build time to include the Godot editor binary.
+# The headless binary (godot) is always included for CI/export use.
+#   docker build --build-arg GODOT_EDITOR=1 -t lotr-dev build/docker/
+ARG GODOT_EDITOR=0
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=UTC \
@@ -60,6 +64,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-dev libxcursor-dev libxrandr-dev \
     libxinerama-dev libxi-dev libxext-dev \
     libxrender-dev libxfixes-dev \
+    # Virtual framebuffer + X auth (headless display for Godot editor / CI)
+    xvfb x11-utils xauth dbus-x11 \
+    # GTK4 runtime (required by Godot editor)
+    libgtk-4-1 \
     # Godot OpenGL / GLES
     libgl-dev libgles2-mesa-dev \
     # Godot audio
@@ -111,6 +119,24 @@ RUN set -eux; \
     rm -rf /tmp/templates.tpz /tmp/templates
 
 # ------------------------------------------------------------
+# Godot 4 editor binary (optional -- only when GODOT_EDITOR=1)
+# Downloads the full editor build so developers can run the Godot editor
+# inside the container via X11 forwarding or xvfb-run.
+# ------------------------------------------------------------
+RUN if [ "${GODOT_EDITOR}" = "1" ]; then \
+    set -eux; \
+    GODOT_FILE="Godot_v${GODOT_VERSION}_linux.x86_64"; \
+    EDITOR_FILE="Godot_v${GODOT_VERSION}_linux.x86_64"; \
+    curl -fsSL \
+        "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${EDITOR_FILE}.zip" \
+        -o /tmp/godot-editor.zip; \
+    unzip /tmp/godot-editor.zip -d /tmp/godot-editor; \
+    mv "/tmp/godot-editor/${GODOT_FILE}" /usr/local/bin/godot-editor; \
+    chmod +x /usr/local/bin/godot-editor; \
+    rm -rf /tmp/godot-editor.zip /tmp/godot-editor; \
+fi
+
+# ------------------------------------------------------------
 # Python -- install packages
 # --break-system-packages : required on Ubuntu 24.04 (PEP 668)
 # --ignore-installed      : skip uninstalling Debian-managed packages
@@ -154,7 +180,8 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     click \
     rich \
     tqdm \
-    pathspec
+    pathspec \
+    Pillow
 
 # Code quality
 RUN python3 -m pip install --break-system-packages --ignore-installed \
@@ -183,7 +210,8 @@ RUN echo '' >> /root/.bashrc && \
 # Copy project aliases into the image
 COPY build/docker/.bash_aliases /root/.bash_aliases
 COPY build/docker/ssh-add.sh   /usr/local/bin/ssh-add.sh
-RUN  chmod +x /usr/local/bin/ssh-add.sh
+COPY build/docker/run-godot.sh /usr/local/bin/run-godot.sh
+RUN  chmod +x /usr/local/bin/ssh-add.sh /usr/local/bin/run-godot.sh
 # ------------------------------------------------------------
 # Working directory
 # Mount the project root here when running the container:

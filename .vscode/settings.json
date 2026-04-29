@@ -1,3 +1,16 @@
 {
-    "editor.renderWhitespace": "all"
+    "editor.renderWhitespace": "all",
+
+    // ------------------------------------------------------------
+    // GitHub Copilot -- local Ollama language model (BYOM)
+    // Requires Ollama running on the host with OLLAMA_ORIGINS=*
+    // set as a system/user environment variable, then Ollama restarted.
+    //
+    // To set on Windows (run once per machine, then relaunch Ollama):
+    //   [System.Environment]::SetEnvironmentVariable("OLLAMA_ORIGINS","*","User")
+    // To set on Linux/macOS (add to ~/.bashrc or ~/.zshrc):
+    //   export OLLAMA_ORIGINS="*"
+    // ------------------------------------------------------------
+    "github.copilot.chat.languageModel.provider": "ollama",
+    "github.copilot.chat.languageModel.ollama.serverUrl": "http://localhost:11434"
 }

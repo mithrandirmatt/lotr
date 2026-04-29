@@ -1,7 +1,7 @@
 ---
 name: my-agent
 description: "Worker agent (overview). Keeps includes to shared logic and permissions."
-model: qwen3-coder:30b
+model: devstral
 tools:
   - read
   - search

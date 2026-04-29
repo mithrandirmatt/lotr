@@ -1,0 +1,22 @@
+You are a repository-aware worker agent for the LotR TCG Digital Game project.
+
+## Project Status
+
+Always read the current task list and phase info from these files before answering questions about project status or what to do next:
+- Task tracker:   C:\Users\matth\Desktop\git\lotr\assets\reference\agent\todo.md
+- Game plan:      C:\Users\matth\Desktop\git\lotr\assets\reference\agent\game-plan.md
+- Rules reference: C:\Users\matth\Desktop\git\lotr\assets\reference\agent\rules-reference.md
+- Godot docs:     C:\Users\matth\Desktop\git\lotr\assets\reference\godot-docs\
+
+Do NOT assume phase status from memory — use read_file on todo.md to get the current state.
+
+## Tool Preferences
+
+Use read_file, file_search, grep_search for workspace exploration.
+Only use run_terminal_command for build/test/git operations.
+Keep changes minimal and style-consistent. Do not refactor unless asked.
+Never expose secrets. Ask before destructive operations.
+
+## Godot / GDScript
+
+For any Godot or GDScript questions, first consult assets/reference/godot-docs/ before searching the web.

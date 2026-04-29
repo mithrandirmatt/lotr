@@ -144,11 +144,20 @@ $wslGitconfigPath = ("/mnt/{0}{1}" -f $gitconfigDrive, $gitconfigRelPath)
 
 Write-Log ("Git config (WSL): {0}" -f $wslGitconfigPath)
 
+# Resolve Windows .continue folder as a WSL path for the volume mount
+$continueWinPath = Join-Path $env:USERPROFILE ".continue"
+$continueDrive   = $continueWinPath.Substring(0, 1).ToLower()
+$continueRelPath = $continueWinPath.Substring(2) -replace '\\', '/'
+$wslContinuePath = ("/mnt/{0}{1}" -f $continueDrive, $continueRelPath)
+
+Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
+
     # -it: interactive + pseudo-TTY
     # --rm: remove container on exit
     # -v:   repo -> /workspace; Windows .ssh (ppk source) -> /root/.ssh:rw;
     #        named volume lotr-ssh-keys -> /root/.ssh_keys (Linux fs, chmod works, persistent);
     #        .gitconfig -> /root/.gitconfig:ro
+    #        .continue  -> /host-continue:rw (for sync_continue make target)
     # -w:   set working directory inside container
     wsl -d $DistroName -u root -- docker run `
         --rm `
@@ -158,6 +167,7 @@ Write-Log ("Git config (WSL): {0}" -f $wslGitconfigPath)
         --volume  "${wslSshPath}:/root/.ssh:rw" `
         --volume  "lotr-ssh-keys:/root/.ssh_keys" `
         --volume  "${wslGitconfigPath}:/root/.gitconfig:ro" `
+        --volume  "${wslContinuePath}:/host-continue:rw" `
         --workdir "/workspace/build" `
         $Tag `
         /bin/bash
