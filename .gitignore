@@ -19,6 +19,10 @@ export_credentials.cfg
 # Imported translations (automatically generated from CSV files)
 *.translation
 
+# Artifacts
+*.pyc
+
+
 # Mono-specific ignores
 .mono/
 data_*/
