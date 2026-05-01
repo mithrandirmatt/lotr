@@ -646,3 +646,211 @@
 2026-04-29T17:21:07.1611200-04:00	Stopping existing MCP container...
 2026-04-29T17:21:07.5171122-04:00	Starting MCP container on port 3100...
 2026-04-29T17:21:07.7984838-04:00	MCP container started.
+2026-05-01T06:27:58.0756805-04:00	Container session ended.
+2026-05-01T06:27:58.0766852-04:00	docker.ps1 done.
+2026-05-01T06:28:01.9427302-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T06:28:02.0954195-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T06:28:02.0974205-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T06:28:02.0984205-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T06:28:02.1004209-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T06:28:02.1034195-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T06:28:02.1044244-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T06:28:02.1064223-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T06:28:02.3597742-04:00	WSLg display available (socket: /tmp/.X11-unix/X0).
+2026-05-01T06:28:02.3617748-04:00	GPU device /dev/dri not found -- Mesa software renderer (llvmpipe) will be used for GUI.
+2026-05-01T06:28:02.3627738-04:00	WSLg PulseAudio socket found -- audio pass-through enabled.
+2026-05-01T06:28:02.5671612-04:00	Stopping existing MCP container...
+2026-05-01T06:28:02.9583316-04:00	Starting MCP container on port 3100...
+2026-05-01T06:28:03.2701338-04:00	MCP container started.
+2026-05-01T06:37:43.3206599-04:00	Container session ended.
+2026-05-01T06:37:43.3226571-04:00	docker.ps1 done.
+2026-05-01T06:37:44.6520580-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T06:37:44.7978723-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T06:37:44.7998713-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T06:37:44.8018710-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T06:37:44.8028701-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T06:37:44.8058753-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T06:37:44.8068703-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T06:37:44.8088707-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T06:37:45.0526180-04:00	WSLg display available (socket: /tmp/.X11-unix/X0).
+2026-05-01T06:37:45.0556141-04:00	GPU device /dev/dri not found -- Mesa software renderer (llvmpipe) will be used for GUI.
+2026-05-01T06:37:45.0566141-04:00	WSLg PulseAudio socket found -- audio pass-through enabled.
+2026-05-01T06:37:45.2717346-04:00	Stopping existing MCP container...
+2026-05-01T06:37:45.6568535-04:00	Starting MCP container on port 3100...
+2026-05-01T06:37:45.9672061-04:00	MCP container started.
+2026-05-01T06:38:55.1908319-04:00	Container session ended.
+2026-05-01T06:38:55.1928326-04:00	docker.ps1 done.
+2026-05-01T06:38:57.0121221-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T06:38:57.1580899-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T06:38:57.1600900-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T06:38:57.1610962-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T06:38:57.1630890-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T06:38:57.1650891-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T06:38:57.1670924-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T06:38:57.1680924-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T06:38:57.4249259-04:00	WSLg display available (socket: /tmp/.X11-unix/X0).
+2026-05-01T06:38:57.4269255-04:00	GPU device /dev/dri not found -- Mesa software renderer (llvmpipe) will be used for GUI.
+2026-05-01T06:38:57.4289261-04:00	WSLg PulseAudio socket found -- audio pass-through enabled.
+2026-05-01T06:38:57.6435736-04:00	Stopping existing MCP container...
+2026-05-01T06:38:58.0450423-04:00	Starting MCP container on port 3100...
+2026-05-01T06:38:58.3457953-04:00	MCP container started.
+2026-05-01T06:38:58.3477956-04:00	MCP endpoints:
+2026-05-01T06:38:58.3487947-04:00	  Host (published): http://localhost:3100/sse
+2026-05-01T06:38:58.3507957-04:00	  Docker network  : http://lotr-mcp:3100/sse
+2026-05-01T06:39:52.0779551-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T06:39:52.2284346-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T06:39:52.2304334-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T06:39:52.2324308-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T06:39:52.2334316-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T06:39:52.2364310-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T06:39:52.2384316-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T06:39:52.2394301-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T06:39:52.4873848-04:00	WSLg display available (socket: /tmp/.X11-unix/X0).
+2026-05-01T06:39:52.4903855-04:00	GPU device /dev/dri not found -- Mesa software renderer (llvmpipe) will be used for GUI.
+2026-05-01T06:39:52.4913852-04:00	WSLg PulseAudio socket found -- audio pass-through enabled.
+2026-05-01T06:39:52.6785493-04:00	Stopping existing MCP container...
+2026-05-01T06:39:53.0152529-04:00	Starting MCP container on port 3100...
+2026-05-01T06:39:53.3035273-04:00	MCP container started.
+2026-05-01T06:39:53.3055248-04:00	MCP endpoints:
+2026-05-01T06:39:53.3075248-04:00	  Host (published): http://localhost:3100/sse
+2026-05-01T06:39:53.3090286-04:00	  Docker network  : http://lotr-mcp:3100/sse
+2026-05-01T06:59:25.0021668-04:00	Container exited with code 127.
+2026-05-01T06:59:28.0179665-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T06:59:28.3184506-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T06:59:28.3204507-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T06:59:28.3224505-04:00	Building image 'lotr-dev:latest' ...
+2026-05-01T06:59:29.1785286-04:00	Image 'lotr-dev:latest' built successfully.
+2026-05-01T06:59:29.1805287-04:00	Building MCP image 'lotr-mcp:latest' ...
+2026-05-01T06:59:29.7778303-04:00	MCP image 'lotr-mcp:latest' built successfully.
+2026-05-01T06:59:29.7798310-04:00	docker.ps1 done.
+2026-05-01T06:59:35.5874705-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T06:59:35.7396470-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T06:59:35.7416486-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T06:59:35.7426484-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T06:59:35.7446501-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T06:59:35.7466483-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T06:59:35.7486486-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T06:59:35.7506481-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T06:59:35.9323857-04:00	Stopping existing MCP container...
+2026-05-01T06:59:36.2994428-04:00	Starting MCP container on port 3100...
+2026-05-01T06:59:36.5933705-04:00	MCP container started.
+2026-05-01T07:03:42.8006096-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T07:03:42.9482044-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T07:03:42.9492014-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T07:03:42.9512022-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T07:03:42.9522043-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T07:03:42.9552019-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T07:03:42.9572051-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T07:03:42.9582019-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T07:03:43.2498780-04:00	Stopping existing MCP container...
+2026-05-01T07:03:43.6741178-04:00	Starting MCP container on port 3100...
+2026-05-01T07:03:43.9697377-04:00	MCP container started.
+2026-05-01T07:06:29.3488261-04:00	Container session ended.
+2026-05-01T07:06:29.3508257-04:00	docker.ps1 done.
+2026-05-01T07:06:36.7504852-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T07:06:36.8998629-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T07:06:36.9018624-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T07:06:36.9028645-04:00	Building image 'lotr-dev:latest' ...
+2026-05-01T07:06:37.7197168-04:00	Image 'lotr-dev:latest' built successfully.
+2026-05-01T07:06:37.7217950-04:00	Building MCP image 'lotr-mcp:latest' ...
+2026-05-01T07:06:38.2560119-04:00	MCP image 'lotr-mcp:latest' built successfully.
+2026-05-01T07:06:38.2580133-04:00	docker.ps1 done.
+2026-05-01T07:06:40.8279394-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T07:06:40.9767382-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T07:06:40.9777338-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T07:06:40.9797339-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T07:06:40.9815734-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T07:06:40.9839814-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T07:06:40.9859823-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T07:06:40.9879812-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T07:06:41.1835108-04:00	Stopping existing MCP container...
+2026-05-01T07:06:41.5274845-04:00	Starting MCP container on port 3100...
+2026-05-01T07:06:41.8203397-04:00	MCP container started.
+2026-05-01T07:16:31.3877934-04:00	Container session ended.
+2026-05-01T07:16:31.3897980-04:00	docker.ps1 done.
+2026-05-01T07:16:34.4202241-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T07:16:34.5716046-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T07:16:34.5736020-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T07:16:34.5756029-04:00	Building image 'lotr-dev:latest' ...
+2026-05-01T07:16:35.6377360-04:00	Image 'lotr-dev:latest' built successfully.
+2026-05-01T07:16:35.6402409-04:00	Building MCP image 'lotr-mcp:latest' ...
+2026-05-01T07:16:36.4519817-04:00	MCP image 'lotr-mcp:latest' built successfully.
+2026-05-01T07:16:36.4540439-04:00	docker.ps1 done.
+2026-05-01T07:16:39.2464615-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T07:16:39.4439574-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T07:16:39.4459571-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T07:16:39.4489627-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T07:16:39.4509572-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T07:16:39.4589575-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T07:16:39.4619575-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T07:16:39.4649577-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T07:16:39.7694944-04:00	Stopping existing MCP container...
+2026-05-01T07:16:40.2078077-04:00	Starting MCP container on port 3100...
+2026-05-01T07:16:40.5909768-04:00	MCP container started.
+2026-05-01T07:19:06.2245339-04:00	Container session ended.
+2026-05-01T07:19:06.2265344-04:00	docker.ps1 done.
+2026-05-01T07:22:23.9418613-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T07:22:24.0934060-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T07:22:24.0954063-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T07:22:24.0974061-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T07:22:24.0984051-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T07:22:24.1014105-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T07:22:24.1024075-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T07:22:24.1044063-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T07:22:24.3038855-04:00	Stopping existing MCP container...
+2026-05-01T07:22:24.7115530-04:00	Starting MCP container on port 3100...
+2026-05-01T07:22:25.0109112-04:00	MCP container started.
+2026-05-01T08:16:19.7380289-04:00	Container session ended.
+2026-05-01T08:16:19.7400285-04:00	docker.ps1 done.
+2026-05-01T08:16:22.7066446-04:00	docker.ps1  command=build  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T08:16:22.8544286-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T08:16:22.8554325-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T08:16:22.8574305-04:00	Building image 'lotr-dev:latest' ...
+2026-05-01T08:16:24.1639708-04:00	Image 'lotr-dev:latest' built successfully.
+2026-05-01T08:16:24.1659767-04:00	Building MCP image 'lotr-mcp:latest' ...
+2026-05-01T08:16:25.1248164-04:00	MCP image 'lotr-mcp:latest' built successfully.
+2026-05-01T08:16:25.1268163-04:00	docker.ps1 done.
+2026-05-01T08:16:52.3552508-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T08:16:52.5035355-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T08:16:52.5055368-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T08:16:52.5075365-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T08:16:52.5085354-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T08:16:52.5115352-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T08:16:52.5125354-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T08:16:52.5145360-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T08:16:52.7133482-04:00	Stopping existing MCP container...
+2026-05-01T08:16:53.0388113-04:00	Starting MCP container on port 3100...
+2026-05-01T08:16:53.3395326-04:00	MCP container started.
+2026-05-01T09:38:20.9938323-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T09:38:21.1469029-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T09:38:21.1489048-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T09:38:21.1509085-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T09:38:21.1519078-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T09:38:21.1549030-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T09:38:21.1559034-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T09:38:21.1569046-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T09:38:21.3599147-04:00	Stopping existing MCP container...
+2026-05-01T09:38:21.7209345-04:00	Starting MCP container on port 3100...
+2026-05-01T09:38:22.0152626-04:00	MCP container started.
+2026-05-01T13:50:45.8084212-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T13:50:45.9626986-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T13:50:45.9647001-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T13:50:45.9656994-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T13:50:45.9677016-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T13:50:45.9697007-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T13:50:45.9717007-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T13:50:45.9726998-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T13:50:46.1503255-04:00	Stopping existing MCP container...
+2026-05-01T13:50:46.4999178-04:00	Starting MCP container on port 3100...
+2026-05-01T13:50:46.7901701-04:00	MCP container started.
+2026-05-01T17:49:09.8365836-04:00	docker.ps1  command=run  distro=lotr-docker-service  tag=lotr-dev:latest  fresh=False
+2026-05-01T17:49:09.9982457-04:00	Repo root (WSL):  /mnt/c/Users/matth/Desktop/git/lotr
+2026-05-01T17:49:10.0002467-04:00	Dockerfile (WSL): /mnt/c/Users/matth/Desktop/git/lotr/build/docker/Dockerfile
+2026-05-01T17:49:10.0022469-04:00	Running interactive shell in image 'lotr-dev:latest' ...
+2026-05-01T17:49:10.0032485-04:00	Mounting /mnt/c/Users/matth/Desktop/git/lotr -> /workspace
+2026-05-01T17:49:10.0062487-04:00	SSH keys (WSL):   /mnt/c/Users/matth/.ssh
+2026-05-01T17:49:10.0072463-04:00	Git config (WSL): /mnt/c/Users/matth/.gitconfig
+2026-05-01T17:49:10.0092467-04:00	Continue (WSL):   /mnt/c/Users/matth/.continue
+2026-05-01T17:49:10.2294237-04:00	Stopping existing MCP container...
+2026-05-01T17:49:10.6726044-04:00	Starting MCP container on port 3100...
+2026-05-01T17:49:11.0230529-04:00	MCP container started.

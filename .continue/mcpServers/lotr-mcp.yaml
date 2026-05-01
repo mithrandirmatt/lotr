@@ -1,0 +1,20 @@
+name: lotr-mcp
+version: 0.0.1
+schema: v1
+mcpServers:
+  - name: lotr-mcp
+    type: stdio
+    command: wsl
+    args:
+      - "-d"
+      - "lotr-docker-service"
+      - "-u"
+      - "root"
+      - "--"
+      - "docker"
+      - "exec"
+      - "-i"
+      - "lotr-mcp"
+      - "python3"
+      - "/workspace/build/docker/mcp/server.py"
+      - "--stdio"

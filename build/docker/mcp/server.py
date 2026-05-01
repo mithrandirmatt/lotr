@@ -83,7 +83,7 @@ def _pg_conn():
     import psycopg2  # lazy — only needed when postgres tools are called
     url = os.environ.get("POSTGRES_URL", "")
     if not url:
-        raise RuntimeError("POSTGRES_URL environment variable is not set")
+        raise RuntimeError("PostgreSQL is not configured (POSTGRES_URL not set). Postgres tools are unavailable in this environment.")
     return psycopg2.connect(url)
 
 
@@ -91,13 +91,18 @@ def _pg_conn():
 
 @mcp.tool()
 def read_file(path: str) -> str:
-    """Read the contents of a file in the workspace."""
-    return _safe_path(path).read_text(encoding="utf-8")
+    """Read the contents of a workspace-relative file path (e.g. build/docker/server.py)."""
+    try:
+        return _safe_path(path).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return f"(file not found: {path})"
+    except Exception as exc:
+        return f"(error reading {path}: {exc})"
 
 
 @mcp.tool()
 def write_file(path: str, content: str) -> str:
-    """Write (or overwrite) a file in the workspace."""
+    """Write (or overwrite) a file at the given workspace-relative path."""
     p = _safe_path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content, encoding="utf-8")
@@ -106,7 +111,7 @@ def write_file(path: str, content: str) -> str:
 
 @mcp.tool()
 def list_directory(path: str = "") -> str:
-    """List the contents of a directory in the workspace."""
+    """List the contents of a workspace directory. path is workspace-relative."""
     base = _safe_path(path) if path else WORKSPACE
     entries = sorted(base.iterdir(), key=lambda e: (e.is_file(), e.name))
     return "\n".join(
@@ -116,7 +121,7 @@ def list_directory(path: str = "") -> str:
 
 @mcp.tool()
 def search_files(pattern: str, path: str = "") -> str:
-    """Search for files matching a glob pattern (max 100 results)."""
+    """Search for files matching a glob pattern in the workspace (max 100 results)."""
     base = _safe_path(path) if path else WORKSPACE
     matches = sorted(base.rglob(pattern))[:100]
     return "\n".join(str(m.relative_to(WORKSPACE)) for m in matches)
@@ -138,7 +143,7 @@ def git_log(n: int = 10) -> str:
 
 @mcp.tool()
 def git_diff(path: str = "") -> str:
-    """Return the current unstaged diff, optionally scoped to a file."""
+    """Return the current unstaged diff, optionally scoped to a workspace-relative file path."""
     args = ["diff"]
     if path:
         args.append(str(_safe_path(path)))
@@ -147,7 +152,7 @@ def git_diff(path: str = "") -> str:
 
 @mcp.tool()
 def git_add(path: str) -> str:
-    """Stage a file for the next commit."""
+    """Stage a workspace-relative file path for the next commit."""
     return _git("add", str(_safe_path(path)))
 
 
@@ -183,7 +188,10 @@ def run_command(command: str, cwd: str = "") -> str:
 @mcp.tool()
 def pg_query(sql: str) -> str:
     """Run a read-only SQL query and return tab-separated results."""
-    conn = _pg_conn()
+    try:
+        conn = _pg_conn()
+    except Exception as exc:
+        return f"(postgres unavailable: {exc})"
     try:
         with conn.cursor() as cur:
             cur.execute(sql)
@@ -199,7 +207,10 @@ def pg_query(sql: str) -> str:
 @mcp.tool()
 def pg_execute(sql: str) -> str:
     """Run a write SQL statement (INSERT / UPDATE / DELETE / DDL)."""
-    conn = _pg_conn()
+    try:
+        conn = _pg_conn()
+    except Exception as exc:
+        return f"(postgres unavailable: {exc})"
     try:
         with conn.cursor() as cur:
             cur.execute(sql)
@@ -406,7 +417,10 @@ def pg_schema(table: str = "") -> str:
     If table is given, show columns + types for that table.
     Otherwise list all tables in the public schema.
     """
-    conn = _pg_conn()
+    try:
+        conn = _pg_conn()
+    except Exception as exc:
+        return f"(postgres unavailable: {exc})"
     try:
         with conn.cursor() as cur:
             if table:
@@ -449,13 +463,18 @@ def pg_schema(table: str = "") -> str:
 def _redis_conn():
     import redis  # lazy import
     url = os.environ.get("REDIS_URL", "redis://localhost:6379")
-    return redis.from_url(url, decode_responses=True)
+    client = redis.from_url(url, decode_responses=True)
+    client.ping()  # fail fast with a clear error
+    return client
 
 
 @mcp.tool()
 def redis_get(key: str) -> str:
     """Get the value of a Redis key. Returns empty string if not found."""
-    val = _redis_conn().get(key)
+    try:
+        val = _redis_conn().get(key)
+    except Exception as exc:
+        return f"(redis unavailable: {exc})"
     return val if val is not None else ""
 
 
@@ -465,7 +484,10 @@ def redis_set(key: str, value: str, ex: int = 0) -> str:
     Set a Redis key to value.
     ex: optional TTL in seconds (0 = no expiry).
     """
-    r = _redis_conn()
+    try:
+        r = _redis_conn()
+    except Exception as exc:
+        return f"(redis unavailable: {exc})"
     if ex > 0:
         r.set(key, value, ex=ex)
     else:
@@ -476,7 +498,10 @@ def redis_set(key: str, value: str, ex: int = 0) -> str:
 @mcp.tool()
 def redis_keys(pattern: str = "*") -> str:
     """List Redis keys matching a pattern (default: all keys, max 200)."""
-    keys = _redis_conn().keys(pattern)
+    try:
+        keys = _redis_conn().keys(pattern)
+    except Exception as exc:
+        return f"(redis unavailable: {exc})"
     if not keys:
         return "(no keys found)"
     return "\n".join(sorted(keys)[:200])
@@ -485,7 +510,10 @@ def redis_keys(pattern: str = "*") -> str:
 @mcp.tool()
 def redis_del(key: str) -> str:
     """Delete a Redis key. Returns the number of keys removed."""
-    n = _redis_conn().delete(key)
+    try:
+        n = _redis_conn().delete(key)
+    except Exception as exc:
+        return f"(redis unavailable: {exc})"
     return f"Deleted {n} key(s): {key}"
 
 
@@ -661,4 +689,14 @@ def run_pytest(path: str = "", args: str = "-v") -> str:
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    mcp.run(transport="sse")
+    import sys
+    if "--stdio" in sys.argv:
+        mcp.run(transport="stdio")
+    else:
+        bind_host = host
+        bind_port = port
+        print(f"MCP server starting — bind: {bind_host}:{bind_port}")
+        print(f"  SSE endpoint (bind): http://{bind_host}:{bind_port}/sse")
+        print(f"  From host (published): http://localhost:{bind_port}/sse")
+        print(f"  From Docker network (service name): http://lotr-mcp:{bind_port}/sse")
+        mcp.run(transport="sse")

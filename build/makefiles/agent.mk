@@ -16,7 +16,7 @@
 agent_update:
 	$(call log_build,Generating flattened agent profiles...)
 
-	$(MAKE) sync_copilot sync_continue
+	$(MAKE) sync_copilot
 
 	$(call log_ok,Agent profiles ready in .github/agents/generated/)
 

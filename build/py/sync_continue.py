@@ -101,14 +101,16 @@ _MCP_TOOLS = (
 )
 
 TOOL_RULE = (
-    f"TOOL USE IS MANDATORY. You have MCP tools available: {_MCP_TOOLS}. "
-    "When asked to read a file you MUST call read_file. "
-    "When asked to edit or write a file you MUST call write_file with the complete new file content. "
-    "NEVER say you cannot modify files - use write_file instead. "
-    "File paths must be workspace-relative (e.g. build/docker/.bash_aliases). "
-    "Use memory_set/memory_get to persist facts across sessions. "
-    "Use task_* tools to update todo.md. "
-    "Use agent_send/agent_receive to coordinate between agents via the handoff queue."
+    "TOOL USE IS MANDATORY. You have MCP tools from the 'lotr-mcp' server. Continue registers "
+    "these as callable tools in the API — you do NOT write them as text. Do NOT output "
+    "'<function=...>', '<tool_call>', 'lotr_mcp_read_file(path=...)', or any other "
+    "XML/JSON/code representation of a tool call in your response text. Doing so accomplishes "
+    "nothing — Continue will not see it. Instead, select the tool from the tool palette and "
+    "invoke it as a structured action. Continue prefixes every MCP tool name with the server "
+    "name using underscores. The server is named 'lotr-mcp', so all tools appear as "
+    f"'lotr_mcp_<tool_name>'. Available tools: {_MCP_TOOLS}. "
+    "File paths must be workspace-relative (e.g. build/docker/server.py). "
+    "If a tool call fails, report the error. NEVER say you cannot read or modify files."
 )
 
 
@@ -148,8 +150,8 @@ IMPORTANT: The project task list and phase information are provided directly bel
 - Guidelines:      {windows_repo}\\.github\\copilot-instructions.md
 
 ## Tool Preferences
-Use read_file, file_search, grep_search for workspace exploration.
-Only use run_terminal_command for build/test/git operations.
+Use lotr_mcp_read_file, lotr_mcp_search_files, lotr_mcp_list_directory for workspace exploration.
+Use lotr_mcp_run_command for shell/build/test/git operations — do NOT use run_terminal_command.
 Keep changes minimal and style-consistent. Do not refactor unless asked.
 Never expose secrets. Ask before destructive operations."""
 

@@ -12,5 +12,7 @@
     //   export OLLAMA_ORIGINS="*"
     // ------------------------------------------------------------
     "github.copilot.chat.languageModel.provider": "ollama",
-    "github.copilot.chat.languageModel.ollama.serverUrl": "http://localhost:11434"
+    "github.copilot.chat.languageModel.ollama.serverUrl": "http://localhost:11434",
+    "cline.includeSelection": true,
+    "cline.includeCurrentFile": true
 }
