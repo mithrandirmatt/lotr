@@ -52,6 +52,33 @@ function Write-Log {
 }
 
 # ---------------------------------------------------------------------------
+# Docker readiness helpers
+# ---------------------------------------------------------------------------
+function Test-DockerResponsive {
+    param([string]$Distro)
+    wsl -d $Distro -u root -- docker version >$null 2>&1
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Wait-For-Docker {
+    param([string]$Distro, [int]$MaxAttempts = 15, [int]$IntervalSeconds = 2)
+    for ($i = 1; $i -le $MaxAttempts; $i++) {
+        Write-Log ("Checking docker availability (attempt {0}/{1})" -f $i, $MaxAttempts)
+        wsl -d $Distro -u root -- docker version >$null 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Log ("Docker is running in {0}" -f $Distro)
+            return $true
+        }
+        Start-Sleep -Seconds $IntervalSeconds
+    }
+    return $false
+}
+
+# Default start script path and args (used when auto-starting Docker)
+$startScript = Join-Path $PSScriptRoot 'start-wsl-docker.ps1'
+$startArgs = @('-DistroName', $DistroName, '-NoPause')
+
+# ---------------------------------------------------------------------------
 # Guard: distro must exist
 # ---------------------------------------------------------------------------
 # Accept GNU-style --fresh flag (case-insensitive) in addition to the PowerShell
@@ -78,11 +105,40 @@ if (-not ($installed -contains $DistroName)) {
     exit 2
 }
 
-# Guard: Docker socket must be reachable
+# Guard: Docker socket must be reachable. If missing, attempt to start it.
 $socketCheck = wsl -d $DistroName -u root -- bash -lc 'test -S /var/run/docker.sock && echo ok' 2>$null
 if ($socketCheck -notmatch 'ok') {
-    Write-Log "Docker socket not found. Start Docker first with start-wsl-docker.ps1."
-    exit 3
+    Write-Log "Docker socket not found. Attempting to start Docker in distro {0} via start-wsl-docker.ps1..." -f $DistroName
+
+    try {
+        & powershell -ExecutionPolicy Bypass -File $startScript @startArgs
+        $startExit = $LASTEXITCODE
+    }
+    catch {
+        Write-Log "Failed to invoke start-wsl-docker.ps1: $_"
+        if (-not $NoPause) { Write-Host "Press any key to exit..."; $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') }
+        exit 3
+    }
+
+    if ($startExit -ne 0) {
+        Write-Log ("start-wsl-docker.ps1 failed (exit {0})." -f $startExit)
+        if (-not $NoPause) { Write-Host "Press any key to exit..."; $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') }
+        exit 3
+    }
+
+    # Wait for Docker to become responsive
+    if (-not (Wait-For-Docker -Distro $DistroName -MaxAttempts 15 -IntervalSeconds 2)) {
+        Write-Log "Docker did not become ready after 15 attempts"
+        $socketCheck = wsl -d $DistroName -u root -- bash -lc 'test -S /var/run/docker.sock && echo ok || echo missing' 2>$null
+        Write-Log ("Socket check: {0}" -f $socketCheck)
+        $psOutput = wsl -d $DistroName -u root -- ps aux 2>&1
+        Write-Log ("Process list: {0}" -f $psOutput)
+        if (-not $NoPause) { Write-Host "Press any key to exit..."; $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') }
+        exit 3
+    }
+    else {
+        Write-Log "Docker is responsive."
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -172,6 +228,54 @@ $wslContinuePath = ("/mnt/{0}{1}" -f $continueDrive, $continueRelPath)
 
 Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
 
+# ------------------------------------------------------------
+# Expose host Ollama to containers by default (auto-detect)
+# - Prefer an 'ollama' container on the `lotr-net` network if present
+# - Otherwise try host.docker.internal:11434
+# - Can be overridden by setting OLLAMA_URL or OLLAMA_ORIGINS in the environment
+# ------------------------------------------------------------
+$ollamaUrlEnv = $env:OLLAMA_URL
+$ollamaOriginsEnv = $env:OLLAMA_ORIGINS
+if (-not $ollamaOriginsEnv) { $ollamaOriginsEnv = '*' }
+
+if (-not $ollamaUrlEnv) {
+    Write-Log "Auto-detecting Ollama endpoint..."
+    # Check for an 'ollama' container running in the distro
+    $ollamaContainer = wsl -d $DistroName -u root -- docker ps --filter "name=ollama" --filter "status=running" -q 2>$null
+    if ($ollamaContainer) {
+        $ollamaUrlEnv = 'http://ollama:11434'
+        Write-Log ("Detected running 'ollama' container; using {0}" -f $ollamaUrlEnv)
+    }
+    else {
+        Write-Log ("Checking host.docker.internal:11434 from distro {0}..." -f $DistroName)
+        $curlTest = wsl -d $DistroName -u root -- bash -lc 'curl -sS -m 2 http://host.docker.internal:11434/ || echo __CURL_ERROR__' 2>$null
+        if ($curlTest -and $curlTest -ne "__CURL_ERROR__") {
+            $ollamaUrlEnv = 'http://host.docker.internal:11434'
+            Write-Log ("host.docker.internal reachable; using {0}" -f $ollamaUrlEnv)
+        }
+        else {
+            $ollamaUrlEnv = 'http://host.docker.internal:11434'
+            Write-Log ("Could not detect Ollama; defaulting to {0}" -f $ollamaUrlEnv)
+        }
+    }
+}
+
+    # Ensure Docker is still responsive before performing network/container ops
+    if (-not (Test-DockerResponsive -Distro $DistroName)) {
+        Write-Log "Docker not responsive when preparing network; attempting to restart..."
+        & powershell -ExecutionPolicy Bypass -File $startScript @startArgs
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log ("Re-start failed (exit {0})." -f $LASTEXITCODE)
+            if (-not $NoPause) { Write-Host "Press any key to exit..."; $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') }
+            exit 3
+        }
+        if (-not (Wait-For-Docker -Distro $DistroName -MaxAttempts 10 -IntervalSeconds 2)) {
+            Write-Log "Docker did not become ready after restart attempt. Exiting."
+            if (-not $NoPause) { Write-Host "Press any key to exit..."; $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') }
+            exit 3
+        }
+    }
+
     # Ensure shared network exists so dev and mcp containers can reach each other
     $netExists = wsl -d $DistroName -u root -- docker network ls --filter "name=lotr-net" -q 2>$null
     if (-not $netExists) {
@@ -195,6 +299,9 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
         --name lotr-mcp `
         --restart on-failure:10 `
         --network lotr-net `
+        --add-host=host.docker.internal:host-gateway `
+        --env "OLLAMA_URL=$ollamaUrlEnv" `
+        --env "OLLAMA_ORIGINS=$ollamaOriginsEnv" `
         --publish 3100:3100 `
         --volume "${wslRepoRoot}:/workspace" `
         $McpTag
@@ -217,6 +324,9 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
         --interactive `
         --tty `
         --network lotr-net `
+        --add-host=host.docker.internal:host-gateway `
+        --env "OLLAMA_URL=$ollamaUrlEnv" `
+        --env "OLLAMA_ORIGINS=$ollamaOriginsEnv" `
         --volume  "${wslRepoRoot}:/workspace" `
         --volume  "${wslSshPath}:/root/.ssh:rw" `
         --volume  "lotr-ssh-keys:/root/.ssh_keys" `

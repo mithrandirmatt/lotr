@@ -182,6 +182,7 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     rich \
     tqdm \
     pathspec \
+    tiktoken \
     Pillow
 
 # Code quality

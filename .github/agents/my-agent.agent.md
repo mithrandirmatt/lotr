@@ -1,48 +1,102 @@
 ---
 name: my-agent
 description: "Worker agent (overview). Keeps includes to shared logic and permissions."
+
 tools:
-  - read
-  - search
-  - edit
-  - execute
+  - vscode/getProjectSetupInfo
+  - vscode/installExtension
+  - vscode/memory
+  - vscode/newWorkspace
+  - vscode/resolveMemoryFileUri
+  - vscode/runCommand
+  - vscode/vscodeAPI
+  - vscode/extensions
+  - vscode/askQuestions
+  - execute/runNotebookCell
+  - execute/getTerminalOutput
+  - execute/killTerminal
+  - execute/sendToTerminal
+  - execute/runTask
+  - execute/createAndRunTask
+  - execute/runInTerminal
+  - read/getNotebookSummary
+  - read/problems
+  - read/readFile
+  - read/viewImage
+  - read/terminalSelection
+  - read/terminalLastCommand
+  - read/getTaskOutput
+  - agent/runSubagent
+  - edit/createDirectory
+  - edit/createFile
+  - edit/createJupyterNotebook
+  - edit/editFiles
+  - edit/editNotebook
+  - edit/rename
+  - search/changes
+  - search/codebase
+  - search/fileSearch
+  - search/listDirectory
+  - search/textSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - web/githubTextSearch
+  - browser/openBrowserPage
+  - browser/readPage
+  - browser/screenshotPage
+  - browser/navigatePage
+  - browser/clickElement
+  - browser/dragElement
+  - browser/hoverElement
+  - browser/typeInPage
+  - browser/runPlaywrightCode
+  - browser/handleDialog
+  - lotr-mcp/agent_queue_status
+  - lotr-mcp/agent_receive
+  - lotr-mcp/agent_send
+  - lotr-mcp/git_add
+  - lotr-mcp/git_commit
+  - lotr-mcp/git_diff
+  - lotr-mcp/git_log
+  - lotr-mcp/git_status
+  - lotr-mcp/list_directory
+  - lotr-mcp/memory_delete
+  - lotr-mcp/memory_get
+  - lotr-mcp/memory_list
+  - lotr-mcp/memory_set
+  - lotr-mcp/pg_execute
+  - lotr-mcp/pg_query
+  - lotr-mcp/read_file
+  - lotr-mcp/run_command
+  - lotr-mcp/search_files
+  - lotr-mcp/task_add
+  - lotr-mcp/task_complete
+  - lotr-mcp/task_list
+  - lotr-mcp/task_move_to_in_progress
+  - lotr-mcp/write_file
+  - pylance-mcp-server/pylanceDocString
+  - pylance-mcp-server/pylanceDocuments
+  - pylance-mcp-server/pylanceFileSyntaxErrors
+  - pylance-mcp-server/pylanceImports
+  - pylance-mcp-server/pylanceInstalledTopLevelModules
+  - pylance-mcp-server/pylanceInvokeRefactoring
+  - pylance-mcp-server/pylancePythonEnvironments
+  - pylance-mcp-server/pylanceRunCodeSnippet
+  - pylance-mcp-server/pylanceSettings
+  - pylance-mcp-server/pylanceSyntaxErrors
+  - pylance-mcp-server/pylanceUpdatePythonEnvironment
+  - pylance-mcp-server/pylanceWorkspaceRoots
+  - pylance-mcp-server/pylanceWorkspaceUserFiles
+  - gitkraken/git_status
+  - vscode.mermaid-chat-features/renderMermaidDiagram
+  - ms-azuretools.vscode-azureresourcegroups/azureActivityLog
+  - ms-azuretools.vscode-containers/containerToolsConfig
+  - ms-python.python/getPythonEnvironmentInfo
+  - ms-python.python/getPythonExecutableCommand
+  - ms-python.python/installPythonPackage
+  - ms-python.python/configurePythonEnvironment
   - todo
-  - agent
-  # lotr-mcp tools
-  - read_file
-  - write_file
-  - list_directory
-  - search_files
-  - git_status
-  - git_log
-  - git_diff
-  - git_add
-  - git_commit
-  - run_command
-  - pg_query
-  - pg_execute
-  - memory_set
-  - memory_get
-  - memory_list
-  - memory_delete
-  - task_list
-  - task_add
-  - task_complete
-  - task_move_to_in_progress
-  - agent_send
-  - agent_receive
-  - agent_queue_status
-  # new tools
-  - pg_schema
-  - redis_get
-  - redis_set
-  - redis_keys
-  - redis_del
-  - ollama_generate
-  - card_search
-  - godot_run
-  - make_target
-  - run_pytest
 includes:
   - ../agent/base.prompts.md
 ---
@@ -53,6 +107,12 @@ You are a repository-aware worker agent. Follow all project guidelines and safet
 - Keep changes minimal and style-consistent. Do not refactor unless asked.
 - Never expose secrets or credentials.
 - For destructive operations ask before proceeding.
+
+- Tool invocation policy: When converting a user request into workspace actions, immediately call the appropriate built-in read/search/edit tools (for example `read/readFile`, `search/fileSearch`, `edit/createFile`) instead of emitting pseudo-function JSON objects as your final reply. If built-in tools are unavailable, fall back to the MCP equivalents (for example `lotr_mcp_read_file`, `lotr_mcp_write_file`) and explicitly log the fallback. After the tool returns, provide a concise summary and any next steps.
+
+## Workflow Reference
+
+When trying to decide how to approach a task, consult the workflow document in .github/agent/workflow.md for guidance on best practices, expected inputs and outputs, and general process for different types of work.
 
 ## Project Reference Documents
 
