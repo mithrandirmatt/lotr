@@ -134,3 +134,10 @@ The repository includes a Godot 4 project in `gotdot/`. Use these conventions wh
 - **Assets**: Processed card images live under `build/do/assets/cards/processed/` (generated, gitignored). Sync them to the Godot project with `make wiki_game_asset_creation` — this copies PNGs to `gotdot/assets/cards/` and copies database JSON into `gotdot/assets/data/`.
 
 When asked to run, test, or export the Godot project, prefer the `make` targets and the `docker.ps1` wrappers so runs are reproducible on other machines.
+
+## Docker Containers:
+- Main Dev Container: Located at build/docker.
+  - This container will contain all neccessary tools to build and run the game.
+- Server Container: Located at server/.
+  - This container will contain all neccessary tools to host the server for the game.
+

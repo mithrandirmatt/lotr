@@ -1,0 +1,5 @@
+fastapi>=0.95
+uvicorn[standard]>=0.22
+
+[tests]
+pytest

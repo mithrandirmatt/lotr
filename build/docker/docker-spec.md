@@ -112,12 +112,15 @@ Verification (run by orchestrator after install):
 
 Scripts (all in `build/docker/`):
 ```
-PowerShell -ExecutionPolicy Bypass -File build/docker/ensure-lotr-distro.ps1  # download/import Ubuntu 24.04, write wsl.conf, record manifest
-PowerShell -ExecutionPolicy Bypass -File build/docker/setup-wsl-docker.ps1    # orchestrator: WSL features + ensure-lotr-distro + Docker install + verify
-PowerShell -ExecutionPolicy Bypass -File build/docker/start-wsl-docker.ps1    # start Docker inside lotr-docker-service
-PowerShell -ExecutionPolicy Bypass -File build/docker/stop-wsl-docker.ps1     # stop Docker inside lotr-docker-service
-PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build        # build the lotr-dev image from build/docker/Dockerfile
-PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run          # run interactive shell in the lotr-dev container
+PowerShell -ExecutionPolicy Bypass -File build/docker/ensure-lotr-distro.ps1                    # download/import Ubuntu 24.04, write wsl.conf, record manifest
+PowerShell -ExecutionPolicy Bypass -File build/docker/setup-wsl-docker.ps1                      # orchestrator: WSL features + ensure-lotr-distro + Docker install + verify
+PowerShell -ExecutionPolicy Bypass -File build/docker/start-wsl-docker.ps1                      # start Docker inside lotr-docker-service
+PowerShell -ExecutionPolicy Bypass -File build/docker/stop-wsl-docker.ps1                       # stop Docker inside lotr-docker-service
+PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build                          # build the lotr-dev image from build/docker/Dockerfile
+PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run                            # run interactive shell in the lotr-dev container
+PowerShell -ExecutionPolicy Bypass -File build/docker/trouble-shoot.ps1                         # Script to troubleshoot our setups
+PowerShell -ExecutionPolicy Bypass -File build/docker/check-ollama-endpoints.ps1                # Script to check ollama server
+PowerShell -ExecutionPolicy Bypass -File build/docker/ollama-latency-test.ps1 -Iterations 5     # Script to check ai lag
 ```
 
 Parameters of `setup-wsl-docker.ps1`:

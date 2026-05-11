@@ -2,7 +2,7 @@ Exposing Ollama to containers
 
 This project can optionally use a local Ollama instance running on the host (Windows/WSL).
 The Docker helper scripts now add a host mapping and default environment variables so containers
-can reach Ollama as `http://host.docker.internal:11434`.
+can reach Ollama as `http://host.docker.internal:11435`.
 
 How it works
 
@@ -13,7 +13,7 @@ How it works
 Auto-detection behavior
 
 - If an `ollama` container is found running in `lotr-docker-service` attached to `lotr-net`, the script will set `OLLAMA_URL=http://ollama:11434` so containers use the service by name.
-- Otherwise the script tests `http://host.docker.internal:11434` from within the WSL distro and will use that if reachable.
+- Otherwise the script tests `http://host.docker.internal:11435` from within the WSL distro and will use that if reachable.
 - You can still override by setting `OLLAMA_URL` or `OLLAMA_ORIGINS` in your host environment before running `docker.ps1`.
 
 Quick usage

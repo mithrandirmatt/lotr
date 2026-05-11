@@ -145,6 +145,7 @@ class Effect:
     culture: str | None = None
     duration: str | None = None
     raw: str | None = None
+    filter: dict | None = None
 
 
 @dataclass
@@ -238,6 +239,7 @@ class GameLogicDatabase:
                                 "culture": e.culture,
                                 "duration": e.duration,
                                 "raw": e.raw,
+                                "filter": e.filter,
                             }
                             for e in a.effects
                         ],

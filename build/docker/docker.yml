@@ -14,10 +14,10 @@ services:
 		tty: true
 		stdin_open: true
 
-	mcp:
+	ai:
 		build:
-			context: mcp
-		image: lotr-mcp:latest
+			context: ai
+		image: lotr-ai:latest
 		ports:
 			- "3100:3100"
 		volumes:

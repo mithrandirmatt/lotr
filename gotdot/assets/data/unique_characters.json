@@ -1,0 +1,781 @@
+{
+  "gimli": [
+    "lotr00012",
+    "lotr00046",
+    "lotr00062",
+    "lotr00123",
+    "lotr01012",
+    "lotr01013",
+    "lotr02121",
+    "lotr04048",
+    "lotr04049",
+    "lotr05007",
+    "lotr07006",
+    "lotr07007",
+    "lotr08005",
+    "lotr09004",
+    "lotr11008",
+    "lotr13005",
+    "lotr15005",
+    "lotr18001",
+    "lotr19002"
+  ],
+  "legolas": [
+    "lotr00013",
+    "lotr00015",
+    "lotr00024",
+    "lotr00087",
+    "lotr00124",
+    "lotr01050",
+    "lotr01051",
+    "lotr03121",
+    "lotr04073",
+    "lotr04074",
+    "lotr05121",
+    "lotr07025",
+    "lotr07026",
+    "lotr08010",
+    "lotr11021",
+    "lotr11022",
+    "lotr13018",
+    "lotr15018",
+    "lotr15019",
+    "lotr19007"
+  ],
+  "aragorn": [
+    "lotr00014",
+    "lotr00023",
+    "lotr00047",
+    "lotr00125",
+    "lotr00127",
+    "lotr01089",
+    "lotr01365",
+    "lotr03038",
+    "lotr04109",
+    "lotr04364",
+    "lotr06050",
+    "lotr07081",
+    "lotr07364",
+    "lotr10025",
+    "lotr11053",
+    "lotr11054",
+    "lotr13059",
+    "lotr15054",
+    "lotr15055",
+    "lotr17093",
+    "lotr18038",
+    "lotr19012"
+  ],
+  "faramir": [
+    "lotr00016",
+    "lotr00035",
+    "lotr00117",
+    "lotr04116",
+    "lotr04117",
+    "lotr06121",
+    "lotr07090",
+    "lotr07091",
+    "lotr08034",
+    "lotr12047",
+    "lotr13066",
+    "lotr17028",
+    "lotr18048"
+  ],
+  "eowyn": [
+    "lotr00017",
+    "lotr00029",
+    "lotr00039",
+    "lotr00088",
+    "lotr00118",
+    "lotr04270",
+    "lotr04271",
+    "lotr05122",
+    "lotr07228",
+    "lotr07229",
+    "lotr10072",
+    "lotr11146",
+    "lotr13124",
+    "lotr15125",
+    "lotr17096",
+    "lotr19026"
+  ],
+  "smeagol": [
+    "lotr00018",
+    "lotr05028",
+    "lotr06045",
+    "lotr07071",
+    "lotr07072",
+    "lotr08027",
+    "lotr09030",
+    "lotr11051",
+    "lotr13055",
+    "lotr15049",
+    "lotr19011"
+  ],
+  "theoden": [
+    "lotr00019",
+    "lotr04292",
+    "lotr04365",
+    "lotr05093",
+    "lotr07254",
+    "lotr07255",
+    "lotr08092",
+    "lotr11159",
+    "lotr13137",
+    "lotr17102",
+    "lotr18105"
+  ],
+  "treebeard": [
+    "lotr00021",
+    "lotr06037",
+    "lotr10018",
+    "lotr15038"
+  ],
+  "denethor": [
+    "lotr00025",
+    "lotr07085",
+    "lotr07086",
+    "lotr10028",
+    "lotr13064",
+    "lotr18042"
+  ],
+  "gandalf": [
+    "lotr00026",
+    "lotr00032",
+    "lotr00064",
+    "lotr00070",
+    "lotr01072",
+    "lotr01364",
+    "lotr02122",
+    "lotr04089",
+    "lotr04090",
+    "lotr06030",
+    "lotr07036",
+    "lotr07037",
+    "lotr08015",
+    "lotr11033",
+    "lotr12027",
+    "lotr13033",
+    "lotr15029",
+    "lotr17017",
+    "lotr19008"
+  ],
+  "frodo": [
+    "lotr00027",
+    "lotr00067",
+    "lotr01289",
+    "lotr01290",
+    "lotr02102",
+    "lotr04301",
+    "lotr04302",
+    "lotr05111",
+    "lotr07317",
+    "lotr07318",
+    "lotr10121",
+    "lotr11164",
+    "lotr13149",
+    "lotr15144",
+    "lotr19028"
+  ],
+  "arwen": [
+    "lotr00028",
+    "lotr00063",
+    "lotr00079",
+    "lotr03007",
+    "lotr03008",
+    "lotr06013",
+    "lotr07016",
+    "lotr10005",
+    "lotr10006",
+    "lotr11015",
+    "lotr13009",
+    "lotr15011",
+    "lotr19006"
+  ],
+  "eomer": [
+    "lotr00045",
+    "lotr00049",
+    "lotr00066",
+    "lotr00080",
+    "lotr04266",
+    "lotr04267",
+    "lotr06092",
+    "lotr07227",
+    "lotr07365",
+    "lotr08087",
+    "lotr11145",
+    "lotr12112",
+    "lotr13123",
+    "lotr15123",
+    "lotr17095",
+    "lotr19025"
+  ],
+  "glorfindel": [
+    "lotr00050",
+    "lotr09016",
+    "lotr18013"
+  ],
+  "radagast": [
+    "lotr00051",
+    "lotr09026"
+  ],
+  "ghan-buri-ghan": [
+    "lotr00056"
+  ],
+  "anarion": [
+    "lotr00058"
+  ],
+  "erkenbrand": [
+    "lotr00059"
+  ],
+  "boromir": [
+    "lotr00065",
+    "lotr00071",
+    "lotr01096",
+    "lotr01097",
+    "lotr03122",
+    "lotr09031",
+    "lotr11057",
+    "lotr12043",
+    "lotr13062",
+    "lotr18040",
+    "lotr19013"
+  ],
+  "riders of the mark": [
+    "lotr00077",
+    "lotr11154"
+  ],
+  "sam": [
+    "lotr00078",
+    "lotr01310",
+    "lotr01311",
+    "lotr02114",
+    "lotr04315",
+    "lotr04316",
+    "lotr05115",
+    "lotr07326",
+    "lotr07327",
+    "lotr10122",
+    "lotr11172",
+    "lotr13156",
+    "lotr15153",
+    "lotr19032"
+  ],
+  "pippin": [
+    "lotr00086",
+    "lotr01306",
+    "lotr01307",
+    "lotr02110",
+    "lotr04313",
+    "lotr04314",
+    "lotr06114",
+    "lotr07323",
+    "lotr07324",
+    "lotr08122",
+    "lotr11170",
+    "lotr12127",
+    "lotr15151",
+    "lotr17109",
+    "lotr19030"
+  ],
+  "jarnsmid": [
+    "lotr00089",
+    "lotr12030"
+  ],
+  "farmer maggot": [
+    "lotr00093",
+    "lotr11163"
+  ],
+  "orophin": [
+    "lotr00101",
+    "lotr12020",
+    "lotr17011"
+  ],
+  "hama": [
+    "lotr00106",
+    "lotr06094",
+    "lotr13128",
+    "lotr17099"
+  ],
+  "guard of the white tree": [
+    "lotr00107",
+    "lotr13067"
+  ],
+  "isildur": [
+    "lotr00119",
+    "lotr09033",
+    "lotr13071",
+    "lotr18054"
+  ],
+  "haldir": [
+    "lotr00122",
+    "lotr01048",
+    "lotr04071",
+    "lotr15017",
+    "lotr18014"
+  ],
+  "watcher at sarn ford": [
+    "lotr00129",
+    "lotr18059"
+  ],
+  "dwarf guard": [
+    "lotr01007"
+  ],
+  "farin": [
+    "lotr01011",
+    "lotr11007"
+  ],
+  "lorien elf": [
+    "lotr01053"
+  ],
+  "merry": [
+    "lotr01302",
+    "lotr01303",
+    "lotr02104",
+    "lotr04310",
+    "lotr04311",
+    "lotr06113",
+    "lotr07320",
+    "lotr07321",
+    "lotr08121",
+    "lotr11168",
+    "lotr15149",
+    "lotr17107",
+    "lotr19029"
+  ],
+  "aegnor": [
+    "lotr10004"
+  ],
+  "celeborn": [
+    "lotr10007",
+    "lotr13011"
+  ],
+  "cirdan": [
+    "lotr10008"
+  ],
+  "elrond": [
+    "lotr07021",
+    "lotr10009",
+    "lotr12017"
+  ],
+  "galadriel": [
+    "lotr09014",
+    "lotr10011",
+    "lotr13015"
+  ],
+  "cursed of erech": [
+    "lotr10026"
+  ],
+  "dead man of dunharrow": [
+    "lotr10027"
+  ],
+  "grimir": [
+    "lotr11010"
+  ],
+  "elven scout": [
+    "lotr11018"
+  ],
+  "woodland sentinel": [
+    "lotr11027"
+  ],
+  "erland": [
+    "lotr11030"
+  ],
+  "madril": [
+    "lotr07110",
+    "lotr11062",
+    "lotr15064",
+    "lotr17030"
+  ],
+  "ranger of westernesse": [
+    "lotr11065"
+  ],
+  "gamling": [
+    "lotr05082",
+    "lotr11147",
+    "lotr15126",
+    "lotr18099"
+  ],
+  "hrothlac": [
+    "lotr11148"
+  ],
+  "riddermark soldier": [
+    "lotr11152"
+  ],
+  "dwarven warrior": [
+    "lotr12007"
+  ],
+  "thrarin": [
+    "lotr12015"
+  ],
+  "rumil": [
+    "lotr12022",
+    "lotr17012"
+  ],
+  "aldred": [
+    "lotr12107"
+  ],
+  "eored warrior": [
+    "lotr12113"
+  ],
+  "haethen": [
+    "lotr12116"
+  ],
+  "leofric": [
+    "lotr12117"
+  ],
+  "bilbo": [
+    "lotr09049",
+    "lotr12119",
+    "lotr13142"
+  ],
+  "rosie cotton": [
+    "lotr12129"
+  ],
+  "tolman cotton": [
+    "lotr12133"
+  ],
+  "lorien protector": [
+    "lotr13020"
+  ],
+  "shrouded elf": [
+    "lotr13023"
+  ],
+  "dasron": [
+    "lotr13029"
+  ],
+  "elendil": [
+    "lotr09032",
+    "lotr13065"
+  ],
+  "tradesman from lebennin": [
+    "lotr13077"
+  ],
+  "merchant of westfold": [
+    "lotr13132"
+  ],
+  "riddermark tactician": [
+    "lotr13133"
+  ],
+  "theodred": [
+    "lotr13138"
+  ],
+  "westfarthing businessman": [
+    "lotr13157"
+  ],
+  "dain ironfoot": [
+    "lotr14001"
+  ],
+  "elladan": [
+    "lotr14002"
+  ],
+  "elrohir": [
+    "lotr14003"
+  ],
+  "gildor inglorion": [
+    "lotr14004"
+  ],
+  "brand": [
+    "lotr14005"
+  ],
+  "grimbeorn": [
+    "lotr14006"
+  ],
+  "duilin": [
+    "lotr14007"
+  ],
+  "duinhir": [
+    "lotr14008"
+  ],
+  "halbarad": [
+    "lotr14009"
+  ],
+  "gloin": [
+    "lotr02007",
+    "lotr15006"
+  ],
+  "elven warrior": [
+    "lotr15014"
+  ],
+  "ent avenger": [
+    "lotr06027",
+    "lotr15028"
+  ],
+  "leaflock": [
+    "lotr15030"
+  ],
+  "quickbeam": [
+    "lotr06033",
+    "lotr15034"
+  ],
+  "shadow of the wood": [
+    "lotr15035"
+  ],
+  "shepherd of the trees": [
+    "lotr15036"
+  ],
+  "skinbark": [
+    "lotr06035",
+    "lotr06124",
+    "lotr15037"
+  ],
+  "damrod": [
+    "lotr04114",
+    "lotr15057"
+  ],
+  "dunedain of the south": [
+    "lotr15059"
+  ],
+  "gondorian prowler": [
+    "lotr15061"
+  ],
+  "mablung": [
+    "lotr04127",
+    "lotr15063"
+  ],
+  "silent traveler": [
+    "lotr15069"
+  ],
+  "unyielding ranger": [
+    "lotr15071"
+  ],
+  "haleth": [
+    "lotr15128"
+  ],
+  "horseman of the north": [
+    "lotr15130"
+  ],
+  "rohirrim soldier": [
+    "lotr15138"
+  ],
+  "rohirrim warrior": [
+    "lotr15139"
+  ],
+  "thorin iii": [
+    "lotr17006"
+  ],
+  "elven guardian": [
+    "lotr17007"
+  ],
+  "barliman butterbur": [
+    "lotr17016"
+  ],
+  "woodland onod": [
+    "lotr17026"
+  ],
+  "ranger of the white tree": [
+    "lotr17033"
+  ],
+  "soldier of rohan": [
+    "lotr17101"
+  ],
+  "warrior of rohan": [
+    "lotr17104"
+  ],
+  "elven defender": [
+    "lotr18009"
+  ],
+  "gil-galad": [
+    "lotr09015",
+    "lotr18012"
+  ],
+  "librarian": [
+    "lotr18022"
+  ],
+  "ranger of the south": [
+    "lotr18056"
+  ],
+  "rohirrim recruit": [
+    "lotr18103"
+  ],
+  "fredegar bolger": [
+    "lotr18107"
+  ],
+  "fror": [
+    "lotr02006"
+  ],
+  "erethon": [
+    "lotr04065"
+  ],
+  "fereveldir": [
+    "lotr04067"
+  ],
+  "ferevellon": [
+    "lotr04068"
+  ],
+  "lorien guardian": [
+    "lotr04076"
+  ],
+  "lorien swordsman": [
+    "lotr04078"
+  ],
+  "ordulus": [
+    "lotr04080"
+  ],
+  "pengedhel": [
+    "lotr04081"
+  ],
+  "thandronen": [
+    "lotr04085"
+  ],
+  "thonnas": [
+    "lotr04086"
+  ],
+  "gondorian ranger": [
+    "lotr04122"
+  ],
+  "ranger of ithilien": [
+    "lotr04130"
+  ],
+  "ceorl": [
+    "lotr04264"
+  ],
+  "elite rider": [
+    "lotr04265",
+    "lotr07225"
+  ],
+  "eothain": [
+    "lotr04269"
+  ],
+  "rider of rohan": [
+    "lotr04286"
+  ],
+  "balglin": [
+    "lotr05010"
+  ],
+  "taurnil": [
+    "lotr05013"
+  ],
+  "birchseed": [
+    "lotr05015"
+  ],
+  "forest guardian": [
+    "lotr05017"
+  ],
+  "lindenroot": [
+    "lotr05019"
+  ],
+  "alcarin": [
+    "lotr05031"
+  ],
+  "gondorian knight": [
+    "lotr05035"
+  ],
+  "knight of gondor": [
+    "lotr05036"
+  ],
+  "turgon": [
+    "lotr05042"
+  ],
+  "household guard": [
+    "lotr05083"
+  ],
+  "rohirrim scout": [
+    "lotr05090"
+  ],
+  "naith troop": [
+    "lotr06022"
+  ],
+  "naith warband": [
+    "lotr06023"
+  ],
+  "ent horde": [
+    "lotr06028"
+  ],
+  "host of fangorn": [
+    "lotr06032"
+  ],
+  "anborn": [
+    "lotr06048"
+  ],
+  "hrethel": [
+    "lotr06095"
+  ],
+  "cirion": [
+    "lotr07082"
+  ],
+  "derufin": [
+    "lotr07087"
+  ],
+  "dervorin": [
+    "lotr07088"
+  ],
+  "gondorian captain": [
+    "lotr07096"
+  ],
+  "ingold": [
+    "lotr07106"
+  ],
+  "iorlas": [
+    "lotr07107"
+  ],
+  "ranger of minas tirith": [
+    "lotr07115"
+  ],
+  "ranger of osgiliath": [
+    "lotr07116"
+  ],
+  "targon": [
+    "lotr07124"
+  ],
+  "vorondil": [
+    "lotr07127"
+  ],
+  "elfhelm": [
+    "lotr07224"
+  ],
+  "enraged horseman": [
+    "lotr07226"
+  ],
+  "grimbold": [
+    "lotr07233"
+  ],
+  "guthlaf": [
+    "lotr07235"
+  ],
+  "rohirrim guard": [
+    "lotr07246"
+  ],
+  "veteran horseman": [
+    "lotr07257"
+  ],
+  "garrison of gondor": [
+    "lotr08036"
+  ],
+  "imrahil": [
+    "lotr08037"
+  ],
+  "king of the dead": [
+    "lotr08038"
+  ],
+  "knight of dol amroth": [
+    "lotr08039"
+  ],
+  "oathbreaker": [
+    "lotr08041"
+  ],
+  "shadow host": [
+    "lotr08043"
+  ],
+  "sleepless dead": [
+    "lotr08045"
+  ],
+  "rohirrim army": [
+    "lotr08091"
+  ],
+  "durin iii": [
+    "lotr09003"
+  ],
+  "linnar": [
+    "lotr09005"
+  ],
+  "sindri": [
+    "lotr09010"
+  ],
+  "uri": [
+    "lotr09011"
+  ],
+  "huorn": [
+    "lotr09025"
+  ]
+}

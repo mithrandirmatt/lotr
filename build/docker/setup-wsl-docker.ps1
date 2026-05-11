@@ -94,28 +94,38 @@ catch {
     Write-Log "wsl --update failed or not supported on this host: $_"
 }
 
-# Check whether distro exists already
-try { $exists = (wsl -l -q) | Select-String -Pattern "^$DistroName$" -SimpleMatch } catch { $exists = $null }
-if ($exists) {
-    Write-Log "Distro '$DistroName' already exists. Aborting to avoid overwrite. To replace, run: wsl --unregister $DistroName"
-    exit 2
-}
+# Robust distro-exists check: wsl -l -q outputs UTF-16LE which confuses Select-String.
+# Instead probe the distro directly; if it answers we know it is registered.
+# wsl -l -q outputs UTF-16LE which confuses Select-String, so probe directly.
+$distroExists = $false
+try {
+    $probe = wsl -d $DistroName -u root -- echo ok 2>$null
+    $distroExists = ($probe -match 'ok')
+} catch { $distroExists = $false }
 
-# Call the importer helper. The importer supports either a provided tarball or will
-# attempt to download an official Ubuntu 24.04 rootfs when no tarball is supplied.
-$importer = Join-Path $PSScriptRoot 'ensure-lotr-distro.ps1'
-if (-not (Test-Path $importer)) {
-    Write-Log "Importer script not found at $importer"
-    exit 7
-}
-Write-Log "Calling importer: $importer"
-& $importer -TarballPath $TarballPath -InstallPath $InstallPath -DistroName $DistroName -ManifestPath $ManifestPath
-if (-not $?) {
-    Write-Log "Importer failed"
-    exit 8
-}
+if ($distroExists) {
+    Write-Log "Distro '$DistroName' already exists -- skipping import, re-running Docker/ROCDXG setup."
+} else {
+    # Call the importer helper. Supports a provided tarball or downloads Ubuntu 24.04.
+    $importer = Join-Path $PSScriptRoot 'ensure-lotr-distro.ps1'
+    if (-not (Test-Path $importer)) {
+        Write-Log "Importer script not found at $importer"
+        exit 7
+    }
+    Write-Log "Calling importer: $importer"
+    & $importer -TarballPath $TarballPath -InstallPath $InstallPath -DistroName $DistroName -ManifestPath $ManifestPath
+    $importerExit = $LASTEXITCODE
+    if ($importerExit -eq 2) {
+        Write-Log "Importer reports distro already exists -- continuing to configuration."
+    } elseif ($importerExit -ne 0) {
+        Write-Log ("Importer failed with exit code {0}" -f $importerExit)
+        exit 8
+    }
+} # end distro-import gate
 
-# Prepare install script content
+# ---------------------------------------------------------------------------
+# Docker install (always runs -- idempotent; safe to re-run on existing distro)
+# ---------------------------------------------------------------------------
 $installScript = @'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -124,9 +134,10 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https
 
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
+    chmod a+r /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
 
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
@@ -180,14 +191,45 @@ catch {
     exit 11
 }
 
+# Ensure dockerd is running (idempotent -- wrapper checks PID 1 / systemd itself)
+Write-Log "Starting Docker daemon inside distro (if not already running)..."
+# Ensure dockerd is running via a persistent Windows-side process.
+# WSL2 kills background processes when the last session exits, so we must
+# launch dockerd from Start-Process (keeps the WSL session alive from Windows).
+Write-Log "Starting Docker daemon inside distro (if not already running)..."
+
+# Check if dockerd is already running inside the distro
+$daemonRunning = wsl -d $DistroName -u root -- bash -c 'docker info >/dev/null 2>&1 && echo yes || echo no' 2>$null
+if ($daemonRunning -match 'yes') {
+    Write-Log "Docker daemon already running -- skipping start."
+} else {
+    # Check if systemd is PID 1 (then it manages dockerd itself)
+    $pid1 = wsl -d $DistroName -u root -- bash -c 'cat /proc/1/comm 2>/dev/null' 2>$null
+    if ($pid1 -match 'systemd') {
+        Write-Log "systemd detected -- enabling and starting docker via systemctl."
+        wsl -d $DistroName -u root -- systemctl enable --now docker 2>$null
+    } else {
+        Write-Log "No systemd -- launching dockerd via Start-Process (persistent Windows-side session)."
+        # Kill any stale dockerd first
+        wsl -d $DistroName -u root -- bash -c 'pkill -f dockerd || true' 2>$null
+        Start-Sleep -Seconds 1
+        $null = Start-Process -FilePath 'wsl' `
+            -ArgumentList @('-d', $DistroName, '-u', 'root', '--',
+                            'dockerd', '--host', 'unix:///var/run/docker.sock') `
+            -WindowStyle Hidden -PassThru
+        Write-Log "dockerd launched; waiting for socket..."
+        Start-Sleep -Seconds 4
+    }
+}
+
 # Verification: wait for docker to become available
 Write-Log "Verifying Docker service inside distro"
 $maxAttempts = 10
 $ok = $false
 for ($i=1; $i -le $maxAttempts; $i++) {
-    wsl -d $DistroName -u root -- docker version 2>$null
+    wsl -d $DistroName -u root -- docker info 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) { $ok = $true; break }
-    Write-Log "Docker not ready yet (attempt $i/$maxAttempts), sleeping 3s"
+    Write-Log "Docker daemon not ready yet (attempt $i/$maxAttempts), sleeping 3s"
     Start-Sleep -Seconds 3
 }
 if (-not $ok) { Write-Log "Docker did not become available"; exit 12 }
@@ -196,6 +238,115 @@ Write-Log "Docker appears available. Gathering verification info..."
 wsl -d $DistroName -u root -- docker version
 wsl -d $DistroName -u root -- docker info
 wsl -d $DistroName -u root -- cat /etc/wsl.conf
+
+# ---------------------------------------------------------------------------
+# ROCDXG (librocdxg) -- auto-install when AMD GPU + /dev/dxg detected
+# ---------------------------------------------------------------------------
+function Resolve-WindowsSdkPath {
+    # Try the registry first (most reliable)
+    $regRoots = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots'
+    )
+    foreach ($root in $regRoots) {
+        try {
+            $kitsRoot = (Get-ItemProperty -Path $root -ErrorAction Stop).'KitsRoot10'
+            if ($kitsRoot -and (Test-Path $kitsRoot)) {
+                $includeBase = Join-Path $kitsRoot 'Include'
+                if (Test-Path $includeBase) {
+                    $best = Get-ChildItem -Path $includeBase -Directory |
+                        Where-Object { Test-Path (Join-Path $_.FullName 'shared') } |
+                        Sort-Object Name -Descending |
+                        Select-Object -First 1
+                    if ($best) { return $best.FullName }
+                }
+            }
+        } catch {}
+    }
+    # Fallback: scan common filesystem location
+    $fsBase = 'C:\Program Files (x86)\Windows Kits\10\Include'
+    if (Test-Path $fsBase) {
+        $best = Get-ChildItem -Path $fsBase -Directory |
+            Where-Object { Test-Path (Join-Path $_.FullName 'shared') } |
+            Sort-Object Name -Descending |
+            Select-Object -First 1
+        if ($best) { return $best.FullName }
+    }
+    return $null
+}
+
+function Install-Rocdxg {
+    param([string]$Distro)
+
+    # Check for AMD/Radeon GPU on the Windows host
+    $gpus = try {
+        Get-CimInstance -ClassName Win32_VideoController -ErrorAction Stop |
+            Select-Object -ExpandProperty Name
+    } catch { @() }
+
+    $isAmd = $gpus | Where-Object { $_ -match 'AMD|Radeon|RX ' }
+    if (-not $isAmd) {
+        Write-Log "ROCDXG: no AMD/Radeon GPU detected on Windows host -- skipping."
+        return
+    }
+    Write-Log ("ROCDXG: AMD GPU found ({0})." -f ($isAmd -join ', '))
+
+    # Check /dev/dxg inside WSL distro
+    $dxgExists = wsl -d $Distro -u root -- bash -c 'test -c /dev/dxg && echo yes || echo no' 2>$null
+    if ($dxgExists -notmatch 'yes') {
+        Write-Log "ROCDXG: /dev/dxg not present in $Distro -- skipping (Windows driver may be too old)."
+        return
+    }
+    Write-Log "ROCDXG: /dev/dxg confirmed. Proceeding with librocdxg installation..."
+
+    # Detect Windows SDK path from the Windows side (registry + filesystem)
+    $winSdkWin = Resolve-WindowsSdkPath
+    $winSdkWsl = $null
+    if ($winSdkWin) {
+        $sdkDrive = $winSdkWin.Substring(0,1).ToLower()
+        $winSdkWsl = '/mnt/' + $sdkDrive + ($winSdkWin.Substring(2) -replace '\\','/')
+        Write-Log ("ROCDXG: Windows SDK detected at {0}" -f $winSdkWin)
+        Write-Log ("ROCDXG: WSL path: {0}" -f $winSdkWsl)
+    } else {
+        Write-Log "ROCDXG: Windows SDK not found on host."
+        Write-Log "  Install from: https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/"
+        Write-Log "  Then re-run setup-wsl-docker.ps1"
+        return
+    }
+
+    # Locate install_rocdxg.sh relative to this script
+    $rocdxgScript = Join-Path $PSScriptRoot 'install_rocdxg.sh'
+    if (-not (Test-Path $rocdxgScript)) {
+        Write-Log ("ROCDXG: installer script not found at {0} -- skipping." -f $rocdxgScript)
+        return
+    }
+
+    # Convert Windows path to WSL /mnt/ path
+    $drive    = $rocdxgScript.Substring(0,1).ToLower()
+    $wslSrc   = '/mnt/' + $drive + ($rocdxgScript.Substring(2) -replace '\\','/')
+    $wslDest  = '/tmp/install_rocdxg.sh'
+
+    Write-Log "ROCDXG: copying installer into $Distro ..."
+    wsl -d $Distro -u root -- cp $wslSrc $wslDest
+    if ($LASTEXITCODE -ne 0) { Write-Log "ROCDXG: failed to copy installer -- skipping."; return }
+
+    wsl -d $Distro -u root -- chmod +x $wslDest
+    if ($LASTEXITCODE -ne 0) { Write-Log "ROCDXG: chmod failed -- skipping."; return }
+
+    Write-Log "ROCDXG: running installer (this may take several minutes) ..."
+    wsl -d $Distro -u root -- bash -c "WIN_SDK='$winSdkWsl' bash $wslDest"
+    if ($LASTEXITCODE -eq 0) {
+        Write-Log "ROCDXG: installation succeeded."
+        Write-Log "ROCDXG: verify with: wsl -d $Distro -u root -- bash -lc 'source /etc/profile.d/rocdxg.sh; rocminfo | head -n 50'"
+    } elseif ($LASTEXITCODE -eq 1) {
+        Write-Log "ROCDXG: /dev/dxg check failed inside WSL -- Windows driver may need updating."
+    } else {
+        Write-Log ("ROCDXG: installer exited with code {0} -- check WSL log at /var/log/install_rocdxg.log" -f $LASTEXITCODE)
+        Write-Log "  To inspect: wsl -d $Distro -u root -- cat /var/log/install_rocdxg.log"
+    }
+}
+
+Install-Rocdxg -Distro $DistroName
 
 Write-Log "setup-wsl-docker completed successfully"
 

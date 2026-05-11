@@ -63,7 +63,7 @@ def run_ollama(model: str, prompt: str, timeout: int = 600) -> tuple[int, str, f
             return -1, '', time.perf_counter() - t0
 
     # If the CLI is not available, try calling a running Ollama HTTP server
-    # pointed to by the OLLAMA_URL environment variable (e.g. http://host:11434).
+    # pointed to by the OLLAMA_URL environment variable (e.g. http://host:11435).
     import os
     base_url = os.environ.get('OLLAMA_URL')
     if not base_url:

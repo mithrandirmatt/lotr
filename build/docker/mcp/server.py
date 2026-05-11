@@ -527,7 +527,7 @@ def ollama_generate(prompt: str, model: str = "", system: str = "") -> str:
     system: optional system message prepended to the conversation.
     """
     import httpx  # lazy import
-    base_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    base_url = os.environ.get("OLLAMA_URL", "http://localhost:11435")
     resolved_model = model or os.environ.get("OLLAMA_MODEL", "qwen3-coder:30b")
     payload: dict = {
         "model": resolved_model,
@@ -559,7 +559,7 @@ def card_search(query: str, limit: int = 10) -> str:
     limit: max number of results to return.
     """
     import httpx  # lazy import
-    base_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    base_url = os.environ.get("OLLAMA_URL", "http://localhost:11435")
     embed_model = os.environ.get("OLLAMA_EMBED_MODEL", "nomic-embed-text")
     conn = _pg_conn()
     try:

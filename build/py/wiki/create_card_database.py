@@ -15,6 +15,8 @@ START_HTML  = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'wiki', 'start.ht
 OUTPUT_PATH = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'card_database.json')
 XLIST_DB    = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'xlist_database.json')
 ERRATA_DB   = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'errata_database.json')
+UNIQUE_OVERRIDES_PATH = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'card_unique_overrides.json')
+UNIQUE_OVERRIDES_DATA = {}
 
 sys.path.insert(0, PYUTILS_DIR)
 from utils.progress import ProgressBar
@@ -173,6 +175,27 @@ def parse_keywords(game_text):
     return keywords
 
 
+def normalize_title(name):
+    """Return a normalized lowercase title used as a lookup key in overrides."""
+    if not name:
+        return ''
+    s = name.strip().lower()
+    s = re.sub(r'\s+', ' ', s)
+    return s
+
+
+def infer_unique_by_heuristics(name, card_type, game_text, fields):
+    """
+    Heuristic determination of whether a card is unique.
+    Current heuristic: name starts with 'The ' OR contains a comma.
+    """
+    if not name:
+        return False
+    if name.startswith('The ') or ',' in name:
+        return True
+    return False
+
+
 def find_image_path(card_dir):
     """Return the first .jpg in card_dir as a repo-root-relative forward-slash path."""
     try:
@@ -230,6 +253,19 @@ def parse_card(html_path, card_id, set_names):
     game_text = get_str('Game Text')
     card_dir  = os.path.dirname(html_path)
 
+    # Determine uniqueness (heuristics), allow overrides via UNIQUE_OVERRIDES_DATA.
+    unique = infer_unique_by_heuristics(name, card_type, game_text, fields)
+    try:
+        if UNIQUE_OVERRIDES_DATA:
+            if card_id in UNIQUE_OVERRIDES_DATA:
+                unique = bool(UNIQUE_OVERRIDES_DATA[card_id])
+            else:
+                norm = normalize_title(name)
+                if norm in UNIQUE_OVERRIDES_DATA:
+                    unique = bool(UNIQUE_OVERRIDES_DATA[norm])
+    except Exception:
+        pass
+
     # Derive the expected processed PNG path (produced by process_card_images.py).
     # This is a forward-slash repo-root-relative path; the file may not exist yet.
     clean_png = f'build/do/assets/cards/processed/set{set_num:02d}/{card_id}.png'
@@ -261,11 +297,22 @@ def parse_card(html_path, card_id, set_names):
         'image_path_clean': clean_png,
         'on_xlist':        None,   # populated in main() post-processing
         'has_errata':      False,  # populated in main() post-processing
+        'unique':          unique,
     }
 
 
 def main():
     set_names = parse_set_names(START_HTML)
+
+    # Load unique overrides if present (maps card_id or normalized title -> bool)
+    global UNIQUE_OVERRIDES_DATA
+    UNIQUE_OVERRIDES_DATA = {}
+    if os.path.exists(UNIQUE_OVERRIDES_PATH):
+        try:
+            with open(UNIQUE_OVERRIDES_PATH, 'r', encoding='utf-8') as f:
+                UNIQUE_OVERRIDES_DATA = json.load(f)
+        except Exception as e:
+            print(f'Warning: failed to load unique overrides from {UNIQUE_OVERRIDES_PATH}: {e}')
 
     cards = {}
     errors = []
