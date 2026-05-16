@@ -28,10 +28,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg2 \
     zstd \
+    wget \
+    unzip \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # ROCm userland (AMD GPUs — host provides kernel driver, container provides libraries)
 # Supports RDNA3 / gfx1100 (RX 7900 XTX). Skipped for cpu/cuda variants.
+# After install: register /opt/rocm/lib with ldconfig so libhsa-runtime64 1.18
+# (DXG-capable) takes precedence over the Ubuntu 1.11 package at runtime.
 RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
       mkdir -p /etc/apt/keyrings && \
       curl -fsSL https://repo.radeon.com/rocm/rocm.gpg.key \
@@ -40,23 +45,49 @@ RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
           > /etc/apt/sources.list.d/rocm.list && \
       apt-get update && \
       apt-get install -y --no-install-recommends \
+          hsa-rocr \
           hip-runtime-amd \
-          rocblas \
-          rocm-libs && \
-      rm -rf /var/lib/apt/lists/*; \
+          rocminfo && \
+      rm -rf /var/lib/apt/lists/* && \
+      echo '/opt/rocm/lib' > /etc/ld.so.conf.d/rocm.conf && ldconfig; \
     fi
 
-# Install Ollama binary (official install script — includes ROCm/CUDA detection at runtime)
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# Install Ollama binary.
+# ROCm: download the ROCm-specific build that includes the HIP/ROCm GPU backend
+#        (the standard install.sh only downloads it when lspci detects AMD hardware,
+#        which fails inside a Docker build container).
+# CPU/CUDA: use the standard install script.
+RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
+      case "$(uname -m)" in \
+        x86_64)  ARCH=amd64 ;; \
+        aarch64) ARCH=arm64 ;; \
+        *)        ARCH=$(uname -m) ;; \
+      esac; \
+      OLLAMA_VER=v0.23.4; \
+      # Base package: contains the ollama binary + CPU/CUDA runners
+      curl --fail --show-error --location --retry 3 \
+        -o /tmp/ollama-base.tar.zst \
+        "https://github.com/ollama/ollama/releases/download/${OLLAMA_VER}/ollama-linux-${ARCH}.tar.zst" && \
+      zstd -d /tmp/ollama-base.tar.zst --stdout | tar -xf - -C /usr/local && \
+      rm /tmp/ollama-base.tar.zst; \
+      # ROCm supplement: overlays ROCm GPU runners onto the base install
+      curl --fail --show-error --location --retry 3 \
+        -o /tmp/ollama-rocm.tar.zst \
+        "https://github.com/ollama/ollama/releases/download/${OLLAMA_VER}/ollama-linux-${ARCH}-rocm.tar.zst" && \
+      zstd -d /tmp/ollama-rocm.tar.zst --stdout | tar -xf - -C /usr/local && \
+      rm /tmp/ollama-rocm.tar.zst; \
+    else \
+      curl -fsSL https://ollama.com/install.sh | sh; \
+    fi
 
-COPY requirements.txt .
+COPY build/docker/ai/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY server.py .
-COPY start_services.sh /usr/local/bin/start_services.sh
-COPY gpu_detect.sh /usr/local/bin/gpu_detect.sh
-COPY install_gpu_runtime.sh /usr/local/bin/install_gpu_runtime.sh
-COPY supervisord.conf /etc/supervisor/supervisord.conf
+COPY build/docker/ai/server.py .
+COPY build/docker/ai/start_services.sh /usr/local/bin/start_services.sh
+COPY build/docker/ai/gpu_detect.sh /usr/local/bin/gpu_detect.sh
+COPY build/docker/ai/install_gpu_runtime.sh /usr/local/bin/install_gpu_runtime.sh
+COPY build/docker/ai/supervisord.conf /etc/supervisor/supervisord.conf
 RUN chmod +x /usr/local/bin/start_services.sh /usr/local/bin/gpu_detect.sh /usr/local/bin/install_gpu_runtime.sh
 
 # Bake GPU_VARIANT into the image so start_services.sh and Ollama can inspect it
@@ -71,7 +102,9 @@ ENV WORKSPACE=/workspace \
     OLLAMA_URL=http://localhost:11434 \
     OLLAMA_HOST_CACHE=/ollama-cache \
     GPU_VARIANT=${GPU_VARIANT} \
-    HSA_OVERRIDE_GFX_VERSION=11.0.0
+    HSA_OVERRIDE_GFX_VERSION=11.0.0 \
+    HSA_ENABLE_DXG_DETECTION=1 \
+    LD_LIBRARY_PATH=/opt/rocm/lib
 
 EXPOSE 3100 11434
 

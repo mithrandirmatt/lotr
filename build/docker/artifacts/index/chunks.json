@@ -1,0 +1,20 @@
+{
+  "root": ".",
+  "file_count": 2,
+  "chunks": [
+    {
+      "id": "README.md:0-29",
+      "source": "README.md",
+      "start": 0,
+      "end": 29,
+      "text": "# lotr\nLord Of the Rings TCG\n"
+    },
+    {
+      "id": "tools/index_repo.py:0-2000",
+      "source": "tools/index_repo.py",
+      "start": 0,
+      "end": 2000,
+      "text": "#!/usr/bin/env python3\n\"\"\"Index repository files into simple lexical chunks (no heavy deps).\n\nSaves: build/docker/artifacts/index/chunks.json\n\"\"\"\nfrom __future__ import annotations\nimport argparse\nimport json\nimport os\nfrom pathlib import Path\n\nCHUNK_SIZE = 1000\nOVERLAP = 200\n\nEXCLUDE_DIRS = {'.git', 'node_modules', 'venv', '.venv', '.ollama', 'build/docker/artifacts'}\nINCLUDE_EXT = {'.py', '.md', '.rst', '.txt', '.json', '.toml', '.ini', '.cfg', '.yml', '.yaml', '.html', '.js', '.ts'}\n\n\ndef should_skip(path: Path) -> bool:\n    parts = set(p for p in path.parts)\n    if parts & EXCLUDE_DIRS:\n        return True\n    if path.is_dir():\n        return True\n    if path.suffix.lower() not in INCLUDE_EXT:\n        return True\n    return False\n\n\ndef chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = OVERLAP):\n    chunks = []\n    i = 0\n    n = len(text)\n    while i < n:\n        end = min(n, i + chunk_size)\n        chunk = text[i:end]\n        chunks.append((i, end, chunk))\n        i = end - overlap\n        if i < 0:\n            i = 0\n    return chunks\n\n\ndef main():\n    p = argparse.ArgumentParser()\n    p.add_argument('--root', default='/workspace', help='Repository root inside container')\n    p.add_argument('--out', default='/workspace/build/docker/artifacts/index/chunks.json')\n    args = p.parse_args()\n\n    root = Path(args.root)\n    out_path = Path(args.out)\n    out_path.parent.mkdir(parents=True, exist_ok=True)\n\n    chunks_list = []\n    file_count = 0\n    for dirpath, dirnames, filenames in os.walk(root):\n        # filter out excluded dirs\n        rel = os.path.relpath(dirpath, root)\n        if rel != '.' and any(part in EXCLUDE_DIRS for part in Path(rel).parts):\n            continue\n        for fn in filenames:\n            fp = Path(dirpath) / fn\n            if should_skip(fp.relative_to(root)):\n                continue\n            try:\n                text = fp.read_text(encoding='utf-8')\n            except Exception:\n                try:\n                    text = fp.read_text(encoding='latin-1')\n                except Exception:\n                    continue\n            file_count += 1\n            file_rel = str(fp.relative_to(root))\n            for idx, (start, end, chunk) in enumerate(chunk_text(text)):\n                chunk_id = f"{file_rel}:{start}-{end}"\n                chunks_list.append({'id': chunk_id, 'source': file_rel, 'start': start, 'end': end, 'text': chunk})\n\n    # write chunks\n    with out_path.open('w', encoding='utf-8') as f:\n        json.dump({'root': str(root), 'file_count': file_count, 'chunks': chunks_list}, f, indent=2)\n\n    print(f'Indexed {file_count} files -> {len(chunks_list)} chunks to {out_path}')\n\n\nif __name__ == '__main__':\n    main()\n"
+    }
+  ]
+}

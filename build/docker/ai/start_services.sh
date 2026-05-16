@@ -62,7 +62,12 @@ if [ -x "$OLLAMA_BIN" ]; then
     export OLLAMA_MODELS
     echo "[start_services] OLLAMA_MODELS=$OLLAMA_MODELS"
     echo "[start_services] Starting Ollama (OLLAMA_HOST=$OLLAMA_HOST)..."
-    "$OLLAMA_BIN" serve >"$OLLAMA_LOG" 2>&1 &
+    if [ "${GPU_VARIANT:-}" = "rocm" ] && [ -f "/opt/rocm/lib/librocdxg.so" ]; then
+        echo "[start_services] Preloading librocdxg + DXCore/D3D12 for ROCDXG/WSL GPU support"
+        LD_PRELOAD=/opt/rocm/lib/librocdxg.so:/opt/rocm/lib/libdxcore.so:/opt/rocm/lib/libd3d12.so:/opt/rocm/lib/libd3d12core.so HSA_ENABLE_DXG_DETECTION=1 "$OLLAMA_BIN" serve >"$OLLAMA_LOG" 2>&1 &
+    else
+        "$OLLAMA_BIN" serve >"$OLLAMA_LOG" 2>&1 &
+    fi
     OLLAMA_PID=$!
     echo "[start_services] Ollama PID $OLLAMA_PID -- waiting up to ${OLLAMA_READY_TIMEOUT}s..."
     elapsed=0

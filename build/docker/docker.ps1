@@ -39,6 +39,8 @@ param(
     [string]$GpuVariant  = '',
     [switch]$Fresh,
     [switch]$NoPause,
+    [switch]$MountDockerSocket,
+    [switch]$StartAiOnly,
 
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ExtraArgs = @()
@@ -107,6 +109,38 @@ function Wait-For-Docker {
         Start-Sleep -Seconds $IntervalSeconds
     }
     return $false
+}
+
+# Ensure Docker is running in the given WSL distro; attempt to start if not
+function Ensure-DockerRunning {
+    param([string]$Distro)
+
+    if (Test-DockerResponsive -Distro $Distro) {
+        Write-Log ("Docker already responsive in {0}" -f $Distro)
+        return $true
+    }
+
+    Write-Log ("Docker not responsive in {0}; attempting to start via start-wsl-docker.ps1" -f $Distro)
+    try {
+        & powershell -ExecutionPolicy Bypass -File $startScript @startArgs
+        $startExit = $LASTEXITCODE
+    } catch {
+        Write-Log ("Failed to invoke start-wsl-docker.ps1: {0}" -f $_)
+        return $false
+    }
+
+    if ($startExit -ne 0) {
+        Write-Log ("start-wsl-docker.ps1 failed (exit {0})." -f $startExit)
+        return $false
+    }
+
+    if (-not (Wait-For-Docker -Distro $Distro -MaxAttempts 20 -IntervalSeconds 2)) {
+        Write-Log "Docker did not become ready after start attempt"
+        return $false
+    }
+
+    Write-Log ("Docker is running in {0} after start attempt" -f $Distro)
+    return $true
 }
 
 function Stop-HostOllamaIfPresent {
@@ -278,6 +312,13 @@ if ($Command -eq 'build') {
 
     if ($IsFresh) { Write-Log 'Fresh build: Docker layer cache disabled.' }
 
+    # Ensure Docker is running in the WSL distro; attempt auto-start if needed
+    if (-not (Ensure-DockerRunning -Distro $DistroName)) {
+        Write-Log "Unable to start Docker in $DistroName; aborting build."
+        if (-not $NoPause) { Write-Host "Press any key to exit..."; $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') }
+        exit 3
+    }
+
     wsl -d $DistroName -u root -- docker build `
         --file "$dockerfileWslPath" `
         --tag  $Tag `
@@ -293,14 +334,23 @@ if ($Command -eq 'build') {
     Write-Log ("Image '{0}' built successfully." -f $Tag)
 
     # Build AI image (previously MCP)
-    $mcpContextWslPath = "$wslRepoRoot/build/docker/ai"
+    $mcpDockerfileWslPath = "$wslRepoRoot/build/docker/ai/Dockerfile"
     Write-Log ("Building AI image '{0}' (GPU_VARIANT={1}) ..." -f $McpTag, $GpuVariant)
+
+    # Ensure Docker is still running before AI build
+    if (-not (Ensure-DockerRunning -Distro $DistroName)) {
+        Write-Log "Unable to start Docker in $DistroName before AI build; aborting."
+        if (-not $NoPause) { Write-Host "Press any key to exit..."; $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') }
+        exit 3
+    }
 
     wsl -d $DistroName -u root -- docker build `
         --tag  $McpTag `
         --build-arg "GPU_VARIANT=$GpuVariant" `
+        --network host `
         $noCacheFlag `
-        $mcpContextWslPath
+        --file "$mcpDockerfileWslPath" `
+        "$wslRepoRoot"
 
     if ($LASTEXITCODE -ne 0) {
         Write-Log ("AI build FAILED (exit {0})." -f $LASTEXITCODE)
@@ -433,12 +483,24 @@ if (-not $ollamaUrlEnv) {
             $librocdxgExists = wsl -d $DistroName -u root -- bash -c 'test -f /opt/rocm/lib/librocdxg.so   && echo yes || echo no' 2>$null
             if ($dxgExists -match 'yes' -and $libdxcoreExists -match 'yes' -and $librocdxgExists -match 'yes') {
                 Write-Log "ROCm mode (ROCDXG/WSL2): /dev/dxg + librocdxg.so found -- using DXG device path."
+                # Read WSL_INTEROP socket path from the WSL distro so libdxcore.so can communicate with Windows
+                $wslInterop = wsl -d $DistroName -u root -- bash -c 'echo $WSL_INTEROP' 2>$null
+                $wslInterop = $wslInterop.Trim()
+                if (-not $wslInterop) { $wslInterop = '/run/WSL/1_interop' }
+                Write-Log "WSL_INTEROP=$wslInterop"
                 $gpuDeviceFlags = @(
                     '--device',        '/dev/dxg',
-                    '--volume',        '/usr/lib/wsl/lib/libdxcore.so:/usr/lib/libdxcore.so',
-                    '--volume',        '/opt/rocm/lib/librocdxg.so:/usr/lib/librocdxg.so',
+                    # Mount host ROCm tree read-only so container uses same userland libraries
+                    '--volume',        '/opt/rocm:/opt/rocm:ro',
+                    # Mount WSL DXCore user-mode libs as a directory (read-only)
+                    '--volume',        '/usr/lib/wsl/lib:/usr/lib/wsl/lib:ro',
+                    '--volume',        '/run/WSL:/run/WSL',
                     '--env',           'HSA_ENABLE_DXG_DETECTION=1',
+                    '--env',           "WSL_INTEROP=$wslInterop",
+                    '--env',           'LD_LIBRARY_PATH=/opt/rocm/lib:/usr/lib/wsl/lib',
+                    '--env',           'LD_PRELOAD=/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so',
                     '--cap-add',       'SYS_PTRACE',
+                    '--cap-add',       'SYS_ADMIN',
                     '--security-opt',  'seccomp=unconfined',
                     '--ipc',           'host',
                     '--shm-size',      '8g'
@@ -494,85 +556,7 @@ if (-not $ollamaUrlEnv) {
         Write-Log ("MCP container start FAILED (exit {0}). Continuing anyway." -f $LASTEXITCODE)
     } else {
         Write-Log "AI container started."
-        # Attempt an auto-warmup using the configuration embedded in the repo's
-        # build/docker/ai/start_services.sh (AI_USE, AI_MODEL, AI_ARGS). This
-        # avoids requiring an image rebuild just to trigger a model load.
-        $startScriptWinPath = Join-Path $repoRoot 'build\docker\ai\start_services.sh'
-        if (Test-Path $startScriptWinPath) {
-            try {
-                $startContent = Get-Content -Path $startScriptWinPath -Raw -ErrorAction Stop
-                $aiModel = 'codellama:13b-code-fp16'
-                $aiArgs = ''
-                $aiUse = 'True'
-                if ($startContent -match 'AI_MODEL\s*=\s*(.+)') {
-                    $aiModel = $matches[1].Trim()
-                    # If literal parameter expansion like ${AI_MODEL:-'name'}, extract default
-                    if ($aiModel -match '^\$\{[^:}]+:-([^}]+)\}$') { $aiModel = $Matches[1].Trim() }
-                    while ($aiModel.Length -gt 0 -and ($aiModel.StartsWith("'") -or $aiModel.StartsWith('"'))) { $aiModel = $aiModel.Substring(1) }
-                    while ($aiModel.Length -gt 0 -and ($aiModel.EndsWith("'") -or $aiModel.EndsWith('"'))) { $aiModel = $aiModel.Substring(0, $aiModel.Length - 1) }
-                }
-                if ($startContent -match 'AI_ARGS\s*=\s*(.+)') {
-                    $aiArgs = $matches[1].Trim()
-                    # If literal parameter expansion like ${AI_ARGS:-'args'}, extract default
-                    if ($aiArgs -match '^\$\{[^:}]+:-([^}]+)\}$') { $aiArgs = $Matches[1].Trim() }
-                    while ($aiArgs.Length -gt 0 -and ($aiArgs.StartsWith("'") -or $aiArgs.StartsWith('"'))) { $aiArgs = $aiArgs.Substring(1) }
-                    while ($aiArgs.Length -gt 0 -and ($aiArgs.EndsWith("'") -or $aiArgs.EndsWith('"'))) { $aiArgs = $aiArgs.Substring(0, $aiArgs.Length - 1) }
-                }
-                if ($startContent -match 'AI_USE\s*=\s*(.+)') {
-                    $aiUse = $matches[1].Trim()
-                    # If the value is a literal shell parameter-expansion like ${AI_USE:-'True'},
-                    # extract the default value after ':-' (captures quoted defaults too).
-                    if ($aiUse -match '^\$\{[^:}]+:-([^}]+)\}$') {
-                        $aiUse = $Matches[1].Trim()
-                    }
-                    # Strip surrounding quotes if present
-                    while ($aiUse.Length -gt 0 -and ($aiUse.StartsWith("'") -or $aiUse.StartsWith('"'))) { $aiUse = $aiUse.Substring(1) }
-                    while ($aiUse.Length -gt 0 -and ($aiUse.EndsWith("'") -or $aiUse.EndsWith('"'))) { $aiUse = $aiUse.Substring(0, $aiUse.Length - 1) }
-                }
-                $aiUseLC = $aiUse.ToLower()
-                if ($aiUseLC -eq 'true' -or $aiUseLC -eq '1' -or $aiUseLC -eq 'yes') {
-                    Write-Log ("Auto-warmup enabled; model={0} args={1}" -f $aiModel, $aiArgs)
-                    $ready = $false
-                    for ($attempt = 0; $attempt -lt 30; $attempt++) {
-                        try {
-                            Invoke-WebRequest -Uri ("http://localhost:{0}/" -f $HostOllamaPort) -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop | Out-Null
-                            $ready = $true
-                            break
-                        } catch {
-                            Start-Sleep -Seconds 1
-                        }
-                    }
-                    if (-not $ready) {
-                        Write-Log ("Warmup skipped: Ollama at localhost:{0} not responding." -f $HostOllamaPort)
-                    } else {
-                        $payload = @{ model = $aiModel; prompt = 'startup warmup'; max_tokens = 1; stream = $false }
-                        if ($aiArgs -and $aiArgs.Trim()) { $payload['args'] = $aiArgs }
-                        $json = $payload | ConvertTo-Json -Depth 6
-                        try {
-                            # Start warmup as a non-blocking background job to avoid long waits
-                            $jobScript = {
-                                param($port, $jsonBody, $modelName)
-                                try {
-                                    Invoke-RestMethod -Uri ("http://localhost:{0}/api/generate" -f $port) -Method Post -Body $jsonBody -ContentType 'application/json' -TimeoutSec 3600 -ErrorAction Stop | Out-Null
-                                } catch {
-                                    # Best-effort; swallow errors in background job to avoid impacting caller.
-                                }
-                            }
-                            Start-Job -ScriptBlock $jobScript -ArgumentList $HostOllamaPort, $json, $aiModel | Out-Null
-                            Write-Log ("Warmup background job started for {0} (non-blocking)." -f $aiModel)
-                        } catch {
-                            Write-Log ("Failed to start warmup background job for {0}: {1}" -f $aiModel, $_)
-                        }
-                    }
-                } else {
-                    Write-Log ("Auto-warmup disabled by AI_USE={0}" -f $aiUse)
-                }
-            } catch {
-                Write-Log ("Failed to read start_services.sh for warmup config: {0}" -f $_)
-            }
-        } else {
-            Write-Log ("start_services.sh not found at {0}; skipping auto-warmup" -f $startScriptWinPath)
-        }
+        Write-Log "Auto-warmup removed: skipping model warmup at container start."
     }
 
     # -it: interactive + pseudo-TTY
@@ -583,30 +567,38 @@ if (-not $ollamaUrlEnv) {
     #        .continue  -> /host-continue:rw (for sync_continue make target)
     # -w:   set working directory inside container
     # --network lotr-net: shared network so dev container can reach mcp at http://lotr-mcp:3100/sse
-    wsl -d $DistroName -u root -- docker run `
-        --rm `
-        --interactive `
-        --tty `
-        --network lotr-net `
-        --add-host=host.docker.internal:host-gateway `
-        --env "OLLAMA_URL=$ollamaUrlEnv" `
-        --env "OLLAMA_ORIGINS=$ollamaOriginsEnv" `
-        --volume  "${wslRepoRoot}:/workspace" `
-        @modelVolumeFlags `
-        --volume  "${wslSshPath}:/root/.ssh:rw" `
-        --volume  "lotr-ssh-keys:/root/.ssh_keys" `
-        --volume  "${wslGitconfigPath}:/root/.gitconfig:ro" `
-        --volume  "${wslContinuePath}:/host-continue:rw" `
-        --workdir "/workspace/build" `
-        $Tag `
-        /bin/bash
+    if (-not $StartAiOnly) {
+        wsl -d $DistroName -u root -- docker run `
+            --rm `
+            --interactive `
+            --tty `
+            --network lotr-net `
+            --add-host=host.docker.internal:host-gateway `
+            --env "OLLAMA_URL=$ollamaUrlEnv" `
+            --env "OLLAMA_ORIGINS=$ollamaOriginsEnv" `
+            --volume  "${wslRepoRoot}:/workspace" `
+            @modelVolumeFlags `
+            --volume  "${wslSshPath}:/root/.ssh:rw" `
+            @(
+                if ($MountDockerSocket) { '--volume'; '/var/run/docker.sock:/var/run/docker.sock' }
+            ) `
+            --volume  "lotr-ssh-keys:/root/.ssh_keys" `
+            --volume  "${wslGitconfigPath}:/root/.gitconfig:ro" `
+            --volume  "${wslContinuePath}:/host-continue:rw" `
+            --workdir "/workspace/build" `
+            $Tag `
+            /bin/bash
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Log ("Container exited with code {0}." -f $LASTEXITCODE)
-        exit $LASTEXITCODE
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log ("Container exited with code {0}." -f $LASTEXITCODE)
+            exit $LASTEXITCODE
+        }
+
+        Write-Log "Container session ended."
     }
-
-    Write-Log "Container session ended."
+    else {
+        Write-Log "StartAiOnly set; skipping interactive dev container shell."
+    }
 }
 
 Write-Log "docker.ps1 done."

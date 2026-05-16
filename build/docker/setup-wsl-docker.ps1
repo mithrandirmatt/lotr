@@ -15,7 +15,9 @@ param(
     [string]$InstallPath = "C:\wsl\lotr-docker-service",
     [string]$DistroName = "lotr-docker-service",
     [string]$ManifestPath = "build\docker\artifacts\manifest.json",
-    [switch]$NoPause
+    [switch]$NoPause,
+    [switch]$InstallKernel,
+    [string]$KernelUrl = ""
 )
 
 Set-StrictMode -Version Latest
@@ -238,6 +240,92 @@ Write-Log "Docker appears available. Gathering verification info..."
 wsl -d $DistroName -u root -- docker version
 wsl -d $DistroName -u root -- docker info
 wsl -d $DistroName -u root -- cat /etc/wsl.conf
+
+# ---------------------------------------------------------------------------
+# WSL HSA / KFD verification + optional custom kernel installation
+# ---------------------------------------------------------------------------
+function Test-WSLHsa {
+    param([string]$Distro)
+    try {
+        $out = wsl -d $Distro -u root -- bash -lc "if [ -c /dev/kfd ]; then echo yes; elif [ -f /proc/config.gz ]; then zcat /proc/config.gz | grep -q CONFIG_HSA_AMD && echo yes || echo no; else echo no; fi" 2>$null
+        return $out.Trim() -eq 'yes'
+    } catch {
+        return $false
+    }
+}
+
+function Ensure-WSLHsa {
+    param(
+        [string]$Distro,
+        [switch]$InstallKernel,
+        [string]$KernelUrl
+    )
+
+    Write-Log "Checking WSL distro '$Distro' for HSA/KFD support..."
+    if (Test-WSLHsa -Distro $Distro) { Write-Log "HSA/KFD present in $Distro"; return $true }
+
+    Write-Log "HSA/KFD missing. Running 'wsl --update' and restarting WSL (best-effort) to pick up vendor kernel..."
+    try { wsl --update 2>$null } catch {}
+    try { wsl --shutdown 2>$null } catch {}
+    Start-Sleep -Seconds 3
+
+    if (Test-WSLHsa -Distro $Distro) { Write-Log "HSA/KFD available after wsl --update/shutdown"; return $true }
+
+    Write-Log "HSA/KFD still missing after update."
+    if (-not $InstallKernel) {
+        Write-Log "To auto-fix, re-run with -InstallKernel -KernelUrl <url-to-prebuilt-wsl-kernel>."
+        Write-Log "Or update the Windows AMD driver / vendor WSL kernel per vendor guidance."
+        return $false
+    }
+
+    if ([string]::IsNullOrEmpty($KernelUrl)) {
+        Write-Log "-InstallKernel was requested but no -KernelUrl provided; aborting kernel install."
+        return $false
+    }
+
+    $kernelDir = Join-Path $env:USERPROFILE '.wsl-kernels\lotr'
+    if (-not (Test-Path $kernelDir)) { New-Item -ItemType Directory -Path $kernelDir -Force | Out-Null }
+    $kernelWinPath = Join-Path $kernelDir 'kernel'
+
+    Write-Log ("Downloading custom WSL kernel from {0} to {1}" -f $KernelUrl, $kernelWinPath)
+    try {
+        Invoke-WebRequest -Uri $KernelUrl -OutFile $kernelWinPath -UseBasicParsing -ErrorAction Stop
+    } catch {
+        Write-Log ("Failed to download kernel: {0}" -f $_)
+        return $false
+    }
+
+    $wslConfigPath = Join-Path $env:USERPROFILE '.wslconfig'
+    if (Test-Path $wslConfigPath) {
+        Copy-Item $wslConfigPath ($wslConfigPath + ".bak." + ((Get-Date).ToString('yyyyMMddHHmmss'))) -Force
+        $content = Get-Content $wslConfigPath -Raw
+        if ($content -match '\[wsl2\]') {
+            if ($content -match 'kernel\s*=') {
+                $content = [Regex]::Replace($content, '(?m)^\s*kernel\s*=.*$', "kernel=$kernelWinPath")
+            } else {
+                $content = $content + "`nkernel=$kernelWinPath`n"
+            }
+        } else {
+            $content = $content + "`n[wsl2]`nkernel=$kernelWinPath`n"
+        }
+        Set-Content -Path $wslConfigPath -Value $content -Encoding ASCII
+    } else {
+        "[wsl2]`nkernel=$kernelWinPath`n" | Out-File -FilePath $wslConfigPath -Encoding ASCII
+    }
+
+    Write-Log "Updated .wslconfig to use custom kernel; shutting down WSL to apply changes."
+    try { wsl --shutdown 2>$null } catch {}
+    Start-Sleep -Seconds 3
+
+    if (Test-WSLHsa -Distro $Distro) { Write-Log "HSA/KFD now present after custom kernel install"; return $true }
+    Write-Log "HSA/KFD still not present after custom kernel install. Manual intervention required.";
+    return $false
+}
+
+# Run the WSL HSA check and optional install (idempotent)
+$hsaOk = Ensure-WSLHsa -Distro $DistroName -InstallKernel:$InstallKernel -KernelUrl $KernelUrl
+if (-not $hsaOk) { Write-Log "Warning: WSL HSA/KFD support not available; ROCm may not function."
+    Write-Log "If you want automatic kernel install, re-run with -InstallKernel -KernelUrl <url>" }
 
 # ---------------------------------------------------------------------------
 # ROCDXG (librocdxg) -- auto-install when AMD GPU + /dev/dxg detected

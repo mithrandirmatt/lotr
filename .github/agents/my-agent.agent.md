@@ -99,6 +99,7 @@ tools:
   - todo
 includes:
   - ../agent/base.prompts.md
+  - ../agent/local-wrapper/prompts.md
 ---
 You are a repository-aware worker agent. Follow all project guidelines and safety rules.
 
@@ -140,4 +141,5 @@ When asked to run, test, or export the Godot project, prefer the `make` targets 
   - This container will contain all neccessary tools to build and run the game.
 - Server Container: Located at server/.
   - This container will contain all neccessary tools to host the server for the game.
+-
 
