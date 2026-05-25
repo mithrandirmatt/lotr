@@ -483,8 +483,9 @@ if (-not $ollamaUrlEnv) {
             $librocdxgExists = wsl -d $DistroName -u root -- bash -c 'test -f /opt/rocm/lib/librocdxg.so   && echo yes || echo no' 2>$null
             if ($dxgExists -match 'yes' -and $libdxcoreExists -match 'yes' -and $librocdxgExists -match 'yes') {
                 Write-Log "ROCm mode (ROCDXG/WSL2): /dev/dxg + librocdxg.so found -- using DXG device path."
-                # Read WSL_INTEROP socket path from the WSL distro so libdxcore.so can communicate with Windows
-                $wslInterop = wsl -d $DistroName -u root -- bash -c 'echo $WSL_INTEROP' 2>$null
+                # Find the most stable WSL_INTEROP socket (lowest PID = init/long-lived process)
+                # Avoid using $WSL_INTEROP from an ephemeral bash session -- that socket dies when the wsl.exe exits
+                $wslInterop = wsl -d $DistroName -u root -- bash -c 'for s in /run/WSL/*_interop; do [ -S "$s" ] && echo "$s"; done | sort -t/ -k4 -n | head -1' 2>$null
                 $wslInterop = $wslInterop.Trim()
                 if (-not $wslInterop) { $wslInterop = '/run/WSL/1_interop' }
                 Write-Log "WSL_INTEROP=$wslInterop"
@@ -497,8 +498,9 @@ if (-not $ollamaUrlEnv) {
                     '--volume',        '/run/WSL:/run/WSL',
                     '--env',           'HSA_ENABLE_DXG_DETECTION=1',
                     '--env',           "WSL_INTEROP=$wslInterop",
-                    '--env',           'LD_LIBRARY_PATH=/opt/rocm/lib:/usr/lib/wsl/lib',
-                    '--env',           'LD_PRELOAD=/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so',
+                    '--env',           'OLLAMA_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama',
+                    '--env',           'LD_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama:/opt/rocm/lib:/usr/lib/wsl/lib',
+                    '--env',           'LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so',
                     '--cap-add',       'SYS_PTRACE',
                     '--cap-add',       'SYS_ADMIN',
                     '--security-opt',  'seccomp=unconfined',

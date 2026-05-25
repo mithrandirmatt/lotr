@@ -14,7 +14,7 @@
 #   godot_export -- export Linux/X11 release binary to build/do/godot/
 # =============================================================================
 
-.PHONY: godot_play godot_run godot_test godot_export
+.PHONY: godot_play godot_play_docker godot_run godot_test godot_export
 
 GODOT_PROJECT    := $(REPO_ROOT)/gotdot
 GODOT_BIN        ?= godot
@@ -24,11 +24,57 @@ GODOT_EXPORT_DIR := $(REPO_ROOT)/build/do/godot
 # godot_play: open a window.
 # Requires DISPLAY to be set -- automatically available when launched via
 # docker.ps1 run on a host with WSLg (Windows 11 / Win10 21H2+).
+#
+# Runs the FastAPI server directly inside the dev container (uvicorn in the
+# background) then launches Godot. Cleans up the server process on exit.
+#
+# Alternative (Docker-in-Docker): if you need the server running as its own
+# container, launch the dev shell with the Docker socket mounted:
+#   docker.ps1 run -MountDockerSocket
+# then run: make godot_play_docker
 # ---------------------------------------------------------------------------
+SERVER_PID_FILE := /tmp/lotr-server.pid
+SERVER_LOG      := /tmp/lotr-server.log
+
 godot_play:
-	$(call log_build,Running Godot project with display...)
-	$(GODOT_BIN) --rendering-driver opengl3 --path $(GODOT_PROJECT)
-	$(call log_ok,Godot exited.)
+	$(call log_build,Starting LOTR server on port 8000...)
+	@cd $(REPO_ROOT)/server && \
+	    python3 -m uvicorn server.server.app:app \
+	        --host 127.0.0.1 --port 8000 \
+	        --log-level warning \
+	        > $(SERVER_LOG) 2>&1 & \
+	    echo $$! > $(SERVER_PID_FILE)
+	@sleep 2
+	@SERVER_PID=$$(cat $(SERVER_PID_FILE)); \
+	if kill -0 $$SERVER_PID 2>/dev/null; then \
+	    $(call log_ok,Server running \(PID=$$SERVER_PID\).); \
+	else \
+	    $(call log_warn,Server failed to start. Check $(SERVER_LOG) for details.) && cat $(SERVER_LOG); \
+	fi
+	$(call log_build,Starting Godot project with display...)
+	@SERVER_PID=$$(cat $(SERVER_PID_FILE)); \
+	kill $$SERVER_PID 2>/dev/null || true
+	@rm -f $(SERVER_PID_FILE)
+
+# ---------------------------------------------------------------------------
+# godot_play_docker: like godot_play but starts the server as a Docker
+# container. Requires the dev container was launched with -MountDockerSocket:
+#   docker.ps1 run -MountDockerSocket
+# ---------------------------------------------------------------------------
+godot_play_docker:
+	$(call log_build,Starting lotr-server container on port 8000...)
+	@docker rm -f lotr-server 2>/dev/null || true
+	@docker run -d \
+	    --name lotr-server \
+	    --network lotr-net \
+	    -p 8000:8000 \
+	    lotr-server
+	@sleep 2
+	$(call log_build,Starting Godot project with display...)
+	$(GODOT_BIN) --rendering-driver opengl3 --path $(GODOT_PROJECT) || true
+	$(call log_ok,Godot exited. Stopping server container...)
+	@docker stop lotr-server 2>/dev/null || true
+	@docker rm lotr-server 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # godot_run: launch the project headless (smoke test / CI)

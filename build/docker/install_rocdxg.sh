@@ -151,6 +151,15 @@ if [ -z "${WIN_SDK:-}" ]; then
 fi
 log "Using Windows SDK: $WIN_SDK"
 
+# Verify ntstatus.h exists in the Windows SDK shared include
+if [ ! -f "${WIN_SDK}/shared/ntstatus.h" ]; then
+    log "ERROR: Expected Windows header 'ntstatus.h' not found under ${WIN_SDK}/shared"
+    log "  This header is provided by the Windows SDK. Ensure the host Windows SDK is installed"
+    log "  and mounted into WSL (e.g. /mnt/c/Program Files (x86)/Windows Kits/10/Include/<version>/shared/ntstatus.h)."
+    log "  Alternatively, set WIN_SDK to the correct path and retry."
+    exit 2
+fi
+
 # ---------------------------------------------------------------------------
 # Clone and build librocdxg
 # ---------------------------------------------------------------------------
@@ -168,7 +177,7 @@ log "Running cmake (WIN_SDK/shared = ${WIN_SDK}/shared) ..."
 mkdir -p "${BUILD_DIR}/build"
 cd "${BUILD_DIR}/build"
 
-cmake .. -DWIN_SDK="${WIN_SDK}/shared" 2>&1 | tee -a "$LOG" \
+cmake .. -DWIN_SDK="${WIN_SDK}/shared" -DCMAKE_INSTALL_PREFIX=/opt/rocm 2>&1 | tee -a "$LOG" \
     || { log "ERROR: cmake configuration failed."; exit 3; }
 
 NPROC=$(nproc 2>/dev/null || echo 4)

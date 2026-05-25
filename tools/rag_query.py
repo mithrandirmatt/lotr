@@ -55,7 +55,7 @@ def main():
     p.add_argument('--prompt', required=True)
     p.add_argument('--index', default='/workspace/build/docker/artifacts/index/chunks.json')
     p.add_argument('--top_k', type=int, default=5)
-    p.add_argument('--model', default=os.environ.get('AI_MODEL', 'codellama:13b-code-fp16'))
+    p.add_argument('--model', default=os.environ.get('AI_MODEL', 'qwen3.5-claude-4.6-opus:latest'))
     p.add_argument('--ollama', default=os.environ.get('OLLAMA_URL', 'http://localhost:11434'))
     args = p.parse_args()
 

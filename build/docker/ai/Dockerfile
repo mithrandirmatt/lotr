@@ -39,8 +39,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # (DXG-capable) takes precedence over the Ubuntu 1.11 package at runtime.
 RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
       mkdir -p /etc/apt/keyrings && \
-      curl -fsSL https://repo.radeon.com/rocm/rocm.gpg.key \
-          | gpg --dearmor -o /etc/apt/keyrings/rocm.gpg && \
+      for _url in \
+          "https://repo.radeon.com/rocm/rocm.gpg.key" \
+          "https://repo.amd.com/rocm/rocm.gpg.key" \
+          "https://repo.radeon.com/amdgpu/rocm.gpg.key"; do \
+        curl --retry 3 --retry-delay 5 -fsSL "$_url" \
+            | gpg --dearmor -o /etc/apt/keyrings/rocm.gpg 2>/dev/null \
+          && break || true; \
+      done && \
+      [ -s /etc/apt/keyrings/rocm.gpg ] || { echo "ERROR: failed to obtain ROCm GPG key"; exit 1; } && \
       printf 'deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/latest noble main\n' \
           > /etc/apt/sources.list.d/rocm.list && \
       apt-get update && \
@@ -76,6 +83,13 @@ RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
         "https://github.com/ollama/ollama/releases/download/${OLLAMA_VER}/ollama-linux-${ARCH}-rocm.tar.zst" && \
       zstd -d /tmp/ollama-rocm.tar.zst --stdout | tar -xf - -C /usr/local && \
       rm /tmp/ollama-rocm.tar.zst; \
+      # Replace Ollama's bundled HSA runtime (v1.18.70201, no DXG/WSL2 support) with the
+      # system DXG-aware version (v1.18.70203) so GPU init works without /dev/kfd.
+      # v1.18.70203 is installed above via hip-runtime-amd and has native DXG detection.
+      if [ -f /opt/rocm/lib/libhsa-runtime64.so.1.18.70203 ]; then \
+        cp /opt/rocm/lib/libhsa-runtime64.so.1.18.70203 /usr/local/lib/ollama/rocm/libhsa-runtime64.so.1.18.70201 && \
+        echo "HSA runtime: replaced bundled v1.18.70201 with DXG-aware system v1.18.70203"; \
+      fi; \
     else \
       curl -fsSL https://ollama.com/install.sh | sh; \
     fi
@@ -104,11 +118,13 @@ ENV WORKSPACE=/workspace \
     GPU_VARIANT=${GPU_VARIANT} \
     HSA_OVERRIDE_GFX_VERSION=11.0.0 \
     HSA_ENABLE_DXG_DETECTION=1 \
-    LD_LIBRARY_PATH=/opt/rocm/lib
+    OLLAMA_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama \
+    LD_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama:/opt/rocm/lib:/usr/lib/wsl/lib
 
 EXPOSE 3100 11434
 
 ENTRYPOINT ["/usr/local/bin/start_services.sh"]
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
-    CMD curl -sf http://localhost:11434/ && curl -sf http://localhost:3100/sse || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=150s --retries=5 \
+    CMD curl -sf http://localhost:11434/ && \
+        { curl -s --max-time 5 http://localhost:3100/sse >/dev/null 2>&1; rc=$?; [ $rc -eq 0 ] || [ $rc -eq 28 ]; }

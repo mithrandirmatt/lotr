@@ -11,8 +11,8 @@ set -uo pipefail
 # -----------------------------
 # Enable automatic model warmup/run at startup ('true' or 'false')
 AI_USE=${AI_USE:-'True'}
-# Model to warm/load (e.g. 'llama3.1:8b' or 'codellama:13b-code-fp16')
-AI_MODEL=${AI_MODEL:-'codellama:13b-code-fp16'}
+# Model to warm/load (e.g. 'llama3.1:8b' or 'qwen3.5-claude-4.6-opus:latest')
+AI_MODEL=${AI_MODEL:-'sorc/qwen3.5-claude-4.6-opus:latest'}
 # Arbitrary args string to show in logs and include in warmup payload (value is informational)
 AI_ARGS=${AI_ARGS:-'trust_remote_code=True'}
 # Host-facing port you may publish Ollama to (for informational logs)
@@ -63,8 +63,59 @@ if [ -x "$OLLAMA_BIN" ]; then
     echo "[start_services] OLLAMA_MODELS=$OLLAMA_MODELS"
     echo "[start_services] Starting Ollama (OLLAMA_HOST=$OLLAMA_HOST)..."
     if [ "${GPU_VARIANT:-}" = "rocm" ] && [ -f "/opt/rocm/lib/librocdxg.so" ]; then
+        # Ensure WSL_INTEROP points to a live socket so libdxcore.so can reach the Windows GPU driver.
+        # The value passed via --env may be stale (tied to the docker.ps1 wsl.exe session).
+        if [ -z "${WSL_INTEROP:-}" ] || [ ! -S "${WSL_INTEROP}" ]; then
+            for _s in /run/WSL/*_interop; do
+                [ -S "$_s" ] && { export WSL_INTEROP="$_s"; break; }
+            done
+        fi
+        echo "[start_services] WSL_INTEROP=${WSL_INTEROP:-<not set>}"
+        # Pre-warm: force the DXG D3D12 compute context open before Ollama starts.
+        # The first hipInit() call through DXG can block WSLService for 30-120 s (cold-start
+        # shader compilation in the Windows GPU driver).  If that happens inside Ollama's own
+        # 30-second discovery timeout the runner falls back to CPU.  By doing it here first,
+        # with up to 120 s of patience, the driver context is warm when Ollama asks for it.
+        HIP_LIB="/usr/local/lib/ollama/rocm/libamdhip64.so.7"
+        if [ -f "$HIP_LIB" ] && command -v python3 >/dev/null 2>&1; then
+            echo "[start_services] GPU pre-warm: triggering DXG compute context (up to 120 s)..."
+            LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so \
+            HSA_ENABLE_DXG_DETECTION=1 HSA_OVERRIDE_GFX_VERSION=11.0.0 \
+            timeout 120 python3 - <<'PYEOF'
+import ctypes, sys, os
+try:
+    hip = ctypes.CDLL('/usr/local/lib/ollama/rocm/libamdhip64.so.7')
+    hip.hipInit.restype = ctypes.c_int
+    r = hip.hipInit(0)
+    if r != 0: sys.exit(f'hipInit failed: {r}')
+    hip.hipSetDevice.restype = ctypes.c_int
+    r = hip.hipSetDevice(0)
+    if r != 0: sys.exit(f'hipSetDevice failed: {r}')
+    hip.hipStreamCreate.restype = ctypes.c_int
+    hip.hipStreamCreate.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+    s = ctypes.c_void_p()
+    r = hip.hipStreamCreate(ctypes.byref(s))
+    if r != 0: sys.exit(f'hipStreamCreate failed: {r}')
+    hip.hipStreamDestroy.restype = ctypes.c_int
+    hip.hipStreamDestroy(s)
+    print('GPU pre-warm OK: DXG compute context established')
+except Exception as e:
+    print(f'GPU pre-warm error: {e}', file=sys.stderr)
+    sys.exit(1)
+PYEOF
+            _pw_rc=$?
+            if [ $_pw_rc -eq 0 ]; then
+                echo "[start_services] GPU pre-warm succeeded -- DXG context is warm."
+            elif [ $_pw_rc -eq 124 ]; then
+                echo "[start_services] GPU pre-warm timed out after 120 s -- DXG compute may be unavailable; Ollama will try anyway."
+            else
+                echo "[start_services] GPU pre-warm failed (rc=$_pw_rc) -- Ollama will attempt GPU init and may fall back to CPU."
+            fi
+        else
+            echo "[start_services] Skipping GPU pre-warm (HIP lib or python3 not found)."
+        fi
         echo "[start_services] Preloading librocdxg + DXCore/D3D12 for ROCDXG/WSL GPU support"
-        LD_PRELOAD=/opt/rocm/lib/librocdxg.so:/opt/rocm/lib/libdxcore.so:/opt/rocm/lib/libd3d12.so:/opt/rocm/lib/libd3d12core.so HSA_ENABLE_DXG_DETECTION=1 "$OLLAMA_BIN" serve >"$OLLAMA_LOG" 2>&1 &
+        LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so HSA_ENABLE_DXG_DETECTION=1 "$OLLAMA_BIN" serve >"$OLLAMA_LOG" 2>&1 &
     else
         "$OLLAMA_BIN" serve >"$OLLAMA_LOG" 2>&1 &
     fi

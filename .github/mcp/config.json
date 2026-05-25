@@ -1,0 +1,141 @@
+# MCP Configuration
+
+## Server Configuration
+
+### GitKraken MCP
+```json
+{
+  "name": "gitkraken",
+  "type": "gitkraken",
+  "enabled": true,
+  "defaultProvider": "github",
+  "repositories": [
+    {
+      "name": "lotr-tcg",
+      "provider": "github",
+      "organization": "your-organization"
+    }
+  ]
+}
+```
+
+### SQL Database MCP
+```json
+{
+  "name": "postgresql",
+  "type": "sql",
+  "enabled": true,
+  "connection": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "lotr_tcg",
+    "user": "postgres",
+    "password": "postgres"
+  },
+  "permissions": ["read-only"]
+}
+```
+
+### Python MCP
+```json
+{
+  "name": "python",
+  "type": "python",
+  "enabled": true,
+  "environment": {
+    "type": "venv",
+    "path": ".venv",
+    "python": "python3.11"
+  },
+  "autoInstall": true
+}
+```
+
+## Tool Integration
+
+### Automatic Tool Selection
+The system automatically selects the appropriate MCP tool based on context:
+
+| Context | Selected Tool |
+|---------|---------------|
+| Database query needed | `mcp_sql_*` |
+| Python dependency issue | `mcp_python_*` |
+| Large file operations | `mcp_filesystem_*` |
+| Issue/PR management | `mcp_gitkraken_*` |
+
+### Manual Tool Activation
+When automatic selection doesn't apply, manually activate:
+
+```bash
+# Database queries
+activate_sql_database_tools
+
+# Python environment management
+activate_python_environment_management_tools
+
+# File operations
+activate_workspace_file_management_tools
+
+# Git operations
+activate_git_version_control_tools
+```
+
+## Memory Integration
+
+### Memory File Locations
+```
+lotr/memories/
+├── repo/          # Repository-specific knowledge
+│   ├── game-mechanics.md
+│   ├── architecture-decisions.md
+│   ├── debugging-patterns.md
+│   └── mcp-tools.md
+├── session/       # Current session state
+│   └── (auto-generated)
+└── user/          # User preferences
+    └── (auto-generated)
+```
+
+### Memory Usage Guidelines
+- **Repository memory**: Codebase conventions, verified practices
+- **Session memory**: Current task progress, pending items
+- **User memory**: Preferences, coding style
+
+## Verification
+
+### Check MCP Status
+```bash
+# List available MCP servers
+mcp list
+
+# Test connection
+mcp test gitkraken
+mcp test postgresql
+mcp test python
+```
+
+### Verify Memory Access
+```bash
+# List repository memory files
+ls lotr/memories/repo/
+
+# Check memory tools are available
+mcp memory list
+```
+
+## Troubleshooting
+
+### MCP Not Responding
+1. Check server is running: `mcp status`
+2. Verify connection: `mcp test <server>`
+3. Restart VS Code if needed
+
+### Memory Not Persisting
+1. Verify directory exists: `ls lotr/memories/`
+2. Check file permissions
+3. Ensure MCP has write access
+
+### Tool Not Available
+1. Check tool is enabled in configuration
+2. Verify server is connected
+3. Restart MCP server

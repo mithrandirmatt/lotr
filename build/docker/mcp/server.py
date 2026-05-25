@@ -523,7 +523,7 @@ def redis_del(key: str) -> str:
 def ollama_generate(prompt: str, model: str = "", system: str = "") -> str:
     """
     Send a prompt to a local Ollama instance and return the response text.
-    model: Ollama model name (defaults to OLLAMA_MODEL env var or 'qwen3-coder:30b').
+    model: Ollama model name (defaults to OLLAMA_MODEL env var or 'qwen3.5-claude-4.6-opus:latest').
     system: optional system message prepended to the conversation.
     """
     import httpx  # lazy import

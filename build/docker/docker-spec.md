@@ -114,6 +114,7 @@ Scripts (all in `build/docker/`):
 ```
 PowerShell -ExecutionPolicy Bypass -File build/docker/ensure-lotr-distro.ps1                    # download/import Ubuntu 24.04, write wsl.conf, record manifest
 PowerShell -ExecutionPolicy Bypass -File build/docker/setup-wsl-docker.ps1                      # orchestrator: WSL features + ensure-lotr-distro + Docker install + verify
+PowerShell -ExecutionPolicy Bypass -File build/docker/setup-wsl-rocm.ps1 -NoPause              # install ROCm + ROCDXG inside lotr-docker-service (non-interactive)
 PowerShell -ExecutionPolicy Bypass -File build/docker/start-wsl-docker.ps1                      # start Docker inside lotr-docker-service
 PowerShell -ExecutionPolicy Bypass -File build/docker/stop-wsl-docker.ps1                       # stop Docker inside lotr-docker-service
 PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build                          # build the lotr-dev image from build/docker/Dockerfile

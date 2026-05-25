@@ -52,3 +52,60 @@ server_test:
 
 server_all: server_build_wheel server_docker_build
 
+# ============================================================
+# lotr-server -- server container management
+#
+# This section adds targets for managing the server Docker container.
+# The server container is automatically started by the godot_play target.
+# ============================================================
+
+.PHONY: server_container_start server_container_stop server_container_status
+
+SERVER_CONTAINER := lotr-server
+SERVER_IMAGE := lotr-server
+SERVER_PORT := 8000
+
+# ---------------------------------------------------------------------------
+# server_container_start: build and start the server container
+# ---------------------------------------------------------------------------
+server_container_start:
+	$(call log_build,Building server container...)
+	@docker build -t $(SERVER_IMAGE) build/docker/
+	$(call log_build,Starting server container...)
+	@docker run -d \
+	    --name $(SERVER_CONTAINER) \
+	    --restart unless-stopped \
+	    -p $(SERVER_PORT):$(SERVER_PORT) \
+	    $(SERVER_IMAGE)
+	$(call log_ok,Server container started successfully.)
+	$(call log_ok,Server is running at http://localhost:$(SERVER_PORT))
+
+# ---------------------------------------------------------------------------
+# server_container_stop: stop and remove the server container
+# ---------------------------------------------------------------------------
+server_container_stop:
+	$(call log_build,Stopping server container...)
+	@docker stop $(SERVER_CONTAINER) 2>/dev/null || true
+	@docker rm $(SERVER_CONTAINER) 2>/dev/null || true
+	$(call log_ok,Server container stopped and removed.)
+
+# ---------------------------------------------------------------------------
+# server_container_status: check if server is running
+# ---------------------------------------------------------------------------
+server_container_status:
+	@docker ps -a --filter "name=$(SERVER_CONTAINER)" --format "{{.Status}}"
+	@if docker ps -q --filter "name=$(SERVER_CONTAINER)" | grep -q .; then \
+		$(call log_ok,Server is running.); \
+		$(call log_build,Health check:); \
+		curl -s http://localhost:$(SERVER_PORT)/health 2>/dev/null || $(call log_warn,Health check failed (server may not be ready yet)); \
+	else \
+		$(call log_warn,Server is not running.); \
+	fi
+
+# ---------------------------------------------------------------------------
+# server_container_logs: view server logs
+# ---------------------------------------------------------------------------
+server_container_logs:
+	$(call log_build,Server logs:)
+	@docker logs --tail 100 $(SERVER_CONTAINER)
+

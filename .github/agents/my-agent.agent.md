@@ -1,6 +1,10 @@
 ---
 name: my-agent
-description: "Worker agent (overview). Keeps includes to shared logic and permissions."
+display_name: LotR Game Development Agent
+description: "Full-stack agent for LotR TCG game development - Godot, FastAPI, Python"
+includes:
+  - ../agent/local-wrapper/prompts.md
+  - ../agent/agent-rules.md
 
 tools:
   - vscode/getProjectSetupInfo

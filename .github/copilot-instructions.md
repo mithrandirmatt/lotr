@@ -31,3 +31,13 @@
 
 - When working with agents: source profiles are in `.github/agents/*.agent.md`; run `make agent_update` (from `build/`) to regenerate `.github/agents/generated/`.
 - Do not edit files in `.github/agents/generated/` directly — they are generated outputs.
+
+## Issue Tracking
+
+- The project uses **local markdown files** as the primary issue tracking mechanism, not GitHub Issues or GitKraken MCP.
+- **Canonical issue files**:
+  - `assets/reference/agent/issues-current.md` — Active issues being worked on and queued issues
+  - `assets/reference/agent/issues-completed.md` — Completed issues archive
+  - `assets/reference/agent/issues-tracker.md` — Additional issue tracking data
+- When asked to track, log, or reference issues, always use these files as the source of truth.
+- The GitKraken MCP issue tools are secondary and should only be used when explicitly requested for external integration.
