@@ -1,0 +1,8 @@
+FROM sorc/qwen3.5-claude-4.6-opus:latest
+
+# Disable Qwen3 thinking mode: the <think> block alone can exceed Copilot's
+# response byte limit before any answer is produced.
+SYSTEM /no_think
+
+# Cap output tokens so responses stay within the VS Code Copilot extension's limit.
+PARAMETER num_predict 512

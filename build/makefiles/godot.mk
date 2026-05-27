@@ -39,19 +39,26 @@ SERVER_LOG      := /tmp/lotr-server.log
 godot_play:
 	$(call log_build,Starting LOTR server on port 8000...)
 	@cd $(REPO_ROOT)/server && \
-	    python3 -m uvicorn server.server.app:app \
+	    echo "[BUILD] Starting server..." && \
+	    python3 -m uvicorn server.app:app \
 	        --host 127.0.0.1 --port 8000 \
-	        --log-level warning \
+	        --log-level debug \
 	        > $(SERVER_LOG) 2>&1 & \
 	    echo $$! > $(SERVER_PID_FILE)
 	@sleep 2
 	@SERVER_PID=$$(cat $(SERVER_PID_FILE)); \
 	if kill -0 $$SERVER_PID 2>/dev/null; then \
-	    $(call log_ok,Server running \(PID=$$SERVER_PID\).); \
+	    echo "[OK] Server running (PID=$$SERVER_PID)."; \
 	else \
-	    $(call log_warn,Server failed to start. Check $(SERVER_LOG) for details.) && cat $(SERVER_LOG); \
+	    echo "[WARNING] Server failed to start. Check logs:"; \
+	    echo "  - /tmp/pip-install.log"; \
+	    echo "  - /tmp/server-import.log"; \
+	    echo "  - $(SERVER_LOG)"; \
+	    if [ -f $(SERVER_LOG) ]; then cat $(SERVER_LOG); fi; \
 	fi
 	$(call log_build,Starting Godot project with display...)
+	$(GODOT_BIN) --rendering-driver opengl3 --path $(GODOT_PROJECT) || true
+	$(call log_ok,Godot exited. Stopping server...)
 	@SERVER_PID=$$(cat $(SERVER_PID_FILE)); \
 	kill $$SERVER_PID 2>/dev/null || true
 	@rm -f $(SERVER_PID_FILE)

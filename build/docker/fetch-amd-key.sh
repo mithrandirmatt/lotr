@@ -5,6 +5,14 @@ KEY=FA296B056C5BB456
 KEYRING=/etc/apt/keyrings/amdrocm.gpg
 mkdir -p /etc/apt/keyrings
 
+# Idempotency guard: if the keyring file already exists and is non-empty,
+# skip all network operations. This prevents keyserver calls from being
+# triggered mid-session by agent tools and breaking work in progress.
+if [ -s "$KEYRING" ]; then
+    echo "=== fetch-amd-key.sh: $KEYRING already present -- skipping (idempotent) ==="
+    exit 0
+fi
+
 echo "=== fetch-amd-key.sh: attempting to obtain key $KEY ==="
 
 apt-get update -y || true

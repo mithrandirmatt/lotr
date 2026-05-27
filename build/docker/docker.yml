@@ -24,6 +24,9 @@ services:
 			- ../..:/workspace
 		environment:
 			- WORKSPACE=/workspace
+			# Set to 'true' to start the Ollama daemon inside the container.
+			# Disabled by default so the host-side Ollama is used instead.
+			- START_OLLAMA=false
 			# Set POSTGRES_URL to enable postgres tools, e.g.:
 			# POSTGRES_URL=postgresql://user:pass@db:5432/lotr
 		restart: unless-stopped

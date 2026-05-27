@@ -44,7 +44,8 @@
 
 param(
     [string]$Url = "http://localhost:11435/api/generate",
-    [string]$Model = "llama3.1:8b",
+    # [string]$Model = "llama3.1:8b",
+    [string]$Model = "sorc/qwen3.5-claude-4.6-opus:latest",
     [string]$Prompt = "latency test: reply pong",
     [int]$Iterations = 3,
     [int]$IntervalMs = 1000,

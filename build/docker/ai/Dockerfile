@@ -70,7 +70,10 @@ RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
         aarch64) ARCH=arm64 ;; \
         *)        ARCH=$(uname -m) ;; \
       esac; \
-      OLLAMA_VER=v0.23.4; \
+      OLLAMA_STABLE=$(curl -fsSL "https://api.github.com/repos/ollama/ollama/releases/latest" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/'); \
+      OLLAMA_PREREL=$(curl -fsSL "https://api.github.com/repos/ollama/ollama/releases?per_page=1" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/'); \
+      OLLAMA_VER=$(printf '%s\n%s\n' "$OLLAMA_STABLE" "$OLLAMA_PREREL" | sort -V | tail -1); \
+      echo "Ollama stable=${OLLAMA_STABLE} prerelease=${OLLAMA_PREREL} selected=${OLLAMA_VER}"; \
       # Base package: contains the ollama binary + CPU/CUDA runners
       curl --fail --show-error --location --retry 3 \
         -o /tmp/ollama-base.tar.zst \
@@ -83,12 +86,13 @@ RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
         "https://github.com/ollama/ollama/releases/download/${OLLAMA_VER}/ollama-linux-${ARCH}-rocm.tar.zst" && \
       zstd -d /tmp/ollama-rocm.tar.zst --stdout | tar -xf - -C /usr/local && \
       rm /tmp/ollama-rocm.tar.zst; \
-      # Replace Ollama's bundled HSA runtime (v1.18.70201, no DXG/WSL2 support) with the
-      # system DXG-aware version (v1.18.70203) so GPU init works without /dev/kfd.
-      # v1.18.70203 is installed above via hip-runtime-amd and has native DXG detection.
-      if [ -f /opt/rocm/lib/libhsa-runtime64.so.1.18.70203 ]; then \
-        cp /opt/rocm/lib/libhsa-runtime64.so.1.18.70203 /usr/local/lib/ollama/rocm/libhsa-runtime64.so.1.18.70201 && \
-        echo "HSA runtime: replaced bundled v1.18.70201 with DXG-aware system v1.18.70203"; \
+      # Replace Ollama's bundled HSA runtime with the DXG-aware system version so
+      # GPU init works without /dev/kfd in WSL2. Find whatever version is bundled
+      # and overwrite it with the system v1.18.70203 from hip-runtime-amd.
+      BUNDLED=$(ls /usr/local/lib/ollama/rocm/libhsa-runtime64.so.1.18.* 2>/dev/null | head -1); \
+      if [ -n "$$BUNDLED" ] && [ -f /opt/rocm/lib/libhsa-runtime64.so.1.18.70203 ]; then \
+        cp /opt/rocm/lib/libhsa-runtime64.so.1.18.70203 "$$BUNDLED" && \
+        echo "HSA runtime: replaced $(basename $$BUNDLED) with DXG-aware system v1.18.70203"; \
       fi; \
     else \
       curl -fsSL https://ollama.com/install.sh | sh; \
@@ -118,6 +122,9 @@ ENV WORKSPACE=/workspace \
     GPU_VARIANT=${GPU_VARIANT} \
     HSA_OVERRIDE_GFX_VERSION=11.0.0 \
     HSA_ENABLE_DXG_DETECTION=1 \
+    ROCR_VISIBLE_DEVICES=0 \
+    OLLAMA_KEEP_ALIVE=-1 \
+    OLLAMA_FLASH_ATTENTION=1 \
     OLLAMA_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama \
     LD_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama:/opt/rocm/lib:/usr/lib/wsl/lib
 

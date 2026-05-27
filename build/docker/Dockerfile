@@ -201,7 +201,8 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     tqdm \
     pathspec \
     tiktoken \
-    Pillow
+    Pillow \
+    uvicorn
 
 # Code quality
 RUN python3 -m pip install --break-system-packages --ignore-installed \
@@ -209,6 +210,12 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     isort \
     flake8 \
     mypy
+
+# Install the LOTR server package (required for godot_play target).
+# Use a non-editable install so the package code is baked into site-packages,
+# not a .pth pointer to a source path that won't exist at runtime.
+COPY server/ /opt/server-src/
+RUN python3 -m pip install --break-system-packages --ignore-installed /opt/server-src
 
 # ------------------------------------------------------------
 # Shell -- enable bash-completion (including make target completion)

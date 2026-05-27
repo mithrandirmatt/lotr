@@ -223,6 +223,7 @@ ldconfig || true
 
 # Prefer running the persistent installer script from the repository to avoid transfer issues
 $repoScript = Join-Path $ScriptDir 'install-rocm-wsl.sh'
+$tmpFile = $null   # may be set in the fallback branch below; initialized here to avoid undefined-variable errors
 if (-not (Test-Path $repoScript)) {
     Log "Repository installer $repoScript not found; falling back to temporary transfer"
     # fallback behavior: write temp file as before

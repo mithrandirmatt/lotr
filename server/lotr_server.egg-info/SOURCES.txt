@@ -8,6 +8,8 @@ lotr_server.egg-info/top_level.txt
 server/__init__.py
 server/app.py
 server/cli.py
+server/core/config.py
+server/core/security.py
 server/engine/__init__.py
 server/engine/commit_reveal.py
 server/engine/core.py
@@ -17,4 +19,7 @@ server/engine/proofs.py
 server/engine/resolver.py
 server/engine/schema.py
 server/engine/validator.py
+server/models/models.py
+server/models/schemas.py
+server/routes/api.py
 tests/test_smoke.py

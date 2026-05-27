@@ -19,6 +19,7 @@ Usage:
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build -GpuVariant rocm
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -GpuVariant rocm
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableAi
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build -Tag my-image:v2 -McpTag my-mcp:v2
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -Tag my-image:v2 -McpTag my-mcp:v2
 #>
@@ -41,6 +42,9 @@ param(
     [switch]$NoPause,
     [switch]$MountDockerSocket,
     [switch]$StartAiOnly,
+    # Pass -EnableAi to start the AI/Ollama container and related host Ollama management.
+    # By default AI is disabled; use this flag when you want the container-side Ollama.
+    [switch]$EnableAi,
 
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ExtraArgs = @()
@@ -284,23 +288,14 @@ $dockerfileWslPath = "$wslRepoRoot/build/docker/Dockerfile"
 Write-Log ("Repo root (WSL):  {0}" -f $wslRepoRoot)
 Write-Log ("Dockerfile (WSL): {0}" -f $dockerfileWslPath)
 
-# Resolve host Ollama models directory (Windows path) -> WSL path for mounts
-$hostModelsWinPath = if ($HostOllamaModels -and $HostOllamaModels.Trim()) { $HostOllamaModels } else { Join-Path $env:USERPROFILE ".ollama\models" }
-Write-Log ("Host Ollama models (Windows): {0}" -f $hostModelsWinPath)
-try {
-    if (Test-Path -Path $hostModelsWinPath) {
-        $modelsDrive = $hostModelsWinPath.Substring(0,1).ToLower()
-        $modelsRelPath = $hostModelsWinPath.Substring(2) -replace '\\','/'
-        $wslModelsPath = ("/mnt/{0}{1}" -f $modelsDrive, $modelsRelPath)
-        Write-Log ("Host Ollama models (WSL): {0}" -f $wslModelsPath)
-    } else {
-        $wslModelsPath = $null
-        Write-Log ("Host Ollama models folder not found on Windows: {0}" -f $hostModelsWinPath)
-    }
-} catch {
-    $wslModelsPath = $null
-    Write-Log ("Error resolving host Ollama models path: {0}" -f $_)
-}
+# AI-related variables -- populated inside the SkipAi block below; initialised
+# here so the dev-container docker run command can reference them unconditionally.
+$ollamaUrlEnv     = ''
+$ollamaOriginsEnv = if ($env:OLLAMA_ORIGINS) { $env:OLLAMA_ORIGINS } else { '*' }
+$wslModelsPath    = $null
+$modelVolumeFlags = @()
+$modelEnvFlags    = @()
+$gpuDeviceFlags   = @()
 
 # ---------------------------------------------------------------------------
 # build
@@ -392,38 +387,6 @@ $wslContinuePath = ("/mnt/{0}{1}" -f $continueDrive, $continueRelPath)
 
 Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
 
-# ------------------------------------------------------------
-# Expose host Ollama to containers by default (auto-detect)
-# - Prefer an 'ollama' container on the `lotr-net` network if present
-# - Otherwise try host.docker.internal:<host port> (defaults to 11435)
-# - Can be overridden by setting OLLAMA_URL or OLLAMA_ORIGINS in the environment
-# ------------------------------------------------------------
-$ollamaUrlEnv = $env:OLLAMA_URL
-$ollamaOriginsEnv = $env:OLLAMA_ORIGINS
-if (-not $ollamaOriginsEnv) { $ollamaOriginsEnv = '*' }
-
-if (-not $ollamaUrlEnv) {
-    Write-Log "Auto-detecting Ollama endpoint..."
-    # Check for an 'ollama' container running in the distro
-    $ollamaContainer = wsl -d $DistroName -u root -- docker ps --filter "name=ollama" --filter "status=running" -q 2>$null
-    if ($ollamaContainer) {
-        $ollamaUrlEnv = 'http://ollama:11434'
-        Write-Log ("Detected running 'ollama' container; using {0}" -f $ollamaUrlEnv)
-    }
-    else {
-        Write-Log ("Checking host.docker.internal:{0} from distro {1}..." -f $HostOllamaPort, $DistroName)
-        $curlTest = wsl -d $DistroName -u root -- bash -lc "curl -sS -m 2 http://host.docker.internal:$HostOllamaPort/ || echo __CURL_ERROR__" 2>$null
-        if ($curlTest -and $curlTest -ne "__CURL_ERROR__") {
-            $ollamaUrlEnv = "http://host.docker.internal:$HostOllamaPort"
-            Write-Log ("host.docker.internal reachable; using {0}" -f $ollamaUrlEnv)
-        }
-        else {
-            $ollamaUrlEnv = "http://host.docker.internal:$HostOllamaPort"
-            Write-Log ("Could not detect Ollama; defaulting to {0}" -f $ollamaUrlEnv)
-        }
-    }
-}
-
     # Ensure Docker is still responsive before performing network/container ops
     if (-not (Test-DockerResponsive -Distro $DistroName)) {
         Write-Log "Docker not responsive when preparing network; attempting to restart..."
@@ -447,29 +410,68 @@ if (-not $ollamaUrlEnv) {
         wsl -d $DistroName -u root -- docker network create lotr-net | Out-Null
     }
 
-    # Stop host Ollama if present (to avoid conflicts when bundling Ollama)
+    # ------------------------------------------------------------------
+    # AI / Ollama setup -- only runs when -EnableAi is specified.
+    # ------------------------------------------------------------------
+    if (-not $EnableAi) {
+        Write-Log "AI disabled (pass -EnableAi to start the AI/Ollama container)."
+    } else {
+
+    # Resolve Ollama endpoint (env override wins; otherwise auto-detect)
+    if ($env:OLLAMA_URL) {
+        $ollamaUrlEnv = $env:OLLAMA_URL
+    } else {
+        Write-Log "Auto-detecting Ollama endpoint..."
+        $ollamaContainer = wsl -d $DistroName -u root -- docker ps --filter "name=ollama" --filter "status=running" -q 2>$null
+        if ($ollamaContainer) {
+            $ollamaUrlEnv = 'http://ollama:11434'
+            Write-Log ("Detected running 'ollama' container; using {0}" -f $ollamaUrlEnv)
+        } else {
+            Write-Log ("Checking host.docker.internal:{0} from distro {1}..." -f $HostOllamaPort, $DistroName)
+            $curlTest = wsl -d $DistroName -u root -- bash -lc "curl -sS -m 2 http://host.docker.internal:$HostOllamaPort/ || echo __CURL_ERROR__" 2>$null
+            if ($curlTest -and $curlTest -ne '__CURL_ERROR__') {
+                $ollamaUrlEnv = "http://host.docker.internal:$HostOllamaPort"
+                Write-Log ("host.docker.internal reachable; using {0}" -f $ollamaUrlEnv)
+            } else {
+                $ollamaUrlEnv = "http://host.docker.internal:$HostOllamaPort"
+                Write-Log ("Could not detect Ollama; defaulting to {0}" -f $ollamaUrlEnv)
+            }
+        }
+    }
+
+    # Resolve host Ollama models directory (Windows path -> WSL path)
+    $hostModelsWinPath = if ($HostOllamaModels -and $HostOllamaModels.Trim()) { $HostOllamaModels } else { Join-Path $env:USERPROFILE ".ollama\models" }
+    Write-Log ("Host Ollama models (Windows): {0}" -f $hostModelsWinPath)
+    try {
+        if (Test-Path -Path $hostModelsWinPath) {
+            $modelsDrive   = $hostModelsWinPath.Substring(0,1).ToLower()
+            $modelsRelPath = $hostModelsWinPath.Substring(2) -replace '\\','/'
+            $wslModelsPath = ("/mnt/{0}{1}" -f $modelsDrive, $modelsRelPath)
+            Write-Log ("Host Ollama models (WSL): {0}" -f $wslModelsPath)
+        } else {
+            Write-Log ("Host Ollama models folder not found on Windows: {0}" -f $hostModelsWinPath)
+        }
+    } catch {
+        Write-Log ("Error resolving host Ollama models path: {0}" -f $_)
+    }
+
+    # Stop host Ollama if present (to avoid port conflicts with the AI container)
     Stop-HostOllamaIfPresent
 
-    # Ensure no other container is publishing the AI port (3100) or the configured Ollama host port
+    # Ensure no other container is already publishing the AI port (3100) or Ollama port
     Remove-Containers-PublishingPort -Distro $DistroName -Port 3100
     Remove-Containers-PublishingPort -Distro $DistroName -Port $HostOllamaPort
 
-    # (Re)start AI container — always stop any existing instance so the
-    # container picks up the latest image and environment on every `run`.
+    # (Re)start AI container
     $mcpRunning = wsl -d $DistroName -u root -- docker ps --filter "name=lotr-ai" --filter "status=running" -q 2>$null
     if ($mcpRunning) {
         Write-Log "Stopping existing AI container..."
         wsl -d $DistroName -u root -- docker rm -f lotr-ai 2>$null | Out-Null
     } else {
-        # Remove any stopped lotr-ai container that may be holding the name
         wsl -d $DistroName -u root -- docker rm -f lotr-ai 2>$null | Out-Null
     }
-    # ROCm GPU device flags: two possible paths:
-    #   1. Native Linux (or WSL2 with /dev/kfd exposed): map /dev/kfd + /dev/dri
-    #   2. WSL2 ROCDXG path: bind /dev/dxg + librocdxg.so + libdxcore.so (requires
-    #      librocdxg installed via install_rocdxg.sh / setup-wsl-docker.ps1)
-    # If neither path is available, start without device flags (Ollama uses CPU).
-    $gpuDeviceFlags = @()
+
+    # ROCm GPU device flags
     if ($GpuVariant -eq 'rocm') {
         $kfdExists = wsl -d $DistroName -u root -- bash -c 'test -e /dev/kfd && echo yes || echo no' 2>$null
         $driExists = wsl -d $DistroName -u root -- bash -c 'test -d /dev/dri && echo yes || echo no' 2>$null
@@ -527,8 +529,8 @@ if (-not $ollamaUrlEnv) {
         try {
             $visible = wsl -d $DistroName -u root -- bash -lc "test -d '$wslModelsPath' && echo yes || echo no" 2>$null
             if ($visible -and $visible -match 'yes') {
-                Write-Log ("Mounting host Ollama models from {0} into container (read-only)" -f $wslModelsPath)
-                $modelVolumeFlags += '--volume'; $modelVolumeFlags += ("{0}:/root/.ollama/models:ro" -f $wslModelsPath)
+                Write-Log ("Mounting host Ollama models from {0} into container (read-write)" -f $wslModelsPath)
+                $modelVolumeFlags += '--volume'; $modelVolumeFlags += ("{0}:/root/.ollama/models:rw" -f $wslModelsPath)
                 # Tell Ollama to read models from the mounted path (overrides start_services.sh default)
                 $modelEnvFlags += '--env'; $modelEnvFlags += 'OLLAMA_MODELS=/root/.ollama/models'
             } else {
@@ -558,7 +560,32 @@ if (-not $ollamaUrlEnv) {
         Write-Log ("MCP container start FAILED (exit {0}). Continuing anyway." -f $LASTEXITCODE)
     } else {
         Write-Log "AI container started."
-        Write-Log "Auto-warmup removed: skipping model warmup at container start."
+    }
+
+    } # end -not $SkipAi block
+
+    # ---------------------------------------------------------------------------
+    # Resolve WSLg display environment for GUI containers (e.g. Godot)
+    # WSLg exposes an X11 socket at /tmp/.X11-unix and sets DISPLAY=:0 inside
+    # the distro.  Pass these into the dev container so graphical apps work.
+    # ---------------------------------------------------------------------------
+    $wslDisplay = (wsl -d $DistroName -u root -- bash -lc 'echo $DISPLAY' 2>$null).Trim()
+    if (-not $wslDisplay) { $wslDisplay = ':0' }
+    Write-Log ("WSLg DISPLAY: {0}" -f $wslDisplay)
+
+    # Check if the Wayland runtime dir is available (WSLg mounts it at /mnt/wslg)
+    $wslgAvailable = wsl -d $DistroName -u root -- bash -c 'test -d /mnt/wslg/runtime-dir && echo yes || echo no' 2>$null
+    $displayFlags = @(
+        '--env',    "DISPLAY=$wslDisplay",
+        '--volume', '/tmp/.X11-unix:/tmp/.X11-unix'
+    )
+    if ($wslgAvailable -match 'yes') {
+        $displayFlags += '--env',    'WAYLAND_DISPLAY=wayland-0'
+        $displayFlags += '--env',    'XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir'
+        $displayFlags += '--volume', '/mnt/wslg:/mnt/wslg'
+        Write-Log "WSLg Wayland runtime dir found; mounting /mnt/wslg."
+    } else {
+        Write-Log "WSLg /mnt/wslg not found; X11-only display forwarding."
     }
 
     # -it: interactive + pseudo-TTY
@@ -578,6 +605,7 @@ if (-not $ollamaUrlEnv) {
             --add-host=host.docker.internal:host-gateway `
             --env "OLLAMA_URL=$ollamaUrlEnv" `
             --env "OLLAMA_ORIGINS=$ollamaOriginsEnv" `
+            @displayFlags `
             --volume  "${wslRepoRoot}:/workspace" `
             @modelVolumeFlags `
             --volume  "${wslSshPath}:/root/.ssh:rw" `

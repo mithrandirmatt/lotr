@@ -113,8 +113,7 @@ Verification (run by orchestrator after install):
 Scripts (all in `build/docker/`):
 ```
 PowerShell -ExecutionPolicy Bypass -File build/docker/ensure-lotr-distro.ps1                    # download/import Ubuntu 24.04, write wsl.conf, record manifest
-PowerShell -ExecutionPolicy Bypass -File build/docker/setup-wsl-docker.ps1                      # orchestrator: WSL features + ensure-lotr-distro + Docker install + verify
-PowerShell -ExecutionPolicy Bypass -File build/docker/setup-wsl-rocm.ps1 -NoPause              # install ROCm + ROCDXG inside lotr-docker-service (non-interactive)
+PowerShell -ExecutionPolicy Bypass -File build/docker/setup-wsl-docker.ps1                      # orchestrator: WSL features + ensure-lotr-distro + Docker install + ROCm install + verify
 PowerShell -ExecutionPolicy Bypass -File build/docker/start-wsl-docker.ps1                      # start Docker inside lotr-docker-service
 PowerShell -ExecutionPolicy Bypass -File build/docker/stop-wsl-docker.ps1                       # stop Docker inside lotr-docker-service
 PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build                          # build the lotr-dev image from build/docker/Dockerfile
@@ -125,11 +124,14 @@ PowerShell -ExecutionPolicy Bypass -File build/docker/ollama-latency-test.ps1 -I
 ```
 
 Parameters of `setup-wsl-docker.ps1`:
-- `-TarballPath`  (optional) passed through to ensure-lotr-distro.ps1
-- `-InstallPath`  (default `C:\wsl\lotr-docker-service`)
-- `-DistroName`   (default `lotr-docker-service`)
-- `-ManifestPath` (default `build\docker\artifacts\manifest.json`)
-- `-NoPause`      (switch) skip end-of-run keypress; required for CI/automation
+- `-TarballPath`         (optional) passed through to ensure-lotr-distro.ps1
+- `-InstallPath`         (default `C:\wsl\lotr-docker-service`)
+- `-DistroName`          (default `lotr-docker-service`)
+- `-ManifestPath`        (default `build\docker\artifacts\manifest.json`)
+- `-NoPause`             (switch) skip end-of-run keypress; required for CI/automation
+- `-RocmMetaPackage`     (default `amdrocm7.12-gfx950`) AMD ROCm apt meta-package to install
+- `-AmdGPURepoVersion`   (default `30.30`) AMDGPU repository version
+- `-SkipRocm`            (switch) skip ROCm installation (Docker-only install)
 
 Invocation:
 ```

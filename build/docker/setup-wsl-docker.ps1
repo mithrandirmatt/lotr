@@ -17,7 +17,10 @@ param(
     [string]$ManifestPath = "build\docker\artifacts\manifest.json",
     [switch]$NoPause,
     [switch]$InstallKernel,
-    [string]$KernelUrl = ""
+    [string]$KernelUrl = "",
+    [string]$RocmMetaPackage = 'amdrocm7.12-gfx950',
+    [string]$AmdGPURepoVersion = '30.30',
+    [switch]$SkipRocm
 )
 
 Set-StrictMode -Version Latest
@@ -435,6 +438,30 @@ function Install-Rocdxg {
 }
 
 Install-Rocdxg -Distro $DistroName
+
+# ---------------------------------------------------------------------------
+# ROCm stack (integrated -- replaces separate setup-wsl-rocm.ps1 invocation)
+# ---------------------------------------------------------------------------
+if ($SkipRocm) {
+    Write-Log "SkipRocm specified -- skipping ROCm installation."
+} else {
+    $rocmScript = Join-Path $PSScriptRoot 'setup-wsl-rocm.ps1'
+    if (Test-Path $rocmScript) {
+        Write-Log "Installing ROCm stack via $rocmScript ..."
+        & $rocmScript `
+            -DistroName $DistroName `
+            -NoPause `
+            -RocmMetaPackage $RocmMetaPackage `
+            -AmdGPURepoVersion $AmdGPURepoVersion
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log ("WARNING: ROCm install reported exit code {0} -- Docker is still installed and functional." -f $LASTEXITCODE)
+        } else {
+            Write-Log "ROCm installation completed successfully."
+        }
+    } else {
+        Write-Log ("WARNING: ROCm script not found at {0} -- skipping ROCm install." -f $rocmScript)
+    }
+}
 
 Write-Log "setup-wsl-docker completed successfully"
 
