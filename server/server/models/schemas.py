@@ -4,7 +4,7 @@ Pydantic schemas for API request/response validation.
 
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, EmailStr, Field, validator, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from enum import Enum
 
 # ============== USER SCHEMAS ==============
@@ -39,6 +39,8 @@ class UserResponse(UserBase):
     updated_at: datetime
     is_active: bool = True
     is_verified: bool = False
+    is_admin: bool = False
+    tolkien_balance: int = 0
 
 
 # ============== AUTH SCHEMAS ==============
@@ -128,6 +130,7 @@ class OwnershipBase(BaseModel):
     """Base ownership schema."""
     card_id: str
     source: str = Field(..., description="How card was acquired: purchase, match_reward, event, etc.")
+    quantity: int = Field(1, ge=1, description="Number of copies owned")
     metadata: Optional[Dict[str, Any]] = None
 
 
@@ -205,6 +208,77 @@ class RefundResponse(BaseModel):
     created_at: datetime
 
 
+class StoreProduct(str, Enum):
+    """Supported store product keys."""
+    PACK = "pack"
+    STARTER_DECK = "starter_deck"
+    BOOSTER_BOX = "booster_box"
+
+
+class StorePurchaseRequest(BaseModel):
+    """Purchase a predefined product using Tolkien balance."""
+    product: StoreProduct
+    quantity: int = Field(1, ge=1)
+
+
+class StorePurchaseResponse(BaseModel):
+    """Store purchase response with updated balance."""
+    user_id: str
+    product: StoreProduct
+    quantity: int
+    unit_price_tolkiens: int
+    total_price_tolkiens: int
+    balance_before: int
+    balance_after: int
+
+
+class StorePricingResponse(BaseModel):
+    """Current product pricing for Tolkien currency."""
+    currency: str
+    usd_per_tolkien: float
+    products: Dict[str, int]
+
+
+class AdminTolkienAdjustRequest(BaseModel):
+    """Admin request to add/remove Tolkien from a user account."""
+    amount: int = Field(..., description="Positive adds, negative removes")
+    reason: Optional[str] = Field(None, max_length=250)
+
+    @field_validator("amount")
+    @classmethod
+    def amount_cannot_be_zero(cls, value: int) -> int:
+        if value == 0:
+            raise ValueError("amount must be non-zero")
+        return value
+
+
+class AdminUserDeleteRequest(BaseModel):
+    """Triple-confirm payload for admin user deletion."""
+    confirm_user_id: str
+    confirm_username: str
+    confirm_email: EmailStr
+
+
+class AdminUserSummary(BaseModel):
+    """Admin-focused summary of a user account."""
+    id: str
+    email: EmailStr
+    username: str
+    is_active: bool
+    is_admin: bool
+    is_moderator: bool = False
+    tolkien_balance: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminUserListResponse(BaseModel):
+    """List response for admin user search/list."""
+    items: List[AdminUserSummary]
+    total: int
+
+
 # ============== MATCH SCHEMAS ==============
 
 class MatchMode(str, Enum):
@@ -263,6 +337,70 @@ class AuditReport(BaseModel):
     integrity_score: int
     last_checked: datetime
     recent_anomalies: List[Dict[str, Any]]
+
+
+# ============== DECK SCHEMAS ==============
+
+class DeckFormat(str, Enum):
+    """Deck format/ruleset enum."""
+    STANDARD = "standard"
+    MODERN = "modern"
+    OPEN = "open"
+
+
+class DeckCardEntry(BaseModel):
+    """A single card entry inside a deck."""
+    card_id: str
+    quantity: int = Field(..., ge=1)
+    card: Optional[CardResponse] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DeckCreate(BaseModel):
+    """Schema for creating a new deck."""
+    name: str = Field(..., min_length=1, max_length=100)
+    format: DeckFormat = DeckFormat.OPEN
+    description: Optional[str] = Field(None, max_length=500)
+
+
+class DeckUpdate(BaseModel):
+    """Schema for updating a deck."""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    format: Optional[DeckFormat] = None
+    description: Optional[str] = Field(None, max_length=500)
+
+
+class DeckResponse(BaseModel):
+    """Deck response schema."""
+    id: str
+    user_id: str
+    name: str
+    format: str
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    cards: List[DeckCardEntry] = []
+    total_cards: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DeckListResponse(BaseModel):
+    """List of decks for a user."""
+    items: List[DeckResponse]
+    total: int
+
+
+class DeckCardAdd(BaseModel):
+    """Request to add a card to a deck."""
+    card_id: str
+    quantity: int = Field(1, ge=1)
+
+
+class DeckCardRemove(BaseModel):
+    """Request to remove a card from a deck (optional partial quantity)."""
+    quantity: Optional[int] = Field(None, ge=1)
 
 
 # ============== GENERIC SCHEMAS ==============

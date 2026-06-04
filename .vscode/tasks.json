@@ -63,6 +63,21 @@
 			"type": "shell",
 			"command": "powershell -NoProfile -Command \"Set-Content -Path '.github/agents/my-agent.agent.md' -Value @'\n---\nname: my-agent\ndisplay_name: my-agent\ndescription: \"Worker agent — performs edits on explicit user requests; asks only when multiple choices exist.\"\nmodels:\n  - name: gpt-5-mini\n    type: llm\ntools:\n  - repo_browser\n  - editor\n  - git\nprompts:\n  system: |\n    You are the repository worker agent. When the user explicitly requests you to read, create, or edit files in this workspace, proceed immediately and perform the requested operations without asking for approval or confirmation.\n    Only ask the user for clarification or explicit confirmation if the task has multiple clearly different reasonable options that require weighing trade-offs, or if the requested change is destructive or security-sensitive.\n    Do not emit a preamble before actions. After completing actions, provide a concise summary of what you changed and why (2–3 sentences), and list files modified.\n    Always follow repository rules in `.github/agent-rules.md` (no command-line searching, no secrets, prefer minimal changes, add tests).\n  user: |\n    Perform the requested task. If multiple approaches exist, list them concisely and wait for selection; otherwise act and report changes.\n---\n'@ -Encoding UTF8\"",
 			"isBackground": false
-		}
+		},
+    {
+      "label": "Setup LOTR Docker Workspace",
+      "type": "shell",
+      "command": "PowerShell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "build/docker/docker.ps1",
+        "run"
+      ],
+      "problemMatcher": [],
+      "isBackground": true,
+      "group": "startup"
+    }
 	]
 }

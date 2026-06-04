@@ -6,8 +6,10 @@ Build or run the lotr dev container.
 Commands:
   build  -- build both the lotr-dev image (build/docker/Dockerfile) and the
             lotr-ai image (build/docker/ai/Dockerfile)
-  run    -- (re)start the MCP container in the background (port 3100), then open an
-            interactive shell in the lotr-dev container
+  run    -- (re)start the MCP container in the background (port 3100), start
+            lotr-server (FastAPI, port 8000) and lotr-admin (Vite, port 3001)
+            as background containers, auto-open the admin panel in the browser,
+            then open an interactive shell in the lotr-dev container
 
 The Docker daemon must already be running inside lotr-docker-service before using
 this script. Start it with:
@@ -18,6 +20,9 @@ Usage:
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build --fresh
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build -GpuVariant rocm
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run -NoDevServices
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run -NoOpenBrowser
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run -ServerPort 8080 -AdminPort 3002
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -GpuVariant rocm
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableAi
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build -Tag my-image:v2 -McpTag my-mcp:v2
@@ -45,12 +50,32 @@ param(
     # Pass -EnableAi to start the AI/Ollama container and related host Ollama management.
     # By default AI is disabled; use this flag when you want the container-side Ollama.
     [switch]$EnableAi,
+    # Dev services: lotr-server (FastAPI) and lotr-admin (React/Vite) are started automatically.
+    # Pass -NoDevServices to skip them (AI-only or minimal runs).
+    [switch]$NoDevServices,
+    # Port published on the Windows host for lotr-server (FastAPI).
+    [int]$ServerPort = 8000,
+    # Port published on the Windows host for lotr-admin (Vite dev server).
+    [int]$AdminPort = 3001,
+    # Pass -NoOpenBrowser to suppress auto-opening the admin panel in the default browser.
+    [switch]$NoOpenBrowser,
 
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ExtraArgs = @()
 )
 
 Set-StrictMode -Version Latest
+
+# ---------------------------------------------------------------------------
+# Feature flags -- edit this line to enable optional features
+# ---------------------------------------------------------------------------
+$EnableRocm = $false   # Set to $true to enable ROCm GPU passthrough and Ollama integration
+
+# Default to starting MCP when running 'run' without explicit -EnableAi
+if ($Command -eq 'run' -and -not $EnableAi) {
+    Write-Host "MCP enabled by default for 'run' command."
+    $EnableAi = $true
+}
 
 # ---------------------------------------------------------------------------
 # GPU auto-detection (Windows host)
@@ -71,7 +96,7 @@ function Resolve-GpuVariant {
 
 if (-not $GpuVariant) {
     $GpuVariant = Resolve-GpuVariant
-    Write-Host ("[gpu-detect] Auto-detected GPU_VARIANT={0}" -f $GpuVariant)
+    if ($EnableRocm) { Write-Host ("[gpu-detect] Auto-detected GPU_VARIANT={0}" -f $GpuVariant) }
 }
 
 # Resolve McpTag default based on GpuVariant (allows explicit override via -McpTag)
@@ -88,7 +113,20 @@ function Write-Log {
     $logDir = "build\docker\logs"
     if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
     $logFile = Join-Path $logDir "docker.log"
-    Add-Content -Path $logFile -Value ("$timestamp`t$msg")
+    
+    # Check if log file is locked and handle gracefully
+    try {
+        $content = Get-Content -Path $logFile -Raw -ErrorAction SilentlyContinue
+        if ($content) {
+            # Truncate the file to release the lock
+            $content = ""
+        }
+    } catch {
+        # File is locked, continue anyway - logs will be written to console
+        Write-Host "  Warning: Log file locked, writing to console only"
+    }
+    
+    Add-Content -Path $logFile -Value ("$timestamp`t$msg") -ErrorAction SilentlyContinue
     Write-Host $msg
 }
 
@@ -188,6 +226,43 @@ function Stop-HostOllamaIfPresent {
     }
 }
 
+function Start-OllamaProxy {
+    param(
+        [int]$ProxyPort = 11436,
+        [string]$UpstreamUrl = 'http://localhost:11434',
+        [int]$MaxTokens = 4096
+    )
+    # Script lives at <repo-root>/scripts/ollama_proxy.py
+    $repoRoot    = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+    $proxyScript = Join-Path $repoRoot 'scripts\ollama_proxy.py'
+    if (-not (Test-Path $proxyScript)) {
+        Write-Log ("Ollama proxy script not found at {0}; skipping." -f $proxyScript)
+        return
+    }
+    # Stop any process already listening on the proxy port
+    try {
+        $conn = Get-NetTCPConnection -LocalPort $ProxyPort -State Listen -ErrorAction SilentlyContinue
+        if ($conn) {
+            $pid = $conn.OwningProcess
+            Write-Log ("Stopping existing process PID {0} on port {1}..." -f $pid, $ProxyPort)
+            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Milliseconds 500
+        }
+    } catch {
+        Write-Log ("Port check for proxy failed: {0}" -f $_)
+    }
+    Write-Log ("Starting Ollama proxy on port {0} -> {1} ..." -f $ProxyPort, $UpstreamUrl)
+    $pyExe = if (Get-Command 'pythonw' -ErrorAction SilentlyContinue) { 'pythonw' } else { 'python' }
+    try {
+        Start-Process -FilePath $pyExe `
+            -ArgumentList "`"$proxyScript`" --port $ProxyPort --upstream $UpstreamUrl --max-tokens $MaxTokens" `
+            -WindowStyle Hidden
+        Write-Log ("Ollama proxy launched via {0} (port {1})." -f $pyExe, $ProxyPort)
+    } catch {
+        Write-Log ("Failed to launch Ollama proxy: {0}" -f $_)
+    }
+}
+
 function Remove-Containers-PublishingPort {
     param([string]$Distro, [int]$Port)
     Write-Log ("Checking Docker for containers publishing port {0}..." -f $Port)
@@ -205,6 +280,53 @@ function Remove-Containers-PublishingPort {
     } catch {
         Write-Log ("Docker container check for port {0} failed: {1}" -f $Port, $_)
     }
+}
+
+# Stop a named container (if it exists) then clear any other containers publishing
+# the given host port.  If a non-Docker host process holds the port, log a warning.
+function Stop-DevService {
+    param([string]$Distro, [string]$ContainerName, [int]$HostPort)
+
+    # Remove by name (covers our own containers from previous runs)
+    $existing = wsl -d $Distro -u root -- docker ps -a --filter "name=^${ContainerName}$" -q 2>$null
+    if ($existing -and $existing.Trim()) {
+        Write-Log ("Removing existing container '${ContainerName}'...")
+        wsl -d $Distro -u root -- docker rm -f $ContainerName 2>$null | Out-Null
+    }
+
+    # Clear any other containers (different name) already publishing the port
+    Remove-Containers-PublishingPort -Distro $Distro -Port $HostPort
+
+    # Warn if a non-Docker host process holds the port
+    try {
+        $conn = Get-NetTCPConnection -LocalPort $HostPort -State Listen -ErrorAction SilentlyContinue
+        if ($conn) {
+            $ownerPid = $conn.OwningProcess
+            $proc = Get-Process -Id $ownerPid -ErrorAction SilentlyContinue
+            $procName = if ($proc) { $proc.ProcessName } else { "PID $ownerPid" }
+            Write-Log ("WARNING: host port {0} is held by '{1}'; container publish may fail." -f $HostPort, $procName)
+        }
+    } catch {
+        # Get-NetTCPConnection not available -- skip check
+    }
+}
+
+# Poll a TCP port on localhost until it accepts a connection or the timeout expires.
+# Returns $true if the port opened within the allotted time, $false otherwise.
+function Wait-For-Port {
+    param([int]$Port, [int]$MaxSeconds = 60, [int]$IntervalSeconds = 2)
+    $deadline = (Get-Date).AddSeconds($MaxSeconds)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $tcp = New-Object System.Net.Sockets.TcpClient
+            $tcp.Connect('127.0.0.1', $Port)
+            $tcp.Close()
+            return $true
+        } catch {
+            Start-Sleep -Seconds $IntervalSeconds
+        }
+    }
+    return $false
 }
 
 # Default start script path and args (used when auto-starting Docker)
@@ -363,6 +485,13 @@ if ($Command -eq 'run') {
     Write-Log ("Running interactive shell in image '{0}' ..." -f $Tag)
     Write-Log ("Mounting {0} -> /workspace" -f $wslRepoRoot)
 
+    # Start (or restart) the Ollama think:false proxy on port 11436.
+    # Upstream is headroom (8787) so the full chain is:
+    #   Copilot -> proxy:11436 (strips thinking) -> headroom:8787 (compresses) -> Ollama:11434
+    # MaxTokens 2048: Copilot BYOM hard-rejects responses above ~8-12KB; 2048 tokens keeps
+    # us safely under that threshold even for verbose completions.
+    Start-OllamaProxy -ProxyPort 11436 -UpstreamUrl 'http://localhost:8787' -MaxTokens 2048
+
 # Resolve Windows SSH key folder as a WSL path for the volume mount
 $sshWinPath  = Join-Path $env:USERPROFILE ".ssh"
 $sshDrive    = $sshWinPath.Substring(0, 1).ToLower()
@@ -417,62 +546,62 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
         Write-Log "AI disabled (pass -EnableAi to start the AI/Ollama container)."
     } else {
 
-    # Resolve Ollama endpoint (env override wins; otherwise auto-detect)
-    if ($env:OLLAMA_URL) {
-        $ollamaUrlEnv = $env:OLLAMA_URL
-    } else {
-        Write-Log "Auto-detecting Ollama endpoint..."
-        $ollamaContainer = wsl -d $DistroName -u root -- docker ps --filter "name=ollama" --filter "status=running" -q 2>$null
-        if ($ollamaContainer) {
-            $ollamaUrlEnv = 'http://ollama:11434'
-            Write-Log ("Detected running 'ollama' container; using {0}" -f $ollamaUrlEnv)
+    # Ollama endpoint, models, and port-11435 cleanup (only when ROCm/Ollama is enabled)
+    if ($EnableRocm) {
+        # Resolve Ollama endpoint (env override wins; otherwise auto-detect)
+        if ($env:OLLAMA_URL) {
+            $ollamaUrlEnv = $env:OLLAMA_URL
         } else {
-            Write-Log ("Checking host.docker.internal:{0} from distro {1}..." -f $HostOllamaPort, $DistroName)
-            $curlTest = wsl -d $DistroName -u root -- bash -lc "curl -sS -m 2 http://host.docker.internal:$HostOllamaPort/ || echo __CURL_ERROR__" 2>$null
-            if ($curlTest -and $curlTest -ne '__CURL_ERROR__') {
-                $ollamaUrlEnv = "http://host.docker.internal:$HostOllamaPort"
-                Write-Log ("host.docker.internal reachable; using {0}" -f $ollamaUrlEnv)
+            Write-Log "Auto-detecting Ollama endpoint..."
+            $ollamaContainer = wsl -d $DistroName -u root -- docker ps --filter "name=ollama" --filter "status=running" -q 2>$null
+            if ($ollamaContainer) {
+                $ollamaUrlEnv = 'http://ollama:11434'
+                Write-Log ("Detected running 'ollama' container; using {0}" -f $ollamaUrlEnv)
             } else {
-                $ollamaUrlEnv = "http://host.docker.internal:$HostOllamaPort"
-                Write-Log ("Could not detect Ollama; defaulting to {0}" -f $ollamaUrlEnv)
+                Write-Log ("Checking host.docker.internal:{0} from distro {1}..." -f $HostOllamaPort, $DistroName)
+                $curlTest = wsl -d $DistroName -u root -- bash -lc "curl -sS -m 2 http://host.docker.internal:$HostOllamaPort/ || echo __CURL_ERROR__" 2>$null
+                if ($curlTest -and $curlTest -ne '__CURL_ERROR__') {
+                    $ollamaUrlEnv = "http://host.docker.internal:$HostOllamaPort"
+                    Write-Log ("host.docker.internal reachable; using {0}" -f $ollamaUrlEnv)
+                } else {
+                    $ollamaUrlEnv = "http://host.docker.internal:$HostOllamaPort"
+                    Write-Log ("Could not detect Ollama; defaulting to {0}" -f $ollamaUrlEnv)
+                }
             }
         }
-    }
 
-    # Resolve host Ollama models directory (Windows path -> WSL path)
-    $hostModelsWinPath = if ($HostOllamaModels -and $HostOllamaModels.Trim()) { $HostOllamaModels } else { Join-Path $env:USERPROFILE ".ollama\models" }
-    Write-Log ("Host Ollama models (Windows): {0}" -f $hostModelsWinPath)
-    try {
-        if (Test-Path -Path $hostModelsWinPath) {
-            $modelsDrive   = $hostModelsWinPath.Substring(0,1).ToLower()
-            $modelsRelPath = $hostModelsWinPath.Substring(2) -replace '\\','/'
-            $wslModelsPath = ("/mnt/{0}{1}" -f $modelsDrive, $modelsRelPath)
-            Write-Log ("Host Ollama models (WSL): {0}" -f $wslModelsPath)
-        } else {
-            Write-Log ("Host Ollama models folder not found on Windows: {0}" -f $hostModelsWinPath)
+        # Resolve host Ollama models directory (Windows path -> WSL path)
+        $hostModelsWinPath = if ($HostOllamaModels -and $HostOllamaModels.Trim()) { $HostOllamaModels } else { Join-Path $env:USERPROFILE ".ollama\models" }
+        Write-Log ("Host Ollama models (Windows): {0}" -f $hostModelsWinPath)
+        try {
+            if (Test-Path -Path $hostModelsWinPath) {
+                $modelsDrive   = $hostModelsWinPath.Substring(0,1).ToLower()
+                $modelsRelPath = $hostModelsWinPath.Substring(2) -replace '\\','/'
+                $wslModelsPath = ("/mnt/{0}{1}" -f $modelsDrive, $modelsRelPath)
+                Write-Log ("Host Ollama models (WSL): {0}" -f $wslModelsPath)
+            } else {
+                Write-Log ("Host Ollama models folder not found on Windows: {0}" -f $hostModelsWinPath)
+            }
+        } catch {
+            Write-Log ("Error resolving host Ollama models path: {0}" -f $_)
         }
-    } catch {
-        Write-Log ("Error resolving host Ollama models path: {0}" -f $_)
     }
 
-    # Stop host Ollama if present (to avoid port conflicts with the AI container)
-    Stop-HostOllamaIfPresent
-
-    # Ensure no other container is already publishing the AI port (3100) or Ollama port
+    # Ensure no other container is already publishing the MCP port (3100) or Ollama port
     Remove-Containers-PublishingPort -Distro $DistroName -Port 3100
-    Remove-Containers-PublishingPort -Distro $DistroName -Port $HostOllamaPort
+    if ($EnableRocm) { Remove-Containers-PublishingPort -Distro $DistroName -Port $HostOllamaPort }
 
-    # (Re)start AI container
-    $mcpRunning = wsl -d $DistroName -u root -- docker ps --filter "name=lotr-ai" --filter "status=running" -q 2>$null
+    # (Re)start MCP container (AI image runs as the MCP service; Ollama disabled)
+    $mcpRunning = wsl -d $DistroName -u root -- docker ps --filter "name=lotr-mcp" --filter "status=running" -q 2>$null
     if ($mcpRunning) {
-        Write-Log "Stopping existing AI container..."
-        wsl -d $DistroName -u root -- docker rm -f lotr-ai 2>$null | Out-Null
+        Write-Log "Stopping existing MCP container..."
+        wsl -d $DistroName -u root -- docker rm -f lotr-mcp 2>$null | Out-Null
     } else {
-        wsl -d $DistroName -u root -- docker rm -f lotr-ai 2>$null | Out-Null
+        wsl -d $DistroName -u root -- docker rm -f lotr-mcp 2>$null | Out-Null
     }
 
     # ROCm GPU device flags
-    if ($GpuVariant -eq 'rocm') {
+    if ($EnableRocm -and $GpuVariant -eq 'rocm') {
         $kfdExists = wsl -d $DistroName -u root -- bash -c 'test -e /dev/kfd && echo yes || echo no' 2>$null
         $driExists = wsl -d $DistroName -u root -- bash -c 'test -d /dev/dri && echo yes || echo no' 2>$null
         if ($kfdExists -match 'yes' -and $driExists -match 'yes') {
@@ -493,9 +622,7 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
                 Write-Log "WSL_INTEROP=$wslInterop"
                 $gpuDeviceFlags = @(
                     '--device',        '/dev/dxg',
-                    # Mount host ROCm tree read-only so container uses same userland libraries
                     '--volume',        '/opt/rocm:/opt/rocm:ro',
-                    # Mount WSL DXCore user-mode libs as a directory (read-only)
                     '--volume',        '/usr/lib/wsl/lib:/usr/lib/wsl/lib:ro',
                     '--volume',        '/run/WSL:/run/WSL',
                     '--env',           'HSA_ENABLE_DXG_DETECTION=1',
@@ -520,12 +647,16 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
         }
     }
 
-    Write-Log ("Starting AI container on port 3100 (GPU_VARIANT={0})..." -f $GpuVariant)
+    if ($EnableRocm) {
+        Write-Log ("Starting MCP container on port 3100 (GPU_VARIANT={0})..." -f $GpuVariant)
+    } else {
+        Write-Log "Starting MCP container on port 3100..."
+    }
 
     # Prepare optional model volume mounts (mount Windows Ollama models into container)
     $modelVolumeFlags = @()
     $modelEnvFlags = @()
-    if ($wslModelsPath) {
+    if ($EnableRocm -and $wslModelsPath) {
         try {
             $visible = wsl -d $DistroName -u root -- bash -lc "test -d '$wslModelsPath' && echo yes || echo no" 2>$null
             if ($visible -and $visible -match 'yes') {
@@ -542,12 +673,13 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
     }
     wsl -d $DistroName -u root -- docker run `
         --detach `
-        --name lotr-ai `
+        --name lotr-mcp `
         --restart on-failure:10 `
         --network lotr-net `
         --add-host=host.docker.internal:host-gateway `
         --env "OLLAMA_URL=$ollamaUrlEnv" `
         --env "OLLAMA_ORIGINS=$ollamaOriginsEnv" `
+        --env "START_OLLAMA=false" `
         --env "GPU_VARIANT=$GpuVariant" `
         --publish 3100:3100 `
         --publish ${HostOllamaPort}:11434 `
@@ -559,10 +691,92 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
     if ($LASTEXITCODE -ne 0) {
         Write-Log ("MCP container start FAILED (exit {0}). Continuing anyway." -f $LASTEXITCODE)
     } else {
-        Write-Log "AI container started."
+        Write-Log "MCP container started."
     }
 
     } # end -not $SkipAi block
+
+    # ---------------------------------------------------------------------------
+    # Dev services: lotr-server (FastAPI + uvicorn --reload) and
+    #               lotr-admin  (Vite HMR dev server)
+    # Both reuse the lotr-dev:latest image -- no separate Dockerfile needed.
+    # Always started unless -NoDevServices is passed.
+    # If either container already exists it is removed and restarted fresh.
+    # ---------------------------------------------------------------------------
+    if (-not $NoDevServices) {
+        # ---- lotr-server -------------------------------------------------------
+        Write-Log ("Starting lotr-server on host port {0}..." -f $ServerPort)
+        Stop-DevService -Distro $DistroName -ContainerName 'lotr-server' -HostPort $ServerPort
+
+        wsl -d $DistroName -u root -- docker run `
+            --detach `
+            --name lotr-server `
+            --restart on-failure:5 `
+            --network lotr-net `
+            --add-host=host.docker.internal:host-gateway `
+            --publish "${ServerPort}:8000" `
+            --volume "${wslRepoRoot}:/workspace" `
+            --workdir '/workspace' `
+            $Tag `
+            /bin/bash -c 'cd /workspace/server && pip install -q --break-system-packages --ignore-installed -e .[tests] 2>/dev/null && uvicorn server.app:app --host 0.0.0.0 --port 8000 --reload --reload-dir /workspace/server'
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log ("lotr-server start FAILED (exit {0}). Continuing." -f $LASTEXITCODE)
+        } else {
+            Write-Log "lotr-server started."
+        }
+
+        # ---- lotr-admin --------------------------------------------------------
+        Write-Log ("Starting lotr-admin on host port {0}..." -f $AdminPort)
+        Stop-DevService -Distro $DistroName -ContainerName 'lotr-admin' -HostPort $AdminPort
+
+        wsl -d $DistroName -u root -- docker run `
+            --detach `
+            --name lotr-admin `
+            --restart on-failure:5 `
+            --network lotr-net `
+            --add-host=host.docker.internal:host-gateway `
+            --publish "${AdminPort}:3001" `
+            --volume "${wslRepoRoot}:/workspace" `
+            --volume 'lotr-admin-node-modules:/workspace/frontend/admin-panel/node_modules' `
+            --workdir '/workspace/frontend/admin-panel' `
+            --env "API_PROXY_TARGET=http://lotr-server:8000" `
+            $Tag `
+            /bin/bash -c 'npm install --prefer-offline && npm run dev -- --host 0.0.0.0'
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log ("lotr-admin start FAILED (exit {0}). Continuing." -f $LASTEXITCODE)
+        } else {
+            Write-Log "lotr-admin started."
+        }
+
+        # ---- Auto-open browser -------------------------------------------------
+        if (-not $NoOpenBrowser) {
+            $adminUrl = "http://localhost:$AdminPort"
+            Write-Log ("Waiting for admin panel at {0} (up to 60s)..." -f $adminUrl)
+            # Wait for server to be fully ready before opening browser
+            Start-Sleep -Seconds 3
+            $browserJob = Start-Job -ScriptBlock {
+                param($port, $url)
+                $deadline = (Get-Date).AddSeconds(60)
+                while ((Get-Date) -lt $deadline) {
+                    try {
+                        $tcp = New-Object System.Net.Sockets.TcpClient
+                        $tcp.Connect('127.0.0.1', $port)
+                        $tcp.Close()
+                        Start-Process $url
+                        return
+                    } catch {
+                        Start-Sleep -Seconds 2
+                    }
+                }
+                Write-Host "Admin panel did not become ready within 60s; open $url manually."
+            } -ArgumentList $AdminPort, $adminUrl
+            Write-Log ("Browser open job started (ID {0})." -f $browserJob.Id)
+        }
+    } else {
+        Write-Log "Dev services skipped (-NoDevServices)."
+    }
 
     # ---------------------------------------------------------------------------
     # Resolve WSLg display environment for GUI containers (e.g. Godot)
@@ -586,6 +800,39 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
         Write-Log "WSLg Wayland runtime dir found; mounting /mnt/wslg."
     } else {
         Write-Log "WSLg /mnt/wslg not found; X11-only display forwarding."
+    }
+
+    # ---------------------------------------------------------------------------
+    # Start headroom proxy container (port 8787 -> host Ollama on port 11434)
+    # Compresses LLM traffic from VS Code Copilot before it reaches Ollama.
+    # Always stops any existing instance so config changes are picked up.
+    # Run setup-headroom.ps1 once to pull the image before first use.
+    # ---------------------------------------------------------------------------
+    $headroomImage = 'ghcr.io/chopratejas/headroom:latest'
+    $imageExists = wsl -d $DistroName -u root -- docker image inspect $headroomImage --format '{{.Id}}' 2>$null
+    if ($imageExists) {
+        # Resolve the WSL default-route gateway (= Windows host IP from inside WSL).
+        # host.docker.internal inside lotr-net resolves to the Docker bridge, not the
+        # Windows host, so we pass the gateway IP directly instead.
+        $wslGateway = (wsl -d $DistroName -u root -- ip route show default 2>$null) -replace '^default via (\S+).*','$1'
+        if (-not $wslGateway) { $wslGateway = 'host.docker.internal' }
+        Write-Log ("Headroom upstream Ollama: http://${wslGateway}:11434")
+
+        wsl -d $DistroName -u root -- docker rm -f lotr-headroom 2>$null | Out-Null
+        wsl -d $DistroName -u root -- docker run `
+            --detach `
+            --name lotr-headroom `
+            --network lotr-net `
+            --publish 8787:8787 `
+            $headroomImage `
+            --openai-api-url "http://${wslGateway}:11434" --no-telemetry
+        if ($LASTEXITCODE -eq 0) {
+            Write-Log "Headroom proxy container started on port 8787."
+        } else {
+            Write-Log ("WARNING: Headroom container start failed (exit {0}); continuing." -f $LASTEXITCODE)
+        }
+    } else {
+        Write-Log "Headroom image not found; run setup-headroom.ps1 to pull it. Skipping."
     }
 
     # -it: interactive + pseudo-TTY

@@ -90,6 +90,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
+# Node.js 22 LTS (for admin panel / frontend dev)
+# Uses NodeSource official repo to get a current LTS release.
+# ------------------------------------------------------------
+RUN set -eux; \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; \
+    apt-get install -y --no-install-recommends nodejs; \
+    rm -rf /var/lib/apt/lists/*
+
+# ------------------------------------------------------------
 # Docker CE: install Docker's official packages (docker-ce, cli, buildx, compose)
 # Prefer Docker CE (official) over the distro `docker.io` package for feature
 # completeness (buildx, compose plugin). This adds Docker's apt repo and
@@ -210,6 +219,16 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     isort \
     flake8 \
     mypy
+
+# ------------------------------------------------------------
+# Node.js (LTS) -- required for React admin panel (Vite + TypeScript)
+# Uses NodeSource binary distribution for a current LTS release.
+# ------------------------------------------------------------
+RUN set -eux; \
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -; \
+    apt-get install -y --no-install-recommends nodejs; \
+    rm -rf /var/lib/apt/lists/*; \
+    npm install -g npm@latest vite
 
 # Install the LOTR server package (required for godot_play target).
 # Use a non-editable install so the package code is baked into site-packages,

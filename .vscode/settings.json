@@ -8,11 +8,14 @@
     //
     // To set on Windows (run once per machine, then relaunch Ollama):
     //   [System.Environment]::SetEnvironmentVariable("OLLAMA_ORIGINS","*","User")
+
+    // Auto-run task on workspace startup
+    "tasks.onTaskStart": "Setup LOTR Docker Workspace",
     // To set on Linux/macOS (add to ~/.bashrc or ~/.zshrc):
     //   export OLLAMA_ORIGINS="*"
     // ------------------------------------------------------------
     "github.copilot.chat.languageModel.provider": "ollama",
-    "github.copilot.chat.languageModel.ollama.serverUrl": "http://localhost:11434",
+    "github.copilot.chat.languageModel.ollama.serverUrl": "http://localhost:11436",
     "github.copilot.chat.languageModel.ollama.model": "sorc/qwen3.5-claude-4.6-opus:copilot",
     "cline.includeSelection": true,
     "cline.includeCurrentFile": true

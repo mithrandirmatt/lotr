@@ -20,7 +20,8 @@ param(
     [string]$KernelUrl = "",
     [string]$RocmMetaPackage = 'amdrocm7.12-gfx950',
     [string]$AmdGPURepoVersion = '30.30',
-    [switch]$SkipRocm
+    [switch]$SkipRocm,
+    [switch]$SkipHeadroom
 )
 
 Set-StrictMode -Version Latest
@@ -460,6 +461,26 @@ if ($SkipRocm) {
         }
     } else {
         Write-Log ("WARNING: ROCm script not found at {0} -- skipping ROCm install." -f $rocmScript)
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Headroom proxy image pull
+# ---------------------------------------------------------------------------
+if ($SkipHeadroom) {
+    Write-Log "SkipHeadroom specified -- skipping headroom setup."
+} else {
+    $headroomScript = Join-Path $PSScriptRoot 'setup-headroom.ps1'
+    if (Test-Path $headroomScript) {
+        Write-Log "Pulling headroom Docker image via $headroomScript ..."
+        & $headroomScript -DistroName $DistroName -NoPause
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log ("WARNING: headroom setup reported exit code {0} -- continuing." -f $LASTEXITCODE)
+        } else {
+            Write-Log "Headroom setup completed successfully."
+        }
+    } else {
+        Write-Log ("WARNING: setup-headroom.ps1 not found at {0} -- skipping." -f $headroomScript)
     }
 }
 

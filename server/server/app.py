@@ -1,9 +1,11 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import JSONResponse
+from .routes.api import router as api_router
 
-from server.engine.schema import GameState
+app = FastAPI(title="LOTR Host-Referee API")
 
-app = FastAPI(title="LOTR Host-Referee")
+# Include active API router
+app.include_router(api_router)
 
 
 @app.get("/health")

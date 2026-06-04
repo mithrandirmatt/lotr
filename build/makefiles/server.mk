@@ -11,10 +11,15 @@ server_build_wheel:
 	python -m build
 	$(call log_ok,Finished $@.)
 
-server_install_dev:
-	$(call log_build,$@...)
-	@cd $(REPO_ROOT) && python3 -m pip install -e server[tests]
-	$(call log_ok,Finished $@.)
+INSTALL_STAMP := $(REPO_ROOT)/server/.install-stamp
+
+$(INSTALL_STAMP): $(REPO_ROOT)/server/pyproject.toml
+	$(call log_build,server_install_dev...)
+	@cd $(REPO_ROOT)/server && python3 -m pip install --break-system-packages --root-user-action=ignore -q -e .[tests]
+	@touch $(INSTALL_STAMP)
+	$(call log_ok,Finished server_install_dev.)
+
+server_install_dev: $(INSTALL_STAMP)
 
 server_docker_build:
 	$(call log_build,$@...)
@@ -31,9 +36,10 @@ server_run:
 	@cd $(REPO_ROOT) && docker run --rm -p 8000:8000 lotr-server:$(DOCKER_TAG)
 	$(call log_ok,Finished $@.)
 
-server_run_dev:
+server_run_dev: $(INSTALL_STAMP)
 	$(call log_build,$@...)
-	@cd $(REPO_ROOT) && python -m server.server.cli --dev
+	@pkill -f "server.cli" 2>/dev/null || true; pkill -f "uvicorn" 2>/dev/null || true; sleep 0.5
+	@cd $(REPO_ROOT)/server && python3 -m server.cli --dev
 	$(call log_ok,Finished $@.)
 
 server_stop_compose:

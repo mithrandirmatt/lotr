@@ -9,6 +9,7 @@ server/__init__.py
 server/app.py
 server/cli.py
 server/core/config.py
+server/core/database.py
 server/core/security.py
 server/engine/__init__.py
 server/engine/commit_reveal.py
@@ -22,4 +23,5 @@ server/engine/validator.py
 server/models/models.py
 server/models/schemas.py
 server/routes/api.py
+tests/test_lot006_schemas.py
 tests/test_smoke.py

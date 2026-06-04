@@ -9,6 +9,7 @@ PYTHON_DIR 	:= $(REPO_ROOT)/build/py
 GIT 		= $(PYTHON_DIR)/git.py
 LOTR_WIKI 	= $(PYTHON_DIR)/lotr_wiki.py
 
+include $(REPO_ROOT)/build/makefiles/admin.mk
 include $(REPO_ROOT)/build/makefiles/agent.mk
 include $(REPO_ROOT)/build/makefiles/ai.mk
 include $(REPO_ROOT)/build/makefiles/godot.mk

@@ -4,6 +4,7 @@ Uses SQLAlchemy ORM for database operations.
 """
 
 from datetime import datetime
+import uuid
 from typing import Optional, List, Dict, Any
 from sqlalchemy import (
     Column, Integer, String, Text, DateTime, Boolean, Numeric,
@@ -32,6 +33,8 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
+    is_moderator = Column(Boolean, default=False)
+    tolkien_balance = Column(Integer, nullable=False, default=0)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -40,8 +43,9 @@ class User(Base):
     # Relationships
     ownerships = relationship("Ownership", back_populates="user", cascade="all, delete-orphan")
     purchases = relationship("Purchase", back_populates="user", cascade="all, delete-orphan")
-    matches = relationship("Match", back_populates="player", cascade="all, delete-orphan")
+    match_players = relationship("MatchPlayer", back_populates="user", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
+    decks = relationship("Deck", back_populates="user", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_user_email", "email"),
@@ -92,8 +96,10 @@ class Card(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+    # Relationships
+    ownerships = relationship("Ownership", back_populates="card")
+
     __table_args__ = (
-        Index("idx_card_name", "name"),
         Index("idx_card_rarity", "rarity"),
     )
 
@@ -108,7 +114,10 @@ class Ownership(Base):
     card_id = Column(String(36), ForeignKey("cards.id"), nullable=False, index=True)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     source = Column(Enum('purchase', 'trade', 'reward', 'event', 'admin'), nullable=False)
-    metadata = Column(JSON, nullable=True)
+    metadata_json = Column("metadata", JSON, nullable=True)
+
+    # How many copies of this card the user owns
+    quantity = Column(Integer, nullable=False, default=1)
 
     # Status
     is_active = Column(Boolean, default=True)
@@ -275,6 +284,10 @@ class MatchPlayer(Base):
     board = Column(JSON, nullable=True)
     score = Column(Integer, default=0)
 
+    # Relationships
+    match = relationship("Match", back_populates="players")
+    user = relationship("User", back_populates="match_players")
+
     __table_args__ = (
         Index("idx_match_player_match", "match_id"),
         Index("idx_match_player_player", "player_id"),
@@ -312,9 +325,12 @@ class AuditLog(Base):
     anomaly_type = Column(String(100), nullable=False)
     severity = Column(Enum('low', 'medium', 'high', 'critical'), nullable=False)
     description = Column(Text, nullable=False)
-    metadata = Column(JSON, nullable=True)
+    metadata_json = Column("metadata", JSON, nullable=True)
 
     detected_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="audit_logs")
 
     __table_args__ = (
         Index("idx_audit_user", "user_id"),
@@ -334,13 +350,61 @@ class MatchAuditLog(Base):
     anomaly_type = Column(String(100), nullable=False)
     severity = Column(Enum('low', 'medium', 'high', 'critical'), nullable=False)
     description = Column(Text, nullable=False)
-    metadata = Column(JSON, nullable=True)
+    metadata_json = Column("metadata", JSON, nullable=True)
 
     detected_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    match = relationship("Match", back_populates="audit_logs")
 
     __table_args__ = (
         Index("idx_match_audit_match", "match_id"),
         Index("idx_match_audit_type", "anomaly_type"),
+    )
+
+
+# ============== DECK MODELS ==============
+
+class Deck(Base):
+    """A user's named deck associated with a ruleset format."""
+    __tablename__ = "decks"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    format = Column(Enum('standard', 'modern', 'open'), nullable=False, default='open')
+    description = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="decks")
+    cards = relationship("DeckCard", back_populates="deck", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        # Each user must have uniquely named decks
+        Index("idx_deck_user_name", "user_id", "name", unique=True),
+        Index("idx_deck_user", "user_id"),
+    )
+
+
+class DeckCard(Base):
+    """A card slot inside a deck (1 row per card in the deck)."""
+    __tablename__ = "deck_cards"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    deck_id = Column(String(36), ForeignKey("decks.id", ondelete="CASCADE"), nullable=False, index=True)
+    card_id = Column(String(36), ForeignKey("cards.id", ondelete="CASCADE"), nullable=False, index=True)
+    quantity = Column(Integer, nullable=False, default=1)
+
+    # Relationships
+    deck = relationship("Deck", back_populates="cards")
+    card = relationship("Card")
+
+    __table_args__ = (
+        Index("idx_deck_card_deck", "deck_id"),
+        Index("idx_deck_card_unique", "deck_id", "card_id", unique=True),
     )
 
 

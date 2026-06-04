@@ -1,6 +1,6 @@
 ## AI helpers
 
-.PHONY: ai_list ai_gpu_check ollama_cap_model
+.PHONY: ai_list ai_gpu_check ollama_cap_model ai_headroom
 
 # OLLAMA_BASE: Ollama endpoint reachable from inside the dev container.
 # lotr-ai:11434 is the container-to-container address on lotr-net.
@@ -37,3 +37,18 @@ ai_gpu_check:
 	$(call log_build,Checking GPU status inside lotr-ai container...)
 	@docker exec lotr-ai python3 /app/test_gpu.py 2>&1 || true
 	$(call log_ok,GPU check complete.)
+
+# ai_headroom: show the local headroom proxy dashboard URL and live stats.
+# Headroom runs inside lotr-docker-service on port 8787.
+# Open the dashboard in a browser: http://localhost:8787/dashboard
+HEADROOM_URL ?= http://lotr-headroom:8787
+
+ai_headroom:
+	$(call log_build,Headroom proxy dashboard...)
+	@echo ""
+	@echo "  Browser panel : http://localhost:8787/dashboard"
+	@echo "  Stats endpoint: http://localhost:8787/stats"
+	@echo ""
+	@curl -sSL --max-time 3 "$(HEADROOM_URL)/stats" 2>/dev/null | python3 -c "import sys,json; raw=sys.stdin.read().strip(); d=json.loads(raw) if raw else None; r=d.get('requests',{}) if d else None; t=d.get('tokens',{}) if d else None; print('  Requests  :',r.get('total','?')) or print('  Tokens in :',t.get('input','?')) or print('  Tokens out:',t.get('output','?')) or print('  Saved     :',t.get('saved','?')) or print('  Savings % :',str(t.get('savings_percent','?'))+'%') if d else print('  (proxy not running -- start with: docker.ps1 run)')"
+	@echo ""
+	$(call log_ok,Done.)

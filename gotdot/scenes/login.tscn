@@ -1,0 +1,226 @@
+[gd_scene load_steps=3 format=3 uid="uid://lotr_login"]
+
+[ext_resource type="Script" path="res://scripts/login.gd" id="1_login"]
+
+; ── Login Screen ─────────────────────────────────────────────────────────────────
+; First-time user experience: Sign In / Register pages
+; Shows welcome screen, then transitions to Sign In, then Register if needed
+
+[node name="Login" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_login")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.07, 0.15, 1)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="WelcomeBox" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 300.0
+offset_top = 150.0
+offset_right = 980.0
+offset_bottom = 420.0
+alignment = 1
+visible = true
+
+[node name="WelcomeTitle" type="Label" parent="CanvasLayer/WelcomeBox"]
+layout_mode = 2
+text = "Welcome to LotR TCG"
+theme_override_font_sizes/font_size = 48
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="WelcomeSubtitle" type="Label" parent="CanvasLayer/WelcomeBox"]
+layout_mode = 2
+text = "Choose your option to begin"
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="WelcomeImage" type="Label" parent="CanvasLayer/WelcomeBox"]
+layout_mode = 2
+text = "[🏰]"
+theme_override_font_sizes/font_size = 80
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="SignInBtnWelcome" type="Button" parent="CanvasLayer/WelcomeBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 50)
+text = "Sign In"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/normal_color = Color(0.2, 0.4, 0.6, 0.5)
+theme_override_colors/pressed_color = Color(0.1, 0.3, 0.5, 0.6)
+theme_override_colors/hover_color = Color(0.3, 0.5, 0.7, 0.4)
+
+[node name="RegisterBtnWelcome" type="Button" parent="CanvasLayer/WelcomeBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 50)
+text = "Register"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/normal_color = Color(0.2, 0.4, 0.6, 0.5)
+theme_override_colors/pressed_color = Color(0.1, 0.3, 0.5, 0.6)
+theme_override_colors/hover_color = Color(0.3, 0.5, 0.7, 0.4)
+
+[node name="SignInBox" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 300.0
+offset_top = 150.0
+offset_right = 980.0
+offset_bottom = 420.0
+alignment = 1
+visible = false
+
+[node name="SignInTitle" type="Label" parent="CanvasLayer/SignInBox"]
+layout_mode = 2
+text = "Sign In"
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="SignInForm" type="VBoxContainer" parent="CanvasLayer/SignInBox"]
+layout_mode = 2
+offset_left = 20.0
+offset_top = 40.0
+offset_right = 960.0
+offset_bottom = 340.0
+theme_override_constants/separation = 16
+
+[node name="EmailLabel" type="Label" parent="CanvasLayer/SignInBox/SignInForm"]
+text = "Email"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="EmailInput" type="LineEdit" parent="CanvasLayer/SignInBox/SignInForm"]
+layout_mode = 2
+placeholder_text = "Enter your email"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/placeholder_color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="SignInBtn" type="Button" parent="CanvasLayer/SignInBox/SignInForm"]
+layout_mode = 2
+custom_minimum_size = Vector2(250, 45)
+text = "Sign In"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+
+[node name="RegisterLink" type="Label" parent="CanvasLayer/SignInBox/SignInForm"]
+layout_mode = 2
+text = "Don't have an account? Register"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/underline_size = 2
+
+[node name="BackToWelcome" type="Label" parent="CanvasLayer/SignInBox/SignInForm"]
+layout_mode = 2
+text = "← Back to Welcome"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="RegisterBox" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 300.0
+offset_top = 150.0
+offset_right = 980.0
+offset_bottom = 420.0
+alignment = 1
+visible = false
+
+[node name="RegisterTitle" type="Label" parent="CanvasLayer/RegisterBox"]
+layout_mode = 2
+text = "Create Account"
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="RegisterForm" type="VBoxContainer" parent="CanvasLayer/RegisterBox"]
+layout_mode = 2
+offset_left = 20.0
+offset_top = 40.0
+offset_right = 960.0
+offset_bottom = 340.0
+theme_override_constants/separation = 16
+
+[node name="NameLabel" type="Label" parent="CanvasLayer/RegisterBox/RegisterForm"]
+text = "Unique Name"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="NameInput" type="LineEdit" parent="CanvasLayer/RegisterBox/RegisterForm"]
+layout_mode = 2
+placeholder_text = "Choose a unique name"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/placeholder_color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="EmailLabel2" type="Label" parent="CanvasLayer/RegisterBox/RegisterForm"]
+text = "Email"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="EmailInput2" type="LineEdit" parent="CanvasLayer/RegisterBox/RegisterForm"]
+layout_mode = 2
+placeholder_text = "Enter your email"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/placeholder_color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="PasswordLabel" type="Label" parent="CanvasLayer/RegisterBox/RegisterForm"]
+text = "Password"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="PasswordInput" type="LineEdit" parent="CanvasLayer/RegisterBox/RegisterForm"]
+layout_mode = 2
+placeholder_text = "Create a password"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/placeholder_color = Color(0.5, 0.5, 0.5, 1)
+password = true
+
+[node name="RegisterBtn" type="Button" parent="CanvasLayer/RegisterBox/RegisterForm"]
+layout_mode = 2
+custom_minimum_size = Vector2(250, 45)
+text = "Create Account"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+
+[node name="SignInLink" type="Label" parent="CanvasLayer/RegisterBox/RegisterForm"]
+layout_mode = 2
+text = "Already have an account? Sign In"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/underline_size = 2
+
+[node name="BackToWelcome2" type="Label" parent="CanvasLayer/RegisterBox/RegisterForm"]
+layout_mode = 2
+text = "← Back to Welcome"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="Notification" type="Label" parent="CanvasLayer"]
+offset_left = 300.0
+offset_top = 450.0
+offset_right = 980.0
+offset_bottom = 500.0
+text = ""
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+theme_override_font_sizes/underline_size = 2
+theme_override_font_sizes/italic = true
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

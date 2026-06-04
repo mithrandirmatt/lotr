@@ -1,3 +1,6 @@
+# make stamp files
+**/.install-stamp
+
 # do directory
 build/do
 
