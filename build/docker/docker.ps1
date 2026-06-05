@@ -113,7 +113,7 @@ function Write-Log {
     $logDir = "build\docker\logs"
     if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
     $logFile = Join-Path $logDir "docker.log"
-    
+
     # Check if log file is locked and handle gracefully
     try {
         $content = Get-Content -Path $logFile -Raw -ErrorAction SilentlyContinue
@@ -125,7 +125,7 @@ function Write-Log {
         # File is locked, continue anyway - logs will be written to console
         Write-Host "  Warning: Log file locked, writing to console only"
     }
-    
+
     Add-Content -Path $logFile -Value ("$timestamp`t$msg") -ErrorAction SilentlyContinue
     Write-Host $msg
 }
@@ -488,9 +488,9 @@ if ($Command -eq 'run') {
     # Start (or restart) the Ollama think:false proxy on port 11436.
     # Upstream is headroom (8787) so the full chain is:
     #   Copilot -> proxy:11436 (strips thinking) -> headroom:8787 (compresses) -> Ollama:11434
-    # MaxTokens 2048: Copilot BYOM hard-rejects responses above ~8-12KB; 2048 tokens keeps
-    # us safely under that threshold even for verbose completions.
-    Start-OllamaProxy -ProxyPort 11436 -UpstreamUrl 'http://localhost:8787' -MaxTokens 2048
+    # MaxTokens 16384: the proxy rewrites finish_reason=="length" -> "stop" so VS Code
+    # won't surface "Response too long" on truncation. Cap exists only as a hard backstop.
+    Start-OllamaProxy -ProxyPort 11436 -UpstreamUrl 'http://localhost:8787' -MaxTokens 16384
 
 # Resolve Windows SSH key folder as a WSL path for the volume mount
 $sshWinPath  = Join-Path $env:USERPROFILE ".ssh"

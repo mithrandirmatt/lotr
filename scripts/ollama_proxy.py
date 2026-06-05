@@ -23,12 +23,67 @@ from datetime import datetime
 
 INJECT_THINK_FALSE_PATHS = {"/api/chat", "/api/generate", "/v1/chat/completions"}
 
-# Copilot BYOM has a hard response-size limit; cap tokens to stay under it.
-# Caller-supplied values are respected (only set if not already present).
-DEFAULT_MAX_TOKENS = 4096
+# Token ceiling. VS Code Copilot rejects responses with finish_reason=="length",
+# so we rewrite that to "stop" (see _rewrite_finish_reason). This cap is a backstop
+# only — most coding responses complete in 300-2000 tokens.
+DEFAULT_MAX_TOKENS = 16384
 
 # Log file: records every intercepted request summary for diagnostics
 LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "build", "docker", "logs", "ollama_proxy.log")
+
+
+def _rewrite_finish_reason(chunk: bytes) -> tuple[bytes, str | None]:
+    """Scan a streaming chunk for finish_reason/done_reason == 'length' and
+    rewrite it to 'stop'.  VS Code Copilot BYOM hard-rejects any response
+    where finish_reason=="length"; rewriting lets it accept truncated output
+    gracefully rather than surfacing "Response too long" to the user.
+
+    Works on both OpenAI SSE format  (data: {...})  and Ollama native NDJSON.
+    Assumes each SSE line fits within a single 4096-byte chunk (true in practice).
+    Returns (possibly-modified chunk bytes, original finish_reason or None).
+    """
+    try:
+        raw = chunk.decode("utf-8", errors="replace")
+    except Exception:
+        return chunk, None
+
+    found_reason: str | None = None
+    new_lines = []
+    for line in raw.split("\n"):
+        # OpenAI SSE: "data: {...}"  (skip "data: [DONE]")
+        if "data: " in line and "[DONE]" not in line:
+            prefix_end = line.index("data: ") + 6
+            json_str = line[prefix_end:]
+            prefix = line[:prefix_end]
+        elif line.lstrip().startswith("{"):
+            json_str = line.lstrip()
+            prefix = line[: len(line) - len(line.lstrip())]
+        else:
+            new_lines.append(line)
+            continue
+        try:
+            j = json.loads(json_str)
+            modified = False
+            # OpenAI SSE: choices[].finish_reason
+            for choice in j.get("choices", []):
+                if choice.get("finish_reason") == "length":
+                    found_reason = "length"
+                    choice["finish_reason"] = "stop"
+                    modified = True
+            # Ollama native NDJSON: done_reason
+            if j.get("done_reason") == "length":
+                found_reason = "length"
+                j["done_reason"] = "stop"
+                modified = True
+            if modified:
+                line = prefix + json.dumps(j, separators=(",", ":"))
+        except (json.JSONDecodeError, ValueError):
+            pass
+        new_lines.append(line)
+
+    if found_reason is not None:
+        return "\n".join(new_lines).encode("utf-8"), found_reason
+    return chunk, None
 
 
 def _log(msg: str):
@@ -56,8 +111,33 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
         tag = " [think:false injected]" if injected else ""
         print(f"{method} {self.path}{tag}", flush=True)
 
+    def _send_sse_error(self, message: str):
+        """Send a well-formed OpenAI SSE error chunk so Copilot surfaces the
+        error message instead of showing 'Sorry, no response was returned.'"""
+        payload = json.dumps({
+            "choices": [{
+                "delta": {"content": f"[Proxy error: {message}]"},
+                "finish_reason": "stop",
+                "index": 0,
+            }]
+        })
+        body = f"data: {payload}\n\ndata: [DONE]\n\n".encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(body)
+        self.wfile.flush()
+
     def _forward(self, method: str, body: bytes | None, content_type: str | None, log_prefix: str = ""):
-        conn = http.client.HTTPConnection(self.upstream_host, self.upstream_port, timeout=300)
+        try:
+            conn = http.client.HTTPConnection(self.upstream_host, self.upstream_port, timeout=300)
+        except Exception as exc:
+            _log(f"ERROR  Failed to create connection to upstream: {exc}")
+            if log_prefix:
+                self._send_sse_error(f"upstream connection failed: {exc}")
+            return
+
         headers = {
             k: v for k, v in self.headers.items()
             if k.lower() not in ("host", "content-length")
@@ -67,45 +147,70 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
         if content_type:
             headers["Content-Type"] = content_type
 
-        conn.request(method, self.path, body=body, headers=headers)
-        resp = conn.getresponse()
+        try:
+            conn.request(method, self.path, body=body, headers=headers)
+            resp = conn.getresponse()
+        except Exception as exc:
+            _log(f"ERROR  Upstream request failed ({log_prefix or self.path}): {exc}")
+            try:
+                self._send_sse_error(f"upstream unreachable: {exc}")
+            except Exception:
+                pass
+            return
 
-        self.send_response(resp.status)
+        upstream_status = resp.status
+        if upstream_status >= 400 and log_prefix:
+            # Read error body for logging, then we still forward it
+            _log(f"WARN  Upstream returned HTTP {upstream_status} for {log_prefix}")
+
+        self.send_response(upstream_status)
         for name, value in resp.getheaders():
             if name.lower() == "transfer-encoding":
                 continue  # let Python handle chunking
             self.send_header(name, value)
         self.end_headers()
 
-        # Stream response back in chunks, flush after each to avoid buffering pauses
-        # Also capture first chunk for diagnostics
-        first_chunk = True
+        # Stream response back in chunks.
+        # Rewrite finish_reason=="length" -> "stop" in every chunk so VS Code
+        # Copilot does not surface "Response too long" when the model is truncated.
         total_bytes = 0
+        rewrote_finish = False
         finish_reason = None
-        while True:
-            chunk = resp.read(4096)
-            if not chunk:
-                break
-            if first_chunk and log_prefix:
-                # Try to extract finish_reason from non-streaming response
-                try:
-                    j = json.loads(chunk.decode("utf-8", errors="replace"))
-                    choices = j.get("choices", [])
-                    if choices:
-                        finish_reason = choices[0].get("finish_reason")
-                        usage = j.get("usage", {})
-                        _log(f"{log_prefix} -> finish_reason={finish_reason} "
-                             f"completion_tokens={usage.get('completion_tokens','?')} "
-                             f"total_tokens={usage.get('total_tokens','?')}")
-                except Exception:
-                    pass
-                first_chunk = False
-            total_bytes += len(chunk)
-            self.wfile.write(chunk)
-            self.wfile.flush()
+        first_chunk = True
+        try:
+            while True:
+                chunk = resp.read(4096)
+                if not chunk:
+                    break
+                chunk, detected = _rewrite_finish_reason(chunk)
+                if detected == "length":
+                    rewrote_finish = True
+                if first_chunk and log_prefix:
+                    # Try to extract finish_reason from non-streaming (single JSON) response
+                    try:
+                        j = json.loads(chunk.decode("utf-8", errors="replace"))
+                        choices = j.get("choices", [])
+                        if choices:
+                            finish_reason = choices[0].get("finish_reason")
+                            usage = j.get("usage", {})
+                            _log(f"{log_prefix} -> HTTP {upstream_status} finish_reason={finish_reason} "
+                                 f"completion_tokens={usage.get('completion_tokens','?')} "
+                                 f"total_tokens={usage.get('total_tokens','?')}")
+                    except Exception:
+                        pass
+                    first_chunk = False
+                total_bytes += len(chunk)
+                self.wfile.write(chunk)
+                self.wfile.flush()
+        except Exception as exc:
+            _log(f"ERROR  Stream interrupted after {total_bytes} bytes ({log_prefix or self.path}): {exc}")
+        finally:
+            conn.close()
+
+        rewrite_tag = " [finish_reason:length->stop REWRITTEN]" if rewrote_finish else ""
+        warn_tag = " [WARN: suspiciously small response]" if total_bytes < 500 and method == "POST" else ""
         if log_prefix and finish_reason is None:
-            _log(f"{log_prefix} -> streamed {total_bytes} bytes")
-        conn.close()
+            _log(f"{log_prefix} -> HTTP {upstream_status} streamed {total_bytes} bytes{rewrite_tag}{warn_tag}")
 
     def _handle(self, method: str):
         length = int(self.headers.get("Content-Length", 0) or 0)
