@@ -195,6 +195,8 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     webdriver-manager \
     tldextract \
     chardet
+# Hugging Face hub for model downloads
+RUN python3 -m pip install --break-system-packages --ignore-installed huggingface_hub
 
 # Install Playwright browser binaries (Chromium + Firefox, headless)
 RUN python3 -m playwright install --with-deps chromium firefox
@@ -220,6 +222,23 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     flake8 \
     mypy
 
+# AI helper dependencies (used by ai_update target)
+RUN python3 -m pip install --break-system-packages --ignore-installed \
+    numpy \
+    faiss-cpu \
+    langchain \
+    langchain-community \
+    ollama \
+    torch \
+    torchvision \
+    torchaudio
+
+# Install zstd (required by the Ollama installer)
+RUN apt-get update && apt-get install -y zstd
+
+# Install Ollama binary for local LLM inference
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
 # ------------------------------------------------------------
 # Node.js (LTS) -- required for React admin panel (Vite + TypeScript)
 # Uses NodeSource binary distribution for a current LTS release.
@@ -235,6 +254,12 @@ RUN set -eux; \
 # not a .pth pointer to a source path that won't exist at runtime.
 COPY server/ /opt/server-src/
 RUN python3 -m pip install --break-system-packages --ignore-installed /opt/server-src
+
+# Copy VS Code extension source and build it inside the image (if present)
+COPY .vscode /workspace/.vscode
+RUN if [ -d /workspace/.vscode/extensions/ai ]; then \
+    cd /workspace/.vscode/extensions/ai && npm install && npm run compile; \
+fi
 
 # ------------------------------------------------------------
 # Shell -- enable bash-completion (including make target completion)

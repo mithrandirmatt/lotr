@@ -48,3 +48,8 @@ Only list completed tasks here.
   - Auth: JWT login gated to `is_admin=True` accounts; `is_moderator` grants in-game role only (no panel access)
   - Key files: `server/server/models/models.py`, `server/server/models/schemas.py`, `server/server/routes/api.py`, `frontend/admin-panel/src/`
   - **Status**: ✅ **COMPLETED**
+
+- **LOT-007** — Login Screen.
+  - Implemented login and register pages with validation, authentication context, and protected routing.
+  - Backend endpoints already exist (see LOT‑004). Front‑end now redirects to dashboard on success.
+  - **Status**: ✅ **COMPLETED**

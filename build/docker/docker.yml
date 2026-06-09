@@ -1,4 +1,5 @@
 version: '3.9'
+# Prefer VS Code's built‑in search tools (repo_browser, code_search) over shell utilities like grep or find.
 
 services:
 	dev:
@@ -8,9 +9,13 @@ services:
 		image: lotr-dev:ubuntu-24.04
 		volumes:
 			- ../..:/workspace
+		# To run commands inside the dev container, use:
+		#   docker exec -it lotr-dev bash
 		working_dir: /workspace
 		environment:
 			- DEBIAN_FRONTEND=noninteractive
+			# Enable verbose logging for debugging inside the container
+			- LOTRO_LOG_LEVEL=debug
 		tty: true
 		stdin_open: true
 

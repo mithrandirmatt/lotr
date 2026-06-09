@@ -7,6 +7,7 @@ from typing import Optional, List, Dict, Any
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 import jwt
@@ -174,14 +175,26 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     }
 
 
+import logging
+
+# Log file for login attempts – create the directory if it doesn't exist
+log_dir = Path("server/server/logs")
+log_dir.mkdir(parents=True, exist_ok=True)
+handler = logging.FileHandler(log_dir / "api_login.log")
+handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+
+logging.basicConfig(level=logging.INFO, handlers=[handler])
+
 @router.post("/auth/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login and get access token."""
+    logging.info("Login attempt for %s", form_data.username)
     user = db.query(User).filter(
         or_(User.email == form_data.username, User.username == form_data.username)
     ).first()
 
     if not user or not user.is_active:
+        logging.warning("Login failed (user not found or inactive) for %s", form_data.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -192,6 +205,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     if not pwd_context.verify(form_data.password, user.password_hash):
+        logging.warning("Login failed (bad password) for %s", form_data.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",

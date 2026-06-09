@@ -209,15 +209,14 @@ function Stop-HostOllamaIfPresent {
     try {
         $conn = Get-NetTCPConnection -LocalPort $HostOllamaPort -State Listen -ErrorAction SilentlyContinue
         if ($conn) {
-            $pid = $conn.OwningProcess
-            $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+            $proc = Get-Process -Id $($conn.OwningProcess) -ErrorAction SilentlyContinue
             if ($proc) {
-                Write-Log ("Detected host process {0} (PID {1}) listening on {2}; attempting to stop..." -f $proc.ProcessName, $pid, $HostOllamaPort)
+                Write-Log ("Detected host process {0} (PID {1}) listening on {2}; attempting to stop..." -f $proc.ProcessName, $conn.OwningProcess, $HostOllamaPort)
                 try {
-                    Stop-Process -Id $pid -Force -ErrorAction Stop
-                    Write-Log ("Stopped process PID {0} listening on {1}." -f $pid, $HostOllamaPort)
+                    Stop-Process -Id $($conn.OwningProcess) -Force -ErrorAction Stop
+                    Write-Log ("Stopped process PID {0} listening on {1}." -f $conn.OwningProcess, $HostOllamaPort)
                 } catch {
-                    Write-Log ("Failed to stop process PID {0} listening on {1}: {2}" -f $pid, $HostOllamaPort, $_)
+                    Write-Log ("Failed to stop process PID {0} listening on {1}: {2}" -f $conn.OwningProcess, $HostOllamaPort, $_)
                 }
             }
         }
@@ -243,9 +242,8 @@ function Start-OllamaProxy {
     try {
         $conn = Get-NetTCPConnection -LocalPort $ProxyPort -State Listen -ErrorAction SilentlyContinue
         if ($conn) {
-            $pid = $conn.OwningProcess
-            Write-Log ("Stopping existing process PID {0} on port {1}..." -f $pid, $ProxyPort)
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+            Write-Log ("Stopping existing process PID {0} on port {1}..." -f $conn.OwningProcess, $ProxyPort)
+            Stop-Process -Id $($conn.OwningProcess) -Force -ErrorAction SilentlyContinue
             Start-Sleep -Milliseconds 500
         }
     } catch {
@@ -488,8 +486,7 @@ if ($Command -eq 'run') {
     # Start (or restart) the Ollama think:false proxy on port 11436.
     # Upstream is headroom (8787) so the full chain is:
     #   Copilot -> proxy:11436 (strips thinking) -> headroom:8787 (compresses) -> Ollama:11434
-    # MaxTokens 16384: the proxy rewrites finish_reason=="length" -> "stop" so VS Code
-    # won't surface "Response too long" on truncation. Cap exists only as a hard backstop.
+    # MaxTokens 16384: cap exists only as a hard backstop.
     Start-OllamaProxy -ProxyPort 11436 -UpstreamUrl 'http://localhost:8787' -MaxTokens 16384
 
 # Resolve Windows SSH key folder as a WSL path for the volume mount

@@ -4,6 +4,10 @@
 # do directory
 build/do
 
+# virtual environments
+**/venv/**
+**/lotr_agent/lib/**
+
 # logs
 build/**/logs
 **/docker/logs/**
@@ -26,8 +30,7 @@ export_credentials.cfg
 # Artifacts
 *.pyc
 
-
 # Mono-specific ignores
-.mono/
+.mono
 data_*/
 mono_crash.*.json

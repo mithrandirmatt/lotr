@@ -1,0 +1,6 @@
+Metadata-Version: 2.4
+Name: lotr_agent
+Version: 0.1
+Requires-Dist: llama-cpp-python
+Requires-Dist: torch
+Dynamic: requires-dist

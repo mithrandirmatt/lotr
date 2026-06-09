@@ -1,0 +1,7 @@
+setup.py
+lotr_agent.egg-info/PKG-INFO
+lotr_agent.egg-info/SOURCES.txt
+lotr_agent.egg-info/dependency_links.txt
+lotr_agent.egg-info/not-zip-safe
+lotr_agent.egg-info/requires.txt
+lotr_agent.egg-info/top_level.txt

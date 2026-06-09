@@ -52,3 +52,23 @@ ai_headroom:
 	@curl -sSL --max-time 3 "$(HEADROOM_URL)/stats" 2>/dev/null | python3 -c "import sys,json; raw=sys.stdin.read().strip(); d=json.loads(raw) if raw else None; r=d.get('requests',{}) if d else None; t=d.get('tokens',{}) if d else None; print('  Requests  :',r.get('total','?')) or print('  Tokens in :',t.get('input','?')) or print('  Tokens out:',t.get('output','?')) or print('  Saved     :',t.get('saved','?')) or print('  Savings % :',str(t.get('savings_percent','?'))+'%') if d else print('  (proxy not running -- start with: docker.ps1 run)')"
 	@echo ""
 	$(call log_ok,Done.)
+
+
+ai_npm_install:
+	$(call log_build,Installing npm dependencies for VS Code extension...)
+	@cd .vscode/extensions/ai && npm install
+	$(call log_ok,Done.)
+
+## ---------------------------------------------------------------------------
+## Local LLM index & helper
+## ---------------------------------------------------------------------------
+
+# Rebuild the repo embeddings and start the interactive helper.
+# Usage: ``make ai:update``
+ai_update:
+	@echo "Rebuilding repository embeddings…"
+	python3 ../scripts/embed_repo.py
+	@echo "Starting LLM helper…"
+	# Run in background so make exits immediately
+		nohup python3 ../scripts/llm_helper.py > /dev/null 2>&1 &
+	@echo "LLM helper running (PID $$!). Use Ctrl+C to stop."

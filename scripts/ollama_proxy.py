@@ -23,9 +23,9 @@ from datetime import datetime
 
 INJECT_THINK_FALSE_PATHS = {"/api/chat", "/api/generate", "/v1/chat/completions"}
 
-# Token ceiling. VS Code Copilot rejects responses with finish_reason=="length",
-# so we rewrite that to "stop" (see _rewrite_finish_reason). This cap is a backstop
-# only — most coding responses complete in 300-2000 tokens.
+# Token ceiling. Keep this as a hard backstop only.
+# Rewriting finish_reason is disabled by default because masking truncation can
+# trigger client-side retry loops.
 DEFAULT_MAX_TOKENS = 16384
 
 # Log file: records every intercepted request summary for diagnostics
@@ -103,6 +103,7 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
     upstream_port: int
     upstream_scheme: str  # "http" or "https"
     max_tokens: int = DEFAULT_MAX_TOKENS
+    rewrite_finish_reason: bool = False
 
     def log_message(self, fmt, *args):  # suppress default access log noise
         pass
@@ -171,8 +172,6 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
         # Stream response back in chunks.
-        # Rewrite finish_reason=="length" -> "stop" in every chunk so VS Code
-        # Copilot does not surface "Response too long" when the model is truncated.
         total_bytes = 0
         rewrote_finish = False
         finish_reason = None
@@ -182,9 +181,10 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
                 chunk = resp.read(4096)
                 if not chunk:
                     break
-                chunk, detected = _rewrite_finish_reason(chunk)
-                if detected == "length":
-                    rewrote_finish = True
+                if self.rewrite_finish_reason:
+                    chunk, detected = _rewrite_finish_reason(chunk)
+                    if detected == "length":
+                        rewrote_finish = True
                 if first_chunk and log_prefix:
                     # Try to extract finish_reason from non-streaming (single JSON) response
                     try:
@@ -284,6 +284,11 @@ def main():
     parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS,
                         help=f"Max tokens per response (default: {DEFAULT_MAX_TOKENS}). "
                              "Caps num_predict / max_tokens to avoid Copilot's response-too-long error.")
+    parser.add_argument(
+        "--rewrite-finish-reason",
+        action="store_true",
+        help="Rewrite finish_reason/done_reason length->stop (off by default).",
+    )
     args = parser.parse_args()
 
     parsed = urllib.parse.urlparse(args.upstream)
@@ -291,11 +296,13 @@ def main():
     ProxyHandler.upstream_port = parsed.port or (443 if parsed.scheme == "https" else 80)
     ProxyHandler.upstream_scheme = parsed.scheme
     ProxyHandler.max_tokens = args.max_tokens
+    ProxyHandler.rewrite_finish_reason = args.rewrite_finish_reason
 
     server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), ProxyHandler)
     print(f"Ollama proxy listening on http://localhost:{args.port}")
     print(f"Forwarding to {args.upstream}")
     print(f"  think:false injected | max_tokens cap: {args.max_tokens}")
+    print(f"  rewrite_finish_reason: {args.rewrite_finish_reason}")
     print(f'  Copilot serverUrl -> "http://localhost:{args.port}"')
     try:
         server.serve_forever()

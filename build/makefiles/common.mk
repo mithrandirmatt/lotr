@@ -17,3 +17,5 @@ include $(REPO_ROOT)/build/makefiles/project.mk
 include $(REPO_ROOT)/build/makefiles/server.mk
 include $(REPO_ROOT)/build/makefiles/utils.mk
 include $(REPO_ROOT)/build/makefiles/wiki.mk
+
+include $(REPO_ROOT)/build/agent/agent.mk

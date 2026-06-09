@@ -12,6 +12,9 @@ RUN npm ci --only=production
 # Copy source code
 COPY . .
 
+# Install and compile the local LLM Copilot extension
+RUN cd .vscode/extensions/ai && npm install && npm run compile
+
 # Build the application
 RUN npm run build
 
