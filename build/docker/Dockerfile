@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # ============================================================
 # lotr project -- development image
 # Base: Ubuntu 24.04 LTS
@@ -18,6 +19,7 @@
 FROM ubuntu:24.04
 
 ARG GODOT_VERSION=4.4.1-stable
+ARG GPU_VARIANT=rocm
 # Set GODOT_EDITOR=1 at build time to include the Godot editor binary.
 # The headless binary (godot) is always included for CI/export use.
 #   docker build --build-arg GODOT_EDITOR=1 -t lotr-dev build/docker/
@@ -28,13 +30,18 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    HSA_OVERRIDE_GFX_VERSION=11.0.0 \
+    HSA_ENABLE_DXG_DETECTION=1 \
+    LD_LIBRARY_PATH=/opt/rocm/lib:/usr/lib/wsl/lib
 
 # ------------------------------------------------------------
 # System packages
 # Install in a single layer to keep image size down.
 # ------------------------------------------------------------
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=lotr-dev-apt-lists,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     # Core build toolchain
     build-essential \
     gcc g++ \
@@ -89,11 +96,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     default-jdk-headless \
     && rm -rf /var/lib/apt/lists/*
 
+# ROCm userland is baked into the dev image for parity with lotr-ai.
+# WSL still provides the kernel-side DXG device and /usr/lib/wsl/lib bridge libs.
+RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=lotr-dev-apt-lists,target=/var/lib/apt/lists,sharing=locked \
+    if [ "$GPU_VARIANT" = "rocm" ]; then \
+        mkdir -p /etc/apt/keyrings && \
+        for _url in \
+            "https://repo.radeon.com/rocm/rocm.gpg.key" \
+            "https://repo.amd.com/rocm/rocm.gpg.key" \
+            "https://repo.radeon.com/amdgpu/rocm.gpg.key"; do \
+          curl --retry 3 --retry-delay 5 -fsSL "$_url" \
+              | gpg --dearmor -o /etc/apt/keyrings/rocm.gpg 2>/dev/null \
+            && break || true; \
+        done && \
+        [ -s /etc/apt/keyrings/rocm.gpg ] || { echo "ERROR: failed to obtain ROCm GPG key"; exit 1; } && \
+        printf 'deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/latest noble main\n' \
+            > /etc/apt/sources.list.d/rocm.list && \
+        apt-get update && \
+        apt-get install -y --no-install-recommends hsa-rocr hip-runtime-amd rocminfo && \
+        rm -rf /var/lib/apt/lists/* && \
+        echo '/opt/rocm/lib' > /etc/ld.so.conf.d/rocm.conf && ldconfig; \
+    else \
+        echo '/opt/rocm/lib' > /etc/ld.so.conf.d/rocm.conf; \
+    fi
+
 # ------------------------------------------------------------
 # Node.js 22 LTS (for admin panel / frontend dev)
 # Uses NodeSource official repo to get a current LTS release.
 # ------------------------------------------------------------
-RUN set -eux; \
+RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=lotr-dev-apt-lists,target=/var/lib/apt/lists,sharing=locked \
+    set -eux; \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; \
     apt-get install -y --no-install-recommends nodejs; \
     rm -rf /var/lib/apt/lists/*
@@ -104,7 +138,9 @@ RUN set -eux; \
 # completeness (buildx, compose plugin). This adds Docker's apt repo and
 # installs the required packages.
 # ------------------------------------------------------------
-RUN set -eux; \
+RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=lotr-dev-apt-lists,target=/var/lib/apt/lists,sharing=locked \
+    set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends ca-certificates curl gnupg lsb-release; \
     mkdir -p /etc/apt/keyrings; \
@@ -175,14 +211,16 @@ fi
 # ------------------------------------------------------------
 
 # Git tooling
-RUN python3 -m pip install --break-system-packages --ignore-installed \
+RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
+    python3 -m pip install --break-system-packages --ignore-installed \
     gitpython \
     pre-commit \
     commitizen \
     pygit2
 
 # Web crawling / HTTP
-RUN python3 -m pip install --break-system-packages --ignore-installed \
+RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
+    python3 -m pip install --break-system-packages --ignore-installed \
     requests \
     httpx[http2] \
     aiohttp \
@@ -196,13 +234,15 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     tldextract \
     chardet
 # Hugging Face hub for model downloads
-RUN python3 -m pip install --break-system-packages --ignore-installed huggingface_hub
+RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
+    python3 -m pip install --break-system-packages --ignore-installed huggingface_hub
 
 # Install Playwright browser binaries (Chromium + Firefox, headless)
 RUN python3 -m playwright install --with-deps chromium firefox
 
 # Data / scripting utilities
-RUN python3 -m pip install --break-system-packages --ignore-installed \
+RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
+    python3 -m pip install --break-system-packages --ignore-installed \
     pyyaml \
     toml \
     tomli \
@@ -216,22 +256,32 @@ RUN python3 -m pip install --break-system-packages --ignore-installed \
     uvicorn
 
 # Code quality
-RUN python3 -m pip install --break-system-packages --ignore-installed \
+RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
+    python3 -m pip install --break-system-packages --ignore-installed \
     black \
     isort \
     flake8 \
     mypy
 
 # AI helper dependencies (used by ai_update target)
-RUN python3 -m pip install --break-system-packages --ignore-installed \
-    numpy \
-    faiss-cpu \
-    langchain \
-    langchain-community \
-    ollama \
-    torch \
-    torchvision \
-    torchaudio
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    python3 -m pip install --break-system-packages --ignore-installed \
+        numpy \
+        faiss-cpu \
+        langchain \
+        langchain-community \
+        ollama
+
+# Install PyTorch variant by GPU build target.
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    if [ "$GPU_VARIANT" = "rocm" ]; then \
+        python3 -m pip install --break-system-packages --ignore-installed \
+            --index-url https://download.pytorch.org/whl/rocm7.2 \
+            torch torchvision torchaudio; \
+    else \
+        python3 -m pip install --break-system-packages --ignore-installed \
+            torch torchvision torchaudio; \
+    fi
 
 # Install zstd (required by the Ollama installer)
 RUN apt-get update && apt-get install -y zstd

@@ -1,4 +1,0 @@
-llama-cpp-python>=0.2.7
-torch>=2.0
-transformers>=4.35
-einops>=0.6

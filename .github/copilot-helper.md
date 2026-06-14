@@ -67,7 +67,7 @@ Create issue (issues-current.md + issues-tracker.md)
 ---
 ## Common Mistakes to Avoid
 - Running `node`, `npm`, `python`, or `pip` on the host instead of in the container.
-- Editing `.github/agents/generated/` files directly (they are auto‑generated).
+- Editing generated instruction artifacts directly instead of canonical files under `.github/agent/`.
 - Marking an issue complete before it has been verified.
 - Creating a new issue number that was previously used (check `issues-tracker.md`).
 - Using GitKraken MCP for issue tracking unless explicitly asked.

@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -65,6 +66,34 @@ def _is_registered_submodule(rel_path: str) -> bool:
         text=True,
     )
     return result.returncode == 0 and bool(result.stdout.strip())
+
+
+def _git_output(repo_path: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=str(repo_path),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or f"git {' '.join(args)} failed")
+    return result.stdout.strip()
+
+
+def _parse_remote_owner(remote_url: str) -> str:
+    # Supports: git@github.com:owner/repo.git and https://github.com/owner/repo(.git)
+    m = re.search(r"github\.com[:/]([^/]+)/[^/]+(?:\.git)?$", remote_url)
+    return m.group(1).strip().lower() if m else ""
+
+
+def _is_submodule_path(repo_root: Path, abs_path: Path) -> bool:
+    if abs_path == repo_root:
+        return False
+    try:
+        rel = abs_path.relative_to(repo_root).as_posix()
+    except ValueError:
+        return False
+    return _is_registered_submodule(rel)
 
 
 def _ensure_lib_submodule(name: str, abs_path: Path) -> bool:
@@ -162,6 +191,124 @@ def cmd_commit_project(args):
     subprocess.run(["git", "status"], cwd=str(REPO_ROOT))
 
 
+def _squash_repo_to_single_commit(repo_path: Path, message: str) -> str:
+    branch = _git_output(repo_path, "rev-parse", "--abbrev-ref", "HEAD")
+    if branch == "HEAD":
+        raise RuntimeError("detached HEAD is not supported for squash")
+
+    temp_branch = f"squash-temp-{int(time.time())}"
+    _git_output(repo_path, "checkout", "--orphan", temp_branch)
+    _git_output(repo_path, "add", "-A")
+
+    commit = subprocess.run(
+        ["git", "commit", "--allow-empty", "-m", message],
+        cwd=str(repo_path),
+        capture_output=True,
+        text=True,
+    )
+    if commit.returncode != 0:
+        raise RuntimeError(commit.stderr.strip() or commit.stdout.strip() or "git commit failed")
+
+    _git_output(repo_path, "branch", "-M", branch)
+    return branch
+
+
+def cmd_squash_project(args):
+    cfg = read_ini(str(INI_PATH))
+    repos = get_section(cfg, "REPOS")
+    if not repos:
+        pe("No [REPOS] entries found in build/build.ini")
+        sys.exit(1)
+
+    resolved = {name: (BUILD_DIR / rel).resolve() for name, rel in repos.items()}
+    root_repo = resolved.get("lotr", REPO_ROOT)
+
+    root_remote = git.get_remote_url(str(root_repo))
+    root_owner = _parse_remote_owner(root_remote)
+    owner_whitelist = {root_owner} if root_owner else set()
+
+    pb("Selecting repos to squash...")
+    if owner_whitelist:
+        psi(f"Owner filter: {', '.join(sorted(owner_whitelist))}")
+    else:
+        pw("Could not infer root GitHub owner; ownership filter disabled.")
+
+    candidates: list[tuple[str, Path]] = []
+    for name, abs_path in sorted(resolved.items(), key=lambda kv: len(kv[1].parts), reverse=True):
+        if not git.is_git_repo(str(abs_path)):
+            pw(f"[{name}] skipped — not a git repo")
+            continue
+
+        if _is_submodule_path(root_repo, abs_path):
+            psi(f"[{name}] skipped — registered submodule")
+            continue
+
+        remote = git.get_remote_url(str(abs_path))
+        owner = _parse_remote_owner(remote)
+        if owner_whitelist and owner and owner not in owner_whitelist:
+            psi(f"[{name}] skipped — remote owner '{owner}' not in whitelist")
+            continue
+
+        if owner_whitelist and not owner:
+            psi(f"[{name}] skipped — no parseable GitHub owner on remote")
+            continue
+
+        candidates.append((name, abs_path))
+
+    if not candidates:
+        pe("No eligible repos found to squash.")
+        sys.exit(1)
+
+    print("")
+    print("Repos selected for squash:")
+    for name, abs_path in candidates:
+        print(f"  - {name}: {abs_path}")
+
+    print("")
+    message = input("Squash commit message: ").strip()
+    if not message:
+        pe("Commit message cannot be empty.")
+        sys.exit(1)
+
+    squashed: list[tuple[str, Path, str]] = []
+    for name, abs_path in candidates:
+        pb(f"[{name}] squashing history -> single commit")
+        try:
+            branch = _squash_repo_to_single_commit(abs_path, message)
+            pok(f"[{name}] squashed on branch '{branch}'.")
+            squashed.append((name, abs_path, branch))
+        except Exception as exc:
+            pe(f"[{name}] squash failed: {exc}")
+
+    if not squashed:
+        pe("No repos were squashed successfully.")
+        sys.exit(1)
+
+    print("")
+    push_now = input("Push squashed branches now? [y/N]: ").strip().lower()
+    if push_now not in {"y", "yes"}:
+        psi("Push skipped by user.")
+        return
+
+    ensure_ssh_agent()
+    for name, abs_path, branch in squashed:
+        remote_url = git.get_remote_url(str(abs_path))
+        if remote_url.startswith("https://"):
+            pw(f"[{name}] skipped push — HTTPS remote configured ({remote_url})")
+            continue
+        pb(f"[{name}] force-pushing squashed branch '{branch}'...")
+        result = subprocess.run(
+            ["git", "push", "--force-with-lease", "origin", branch],
+            cwd=str(abs_path),
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            pe(f"[{name}] push failed: {result.stderr.strip() or result.stdout.strip()}")
+        else:
+            pok(f"[{name}] push complete.")
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -170,10 +317,13 @@ def main():
     parser = argparse.ArgumentParser(description="Project automation for lotr.")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("commit_project", help="Stage, commit, and push all repos in build.ini.")
+    sub.add_parser("squash_project", help="Squash eligible project repos to one commit and optionally push.")
     args = parser.parse_args()
 
     if args.command == "commit_project":
         cmd_commit_project(args)
+    elif args.command == "squash_project":
+        cmd_squash_project(args)
 
 
 if __name__ == "__main__":

@@ -18,11 +18,13 @@
 FROM python:3.12-slim
 
 # GPU_VARIANT selects the runtime: cpu (default) | rocm | cuda
-ARG GPU_VARIANT=cpu
+ARG GPU_VARIANT=rocm
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,id=lotr-ai-apt-cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,id=lotr-ai-apt-lists,target=/var/lib/apt/lists,sharing=locked \
+  apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
@@ -37,7 +39,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Supports RDNA3 / gfx1100 (RX 7900 XTX). Skipped for cpu/cuda variants.
 # After install: register /opt/rocm/lib with ldconfig so libhsa-runtime64 1.18
 # (DXG-capable) takes precedence over the Ubuntu 1.11 package at runtime.
-RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
+RUN --mount=type=cache,id=lotr-ai-apt-cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,id=lotr-ai-apt-lists,target=/var/lib/apt/lists,sharing=locked \
+  if [ "$GPU_VARIANT" = "rocm" ]; then \
       mkdir -p /etc/apt/keyrings && \
       for _url in \
           "https://repo.radeon.com/rocm/rocm.gpg.key" \
@@ -99,7 +103,8 @@ RUN if [ "$GPU_VARIANT" = "rocm" ]; then \
     fi
 
 COPY build/docker/ai/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,id=lotr-ai-pip-cache,target=/root/.cache/pip,sharing=locked \
+  pip install --no-cache-dir -r requirements.txt
 
 COPY build/docker/ai/server.py .
 COPY build/docker/ai/start_services.sh /usr/local/bin/start_services.sh
@@ -109,7 +114,7 @@ COPY build/docker/ai/supervisord.conf /etc/supervisor/supervisord.conf
 RUN chmod +x /usr/local/bin/start_services.sh /usr/local/bin/gpu_detect.sh /usr/local/bin/install_gpu_runtime.sh
 
 # Bake GPU_VARIANT into the image so start_services.sh and Ollama can inspect it
-ARG GPU_VARIANT=cpu
+ARG GPU_VARIANT=rocm
 
 # OLLAMA_HOST must be 0.0.0.0:11434 so Ollama binds on all interfaces
 # HSA_OVERRIDE_GFX_VERSION=11.0.0 tells ROCm the 7900 XTX is gfx1100 (RDNA3)

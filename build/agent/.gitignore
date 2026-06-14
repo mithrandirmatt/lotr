@@ -1,0 +1,14 @@
+# Agent build outputs and local environment artifacts
+do/agent/models/
+
+# Local training environment created by make targets
+lotr_agent/venv/
+lotr_agent/bin/
+lotr_agent/include/
+lotr_agent/lib/
+lotr_agent/lib64
+lotr_agent/lotr_agent.egg-info/
+
+# Python build cache
+__pycache__/
+

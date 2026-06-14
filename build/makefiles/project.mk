@@ -12,3 +12,8 @@ project_commit:
 	$(call log_build,** Calling $@... **)
 	@cd $(REPO_ROOT) && python3 build/py/project.py commit_project
 	$(call log_ok,Finished $@.)
+
+project_squash:
+	$(call log_build,** Calling $@... **)
+	@cd $(REPO_ROOT) && python3 build/py/project.py squash_project
+	$(call log_ok,Finished $@.)

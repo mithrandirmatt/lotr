@@ -30,6 +30,11 @@ export_credentials.cfg
 # Artifacts
 *.pyc
 
+# Agent model/training artifacts
+do/agent/models/
+build/do/agent/models/
+build/agent/do/agent/models/
+
 # Mono-specific ignores
 .mono
 data_*/

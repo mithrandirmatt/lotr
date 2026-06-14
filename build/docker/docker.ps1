@@ -10,6 +10,7 @@ Commands:
             lotr-server (FastAPI, port 8000) and lotr-admin (Vite, port 3001)
             as background containers, auto-open the admin panel in the browser,
             then open an interactive shell in the lotr-dev container
+  exec  -- run a command in a container
 
 The Docker daemon must already be running inside lotr-docker-service before using
 this script. Start it with:
@@ -27,11 +28,14 @@ Usage:
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableAi
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build -Tag my-image:v2 -McpTag my-mcp:v2
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -Tag my-image:v2 -McpTag my-mcp:v2
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run -CommandArg "command"
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run --exec "command"
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 exec "command"
 #>
 
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('build', 'run')]
+    [ValidateSet('build', 'run', 'exec')]
     [string]$Command,
 
     [string]$DistroName  = 'lotr-docker-service',
@@ -61,7 +65,9 @@ param(
     [switch]$NoOpenBrowser,
 
     [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$ExtraArgs = @()
+    [string[]]$ExtraArgs = @(),
+
+    [string]$CommandArg = $null
 )
 
 Set-StrictMode -Version Latest
@@ -69,7 +75,7 @@ Set-StrictMode -Version Latest
 # ---------------------------------------------------------------------------
 # Feature flags -- edit this line to enable optional features
 # ---------------------------------------------------------------------------
-$EnableRocm = $false   # Set to $true to enable ROCm GPU passthrough and Ollama integration
+$EnableRocm = $true   # Enable ROCm passthrough/integration when GpuVariant resolves to rocm.
 
 # Default to starting MCP when running 'run' without explicit -EnableAi
 if ($Command -eq 'run' -and -not $EnableAi) {
@@ -345,6 +351,26 @@ if ($ExtraArgs -contains '--fresh') {
 
 Write-Log ("docker.ps1  command={0}  distro={1}  tag={2}  fresh={3}" -f $Command, $DistroName, $Tag, $IsFresh)
 
+if (-not $CommandArg -and $ExtraArgs) {
+    $execIndex = [Array]::IndexOf($ExtraArgs, '--exec')
+    if ($execIndex -ge 0 -and ($execIndex + 1) -lt $ExtraArgs.Count) {
+        $CommandArg = ($ExtraArgs[($execIndex + 1)..($ExtraArgs.Count - 1)] -join ' ').Trim()
+    } elseif ($Command -eq 'exec') {
+        $CommandArg = ($ExtraArgs -join ' ').Trim()
+    }
+}
+
+if ($Command -eq 'exec') {
+    $Command = 'run'
+    $NoDevServices = $true
+    $NoOpenBrowser = $true
+    if (-not $CommandArg) {
+        Write-Log 'The exec command requires a command string. Example: ./build/docker/docker.ps1 exec "pwd"'
+        exit 1
+    }
+    Write-Log 'Normalizing exec to run -NoDevServices -NoOpenBrowser with CommandArg.'
+}
+
 try {
     $installed = @(wsl -l -q 2>$null)
 }
@@ -416,6 +442,12 @@ $wslModelsPath    = $null
 $modelVolumeFlags = @()
 $modelEnvFlags    = @()
 $gpuDeviceFlags   = @()
+# ROCm-specific env vars kept separately so they survive WSL splatting
+$rocmEnvLdPreload      = ''
+$rocmEnvLdLibraryPath  = ''
+$rocmEnvHsaDxg         = ''
+$rocmEnvHsaGfx         = ''
+$rocmEnvWslInterop     = ''
 
 # ---------------------------------------------------------------------------
 # build
@@ -434,9 +466,10 @@ if ($Command -eq 'build') {
         exit 3
     }
 
-    wsl -d $DistroName -u root -- docker build `
+    wsl -d $DistroName -u root -- env DOCKER_BUILDKIT=1 docker build `
         --file "$dockerfileWslPath" `
         --tag  $Tag `
+        --build-arg "GPU_VARIANT=$GpuVariant" `
         $noCacheFlag `
         $wslRepoRoot
 
@@ -459,13 +492,13 @@ if ($Command -eq 'build') {
         exit 3
     }
 
-    wsl -d $DistroName -u root -- docker build `
+    wsl -d $DistroName -u root -- env DOCKER_BUILDKIT=1 docker build `
         --tag  $McpTag `
         --build-arg "GPU_VARIANT=$GpuVariant" `
         --network host `
         $noCacheFlag `
         --file "$mcpDockerfileWslPath" `
-        "$wslRepoRoot"
+        $wslRepoRoot
 
     if ($LASTEXITCODE -ne 0) {
         Write-Log ("AI build FAILED (exit {0})." -f $LASTEXITCODE)
@@ -505,13 +538,22 @@ $wslGitconfigPath = ("/mnt/{0}{1}" -f $gitconfigDrive, $gitconfigRelPath)
 
 Write-Log ("Git config (WSL): {0}" -f $wslGitconfigPath)
 
-# Resolve Windows .continue folder as a WSL path for the volume mount
-$continueWinPath = Join-Path $env:USERPROFILE ".continue"
-$continueDrive   = $continueWinPath.Substring(0, 1).ToLower()
-$continueRelPath = $continueWinPath.Substring(2) -replace '\\', '/'
-$wslContinuePath = ("/mnt/{0}{1}" -f $continueDrive, $continueRelPath)
+# Resolve Windows .ollama folder as a WSL path for the volume mount
+$ollamaWinPath = Join-Path $env:USERPROFILE ".ollama"
+if (-not (Test-Path -Path $ollamaWinPath)) {
+    New-Item -ItemType Directory -Path $ollamaWinPath | Out-Null
+}
+$ollamaDrive   = $ollamaWinPath.Substring(0, 1).ToLower()
+$ollamaRelPath = $ollamaWinPath.Substring(2) -replace '\\', '/'
+$wslOllamaPath = ("/mnt/{0}{1}" -f $ollamaDrive, $ollamaRelPath)
 
-Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
+Write-Log ("Ollama dir (WSL): {0}" -f $wslOllamaPath)
+
+# Resolve Windows host IP from within WSL and construct default host Ollama URL.
+$wslGateway = (wsl -d $DistroName -u root -- ip route show default 2>$null) -replace '^default via (\S+).*','$1'
+if (-not $wslGateway) { $wslGateway = 'host.docker.internal' }
+$hostOllamaUrl = "http://${wslGateway}:11434"
+Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
 
     # Ensure Docker is still responsive before performing network/container ops
     if (-not (Test-DockerResponsive -Distro $DistroName)) {
@@ -534,6 +576,50 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
     if (-not $netExists) {
         Write-Log "Creating Docker network lotr-net..."
         wsl -d $DistroName -u root -- docker network create lotr-net | Out-Null
+    }
+
+    # ROCm GPU device flags for container runtime (dev + ai containers).
+    if ($GpuVariant -eq 'rocm') {
+        $kfdExists = wsl -d $DistroName -u root -- bash -c 'test -e /dev/kfd && echo yes || echo no' 2>$null
+        $driExists = wsl -d $DistroName -u root -- bash -c 'test -d /dev/dri && echo yes || echo no' 2>$null
+        if ($kfdExists -match 'yes' -and $driExists -match 'yes') {
+            $gpuDeviceFlags = @('--device', '/dev/kfd', '--device', '/dev/dri', '--group-add', 'video', '--group-add', 'render')
+            Write-Log "ROCm mode: /dev/kfd and /dev/dri found -- adding native device flags."
+        } else {
+            # WSL2 ROCDXG path: /dev/dxg + librocdxg.so
+            $dxgExists       = wsl -d $DistroName -u root -- bash -c 'test -c /dev/dxg        && echo yes || echo no' 2>$null
+            $libdxcoreExists = wsl -d $DistroName -u root -- bash -c 'test -f /usr/lib/wsl/lib/libdxcore.so && echo yes || echo no' 2>$null
+            $librocdxgExists = wsl -d $DistroName -u root -- bash -c 'test -f /opt/rocm/lib/librocdxg.so   && echo yes || echo no' 2>$null
+            if ($dxgExists -match 'yes' -and $libdxcoreExists -match 'yes' -and $librocdxgExists -match 'yes') {
+                Write-Log "ROCm mode (ROCDXG/WSL2): /dev/dxg + librocdxg.so found -- using DXG device path."
+                $wslInterop = wsl -d $DistroName -u root -- bash -c 'for s in /run/WSL/*_interop; do [ -S "$s" ] && echo "$s"; done | sort -t/ -k4 -n | head -1' 2>$null
+                $wslInterop = $wslInterop.Trim()
+                if (-not $wslInterop) { $wslInterop = '/run/WSL/1_interop' }
+                Write-Log "WSL_INTEROP=$wslInterop"
+                $gpuDeviceFlags = @(
+                    '--device',        '/dev/dxg',
+                    '--volume',        '/opt/rocm:/opt/rocm:ro',
+                    '--volume',        '/usr/lib/wsl/lib:/usr/lib/wsl/lib:ro',
+                    '--volume',        '/run/WSL:/run/WSL',
+                    '--cap-add',       'SYS_PTRACE',
+                    '--cap-add',       'SYS_ADMIN',
+                    '--security-opt',  'seccomp=unconfined',
+                    '--ipc',           'host',
+                    '--shm-size',      '8g'
+                )
+                # Keep env vars as separate scalars so splatting doesn't mangle them
+                $rocmEnvLdPreload     = 'LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so'
+                $rocmEnvLdLibraryPath = 'LD_LIBRARY_PATH=/opt/rocm/lib:/usr/lib/wsl/lib'
+                $rocmEnvHsaDxg        = 'HSA_ENABLE_DXG_DETECTION=1'
+                $rocmEnvHsaGfx        = 'HSA_OVERRIDE_GFX_VERSION=11.0.0'
+                $rocmEnvWslInterop    = "WSL_INTEROP=$wslInterop"
+            } elseif ($dxgExists -match 'yes') {
+                Write-Log "ROCm mode: /dev/dxg present but librocdxg.so not installed."
+                Write-Log "  Run setup-wsl-docker.ps1 again to install ROCDXG."
+            } else {
+                Write-Log "ROCm mode: /dev/kfd, /dev/dri, and /dev/dxg all absent. Starting without device flags; GPU will not be visible in container."
+            }
+        }
     }
 
     # ------------------------------------------------------------------
@@ -837,42 +923,69 @@ Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
     # -v:   repo -> /workspace; Windows .ssh (ppk source) -> /root/.ssh:rw;
     #        named volume lotr-ssh-keys -> /root/.ssh_keys (Linux fs, chmod works, persistent);
     #        .gitconfig -> /root/.gitconfig:ro
-    #        .continue  -> /host-continue:rw (for sync_continue make target)
     # -w:   set working directory inside container
     # --network lotr-net: shared network so dev container can reach mcp at http://lotr-mcp:3100/sse
-    if (-not $StartAiOnly) {
-        wsl -d $DistroName -u root -- docker run `
-            --rm `
-            --interactive `
-            --tty `
-            --network lotr-net `
-            --add-host=host.docker.internal:host-gateway `
-            --env "OLLAMA_URL=$ollamaUrlEnv" `
-            --env "OLLAMA_ORIGINS=$ollamaOriginsEnv" `
-            @displayFlags `
-            --volume  "${wslRepoRoot}:/workspace" `
-            @modelVolumeFlags `
-            --volume  "${wslSshPath}:/root/.ssh:rw" `
-            @(
-                if ($MountDockerSocket) { '--volume'; '/var/run/docker.sock:/var/run/docker.sock' }
-            ) `
-            --volume  "lotr-ssh-keys:/root/.ssh_keys" `
-            --volume  "${wslGitconfigPath}:/root/.gitconfig:ro" `
-            --volume  "${wslContinuePath}:/host-continue:rw" `
-            --workdir "/workspace/build" `
-            $Tag `
-            /bin/bash
-
-        if ($LASTEXITCODE -ne 0) {
-            Write-Log ("Container exited with code {0}." -f $LASTEXITCODE)
-            exit $LASTEXITCODE
-        }
-
-        Write-Log "Container session ended."
+    $dockerSocketFlags = @()
+    if ($MountDockerSocket) {
+        $dockerSocketFlags += '--volume'
+        $dockerSocketFlags += '/var/run/docker.sock:/var/run/docker.sock'
     }
-    else {
-        Write-Log "StartAiOnly set; skipping interactive dev container shell."
+
+    # Build additional --env flags for ROCm env vars (only set when rocm path was taken)
+    $rocmEnvFlags = @()
+    if ($rocmEnvLdPreload)     { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvLdPreload }
+    if ($rocmEnvLdLibraryPath) { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvLdLibraryPath }
+    if ($rocmEnvHsaDxg)        { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvHsaDxg }
+    if ($rocmEnvHsaGfx)        { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvHsaGfx }
+    if ($rocmEnvWslInterop)    { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvWslInterop }
+
+    # Combine gpu device flags + rocm env flags into a bash-safe argument string
+    # so that values containing '=' and ':' survive the wsl -- boundary.
+    $allGpuArgs = ($gpuDeviceFlags + $rocmEnvFlags) -join ' '
+
+    if ($CommandArg) {
+        Write-Log ("Executing command '{0}' in container '{1}'..." -f $CommandArg, $Tag)
+        $baseArgs = "--rm --interactive --tty --network lotr-net --add-host=host.docker.internal:host-gateway" +
+            " --env OLLAMA_URL='$ollamaUrlEnv'" +
+            " --env OLLAMA_ORIGINS='$ollamaOriginsEnv'" +
+            " --env OLLAMA_HOST='$hostOllamaUrl'" +
+            " --env HOST_OLLAMA_URL='$hostOllamaUrl'" +
+            " --volume '${wslRepoRoot}:/workspace'" +
+            " --volume '${wslSshPath}:/root/.ssh:rw'" +
+            " --volume 'lotr-ssh-keys:/root/.ssh_keys'" +
+            " --volume '${wslGitconfigPath}:/root/.gitconfig:ro'" +
+            " --volume '${wslOllamaPath}:/root/.ollama:rw'" +
+            " --workdir /workspace/build"
+        $displayArgsStr = ($displayFlags) -join ' '
+        $dockerSockStr  = ($dockerSocketFlags) -join ' '
+        $modelVolStr    = ($modelVolumeFlags) -join ' '
+        $bashCmd = "docker run $baseArgs $displayArgsStr $allGpuArgs $dockerSockStr $modelVolStr $Tag /bin/bash -c '$CommandArg'"
+        wsl -d $DistroName -u root -- bash -c $bashCmd
+    } else {
+        Write-Log ("Starting interactive shell in container '{0}'..." -f $Tag)
+        $baseArgs = "--rm --interactive --tty --network lotr-net --add-host=host.docker.internal:host-gateway" +
+            " --env OLLAMA_URL='$ollamaUrlEnv'" +
+            " --env OLLAMA_ORIGINS='$ollamaOriginsEnv'" +
+            " --env OLLAMA_HOST='$hostOllamaUrl'" +
+            " --env HOST_OLLAMA_URL='$hostOllamaUrl'" +
+            " --volume '${wslRepoRoot}:/workspace'" +
+            " --volume '${wslSshPath}:/root/.ssh:rw'" +
+            " --volume 'lotr-ssh-keys:/root/.ssh_keys'" +
+            " --volume '${wslGitconfigPath}:/root/.gitconfig:ro'" +
+            " --volume '${wslOllamaPath}:/root/.ollama:rw'" +
+            " --workdir /workspace/build"
+        $displayArgsStr = ($displayFlags) -join ' '
+        $dockerSockStr  = ($dockerSocketFlags) -join ' '
+        $modelVolStr    = ($modelVolumeFlags) -join ' '
+        $bashCmd = "docker run $baseArgs $displayArgsStr $allGpuArgs $dockerSockStr $modelVolStr $Tag /bin/bash"
+        wsl -d $DistroName -u root -- bash -c $bashCmd
     }
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log ("Command exited with code {0}." -f $LASTEXITCODE)
+        exit $LASTEXITCODE
+    }
+    Write-Log "Command completed successfully."
 }
 
 Write-Log "docker.ps1 done."

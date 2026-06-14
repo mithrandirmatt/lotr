@@ -1,0 +1,46 @@
+# Git metadata
+.git
+.gitignore
+
+# Build outputs and generated artifacts
+build/do/
+build/docker/logs/
+build/docker/artifacts/
+build/agent/lotr_agent/
+build/agent/do/
+build/agent/__pycache__/
+build/agent/*.pyc
+build/py/__pycache__/
+build/py/**/*.pyc
+
+# Repo-generated agent/model outputs
+do/agent/models/
+do/**/__pycache__/
+
+# Python caches and virtualenvs
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+**/venv/
+
+# Node and package caches
+**/node_modules/
+**/.parcel-cache/
+**/.turbo/
+**/dist/
+# Editor and OS junk
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions/
+!.vscode/extensions/**
+.DS_Store
+Thumbs.db
+
+# Large or local runtime data that should not be sent to docker build
+.ollama/
+*.log

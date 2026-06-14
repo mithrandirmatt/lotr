@@ -1,0 +1,45 @@
+BASE_MODEL ?= llama3-8b
+QUANTIZATION ?= 4bit
+MODEL_DIR ?= models
+OUTPUT_MODEL := $(MODEL_DIR)/lotr-$(BASE_MODEL)-$(QUANTIZATION).gguf
+
+.PHONY: validate-model
+validate-model:
+	@echo "Validating model configuration for $(BASE_MODEL) with $(QUANTIZATION) quantization..."
+	@echo "Model output will be saved to: $(OUTPUT_MODEL)"
+
+.PHONY: train-$(BASE_MODEL)
+train-$(BASE_MODEL):
+	@echo "Training $(BASE_MODEL) model with $(QUANTIZATION) quantization..."
+	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/Scripts/python build.train.py --model "$(BASE_MODEL)" --quantization "$(QUANTIZATION)"
+
+
+.PHONY: quantize-$(QUANTIZATION)
+quantize-$(QUANTIZATION):
+	@echo "Quantizing model with $(QUANTIZATION) quantization..."
+	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/Scripts/python build.quantize.py --quantization "$(QUANTIZATION)"
+
+.PHONY: optimize-inference
+optimize-inference:
+	@echo "Optimizing inference for $(QUANTIZATION) quantization..."
+	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/Scripts/python build.optimize.py --quantization "$(QUANTIZATION)"
+
+.PHONY: lotr-$(BASE_MODEL)-$(QUANTIZATION)
+lotr-$(BASE_MODEL)-$(QUANTIZATION): train-$(BASE_MODEL) quantize-$(QUANTIZATION) optimize-inference
+	@echo "Model training, quantization, and optimization completed successfully."
+	@echo "Final model saved to: $(OUTPUT_MODEL)"
+
+.PHONY: install-$(BASE_MODEL)
+install-$(BASE_MODEL):
+	@echo "Installing $(BASE_MODEL) model with $(QUANTIZATION) quantization..."
+	@echo "Setting Python path to include build directory"
+	@mkdir -p $(REPO_ROOT)/build/agent/lotr_agent/venv
+	@python3 -m venv $(REPO_ROOT)/build/agent/lotr_agent/venv
+	@$(REPO_ROOT)/build/agent/lotr_agent/venv/Scripts/python -m pip install -e $(REPO_ROOT)/build/agent/lotr_agent --break-system-packages
+	@echo "Installation completed"
+
+.PHONY: agent_build
+agent_build: lotr-$(BASE_MODEL)-$(QUANTIZATION)
+	@echo "\n=== Full build workflow completed for $(BASE_MODEL) with $(QUANTIZATION) quantization ==="
+	@echo "Final model saved to: $(OUTPUT_MODEL)"
+	@echo "Logs and outputs available in the terminal."

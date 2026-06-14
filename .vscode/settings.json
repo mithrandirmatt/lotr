@@ -2,6 +2,19 @@
     "editor.renderWhitespace": "all",
 
     // ------------------------------------------------------------
+    // Python -- workspace-safe interpreter strategy
+    // Avoid hardcoding OS-specific interpreter executables here.
+    // Let each runtime (Windows / WSL / container) resolve `python`
+    // and discover local virtual environments.
+    // ------------------------------------------------------------
+    "python.defaultInterpreterPath": "python",
+    "python.venvFolders": [
+        "venv",
+        ".venv"
+    ],
+    "python.terminal.activateEnvironment": true,
+
+    // ------------------------------------------------------------
     // GitHub Copilot -- local Ollama language model (BYOM)
     // Requires Ollama running on the host with OLLAMA_ORIGINS=*
     // set as a system/user environment variable, then Ollama restarted.
@@ -16,7 +29,5 @@
     // ------------------------------------------------------------
     "github.copilot.chat.languageModel.provider": "ollama",
     "github.copilot.chat.languageModel.ollama.serverUrl": "http://localhost:11436",
-    "github.copilot.chat.languageModel.ollama.model": "sorc/qwen3.5-claude-4.6-opus:copilot",
-    "cline.includeSelection": true,
-    "cline.includeCurrentFile": true
+    "github.copilot.chat.languageModel.ollama.model": "sorc/qwen3.5-claude-4.6-opus:copilot"
 }

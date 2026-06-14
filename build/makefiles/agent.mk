@@ -8,7 +8,7 @@
 #      .github/agents/generated/ via build/py/gen_agents.py
 # =============================================================================
 
-.PHONY: agent_update agent_check sync_continue
+.PHONY: agent_update agent_check
 
 # Default iterations for model benchmarking (can be overridden by calling `make bench_models ITERATIONS=5`)
 ITERATIONS ?= 3
@@ -29,15 +29,6 @@ agent_update:
 agent_check:
 	$(call log_info,Dry-run: checking agent profiles...)
 	cd $(REPO_ROOT) && python3 build/py/gen_agents.py --dry-run
-
-# ---------------------------------------------------------------------------
-# sync_continue: update ~/.continue/config.yaml systemMessage from MD files
-# ~/.continue is mounted as /host-continue inside the container.
-# ---------------------------------------------------------------------------
-sync_continue:
-	$(call log_build,Syncing Continue agent config from project MD files...)
-	cd $(REPO_ROOT) && python3 build/py/sync_continue.py
-	$(call log_ok,Continue config updated.)
 
 # ---------------------------------------------------------------------------
 # sync_copilot: regenerate all flattened agent profiles (commit-ready)
