@@ -1,0 +1,34 @@
+{
+  "id": "qwen3-30b-a3b-moe",
+  "type": "moe",
+  "ollama_base_model": "qwen3:30b",
+  "hf_base_model": "Qwen/Qwen3-30B-A3B",
+  "runtime_overrides": {
+    "num_ctx": 24576,
+    "temperature": 0.2
+  },
+  "lora_overrides": {
+    "max_seq_length": 1536,
+    "batch_size": 1,
+    "grad_accum": 24,
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ]
+  },
+  "capability_tags": [
+    "coding",
+    "agentic",
+    "moe"
+  ],
+  "constraints": {
+    "vram_target_gb": 24,
+    "active_params": "A3B",
+    "note": "MoE candidate for agentic coding; start with inference and small LoRA smoke runs."
+  }
+}

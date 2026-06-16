@@ -24,6 +24,12 @@ Sections:
 
 Purpose: ensure the Windows host is WSL2-ready.
 
+Host WSL configuration:
+- `setup-wsl-docker.ps1` invokes `build/docker/setup-wslconfig.ps1` automatically
+  in forced non-interactive mode to apply recommended host `.wslconfig` values
+  (including `vmIdleTimeout` and auto-detected resource caps).
+- Use `-SkipWslConfig` to bypass this behavior.
+
 Rules:
 - Run elevated (admin). The orchestrator re-launches with UAC if needed; exit non-zero
   if elevation is declined.
@@ -132,6 +138,7 @@ Parameters of `setup-wsl-docker.ps1`:
 - `-RocmMetaPackage`     (default `amdrocm7.12-gfx950`) AMD ROCm apt meta-package to install
 - `-AmdGPURepoVersion`   (default `30.30`) AMDGPU repository version
 - `-SkipRocm`            (switch) skip ROCm installation (Docker-only install)
+- `-SkipWslConfig`       (switch) skip automatic host `.wslconfig` tuning
 
 Invocation:
 ```

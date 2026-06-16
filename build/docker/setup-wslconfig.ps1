@@ -15,6 +15,8 @@
     vmIdleTimeout=0  -- Prevents WSL2 VM from shutting down between sessions,
                         eliminating the 30-second GPU driver cold-start that
                         causes the WSLService timeout in Windows Event Log.
+        processors=<75%> -- Caps WSL2 CPU allocation to 75% of host logical CPUs.
+        memory=<75%>     -- Caps WSL2 memory allocation to 75% of host physical RAM.
 
 .PARAMETER NoPause
   Skip the end-of-run keypress (for scripted / CI use).
@@ -37,6 +39,36 @@ $ErrorActionPreference = 'Stop'
 
 $wslConfigPath = Join-Path $env:USERPROFILE '.wslconfig'
 
+function Get-RecommendedWslResources {
+    $cpuCount = [int][Environment]::ProcessorCount
+    $recommendedCpu = [Math]::Max(1, [int][Math]::Floor($cpuCount * 0.75))
+
+    $totalMemoryBytes = 0
+    try {
+        $cs = Get-CimInstance -ClassName Win32_ComputerSystem
+        if ($null -ne $cs -and $null -ne $cs.TotalPhysicalMemory) {
+            $totalMemoryBytes = [double]$cs.TotalPhysicalMemory
+        }
+    } catch {
+        $totalMemoryBytes = 0
+    }
+
+    if ($totalMemoryBytes -le 0) {
+        $totalMemoryBytes = [double](Get-ComputerInfo).CsTotalPhysicalMemory
+    }
+
+    $recommendedMemoryGiB = [Math]::Max(2, [int][Math]::Floor(($totalMemoryBytes * 0.75) / 1GB))
+
+    return [ordered]@{
+        HostCpuCount = $cpuCount
+        CpuCores = $recommendedCpu
+        HostMemoryGiB = [int][Math]::Floor($totalMemoryBytes / 1GB)
+        Memory = "${recommendedMemoryGiB}GB"
+    }
+}
+
+$resourcePlan = Get-RecommendedWslResources
+
 # ---------------------------------------------------------------------------
 # Desired settings (add more entries here as needed)
 # ---------------------------------------------------------------------------
@@ -46,6 +78,18 @@ $desiredSettings = @(
         Key         = 'vmIdleTimeout'
         Value       = '0'
         Description = 'Prevents WSL2 VM from shutting down when idle. Eliminates GPU driver cold-start (30s WSLService timeout in Windows Event Log).'
+    },
+    [ordered]@{
+        Section     = 'wsl2'
+        Key         = 'processors'
+        Value       = [string]$resourcePlan.CpuCores
+        Description = "Auto-detected at 75% of host logical CPUs ($($resourcePlan.HostCpuCount) -> $($resourcePlan.CpuCores))."
+    },
+    [ordered]@{
+        Section     = 'wsl2'
+        Key         = 'memory'
+        Value       = [string]$resourcePlan.Memory
+        Description = "Auto-detected at 75% of host RAM (~$($resourcePlan.HostMemoryGiB)GB -> $($resourcePlan.Memory))."
     }
 )
 
@@ -61,13 +105,13 @@ function Read-IniFile {
         $trimmed = $line.Trim()
         if ($trimmed -match '^\[(.+)\]$') {
             $currentSection = $Matches[1].Trim().ToLower()
-            if (-not $ini.ContainsKey($currentSection)) {
+            if (-not $ini.Contains($currentSection)) {
                 $ini[$currentSection] = [ordered]@{}
             }
         } elseif ($trimmed -match '^([^=;#]+?)\s*=\s*(.*)$') {
             $k = $Matches[1].Trim()
             $v = $Matches[2].Trim()
-            if (-not $ini.ContainsKey($currentSection)) {
+            if (-not $ini.Contains($currentSection)) {
                 $ini[$currentSection] = [ordered]@{}
             }
             $ini[$currentSection][$k] = $v
@@ -151,6 +195,10 @@ function Set-IniSetting {
 Write-Host ""
 Write-Host "=== setup-wslconfig.ps1 ==="
 Write-Host "Config path: $wslConfigPath"
+Write-Host "Detected host logical CPUs: $($resourcePlan.HostCpuCount)"
+Write-Host "Detected host RAM (GiB): $($resourcePlan.HostMemoryGiB)"
+Write-Host "Recommended WSL processors (75%): $($resourcePlan.CpuCores)"
+Write-Host "Recommended WSL memory (75%): $($resourcePlan.Memory)"
 Write-Host ""
 
 $anyChanged = $false
@@ -187,7 +235,7 @@ if (-not (Test-Path $wslConfigPath)) {
         $key = $s['Key']
         $val = $s['Value']
         $currentVal = $null
-        if ($ini.ContainsKey($sec) -and $ini[$sec].ContainsKey($key)) {
+        if ($ini.Contains($sec) -and $ini[$sec].Contains($key)) {
             $currentVal = $ini[$sec][$key]
         }
 

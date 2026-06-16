@@ -20,6 +20,7 @@ FROM ubuntu:24.04
 
 ARG GODOT_VERSION=4.4.1-stable
 ARG GPU_VARIANT=rocm
+ARG OLLAMA_VERSION=latest
 # Set GODOT_EDITOR=1 at build time to include the Godot editor binary.
 # The headless binary (godot) is always included for CI/export use.
 #   docker build --build-arg GODOT_EDITOR=1 -t lotr-dev build/docker/
@@ -114,9 +115,24 @@ RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locke
         printf 'deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/latest noble main\n' \
             > /etc/apt/sources.list.d/rocm.list && \
         apt-get update && \
-        apt-get install -y --no-install-recommends hsa-rocr hip-runtime-amd rocminfo && \
+        apt-get install -y --no-install-recommends \
+            hsa-rocr7.2.4 \
+            hipcc7.2.4 \
+            rocm-cmake7.2.4 \
+            rocm-hip-sdk7.2.4 \
+            rocm-hip-runtime-dev7.2.4 \
+            rocblas-dev7.2.4 \
+            rocrand-dev7.2.4 \
+            hipblas-dev7.2.4 \
+            hipblaslt-dev7.2.4 \
+            hipsparse-dev7.2.4 \
+            rocminfo7.2.4 && \
         rm -rf /var/lib/apt/lists/* && \
         echo '/opt/rocm/lib' > /etc/ld.so.conf.d/rocm.conf && ldconfig; \
+            ln -sf /opt/rocm-7.2.4/lib/libamdhip64.so.7.2.70204 /usr/lib/libamdhip64.so.7.2.70204 && \
+            ln -sf /opt/rocm-7.2.4/lib/libamdhip64.so.7 /usr/lib/libamdhip64.so.7 && \
+            ln -sf /opt/rocm-7.2.4/lib/libamdhip64.so /usr/lib/libamdhip64.so && \
+            mkdir -p /usr/lib/cmake && ln -sf /opt/rocm-7.2.4/lib/cmake/hip-lang /usr/lib/cmake/hip-lang; \
     else \
         echo '/opt/rocm/lib' > /etc/ld.so.conf.d/rocm.conf; \
     fi
@@ -283,11 +299,36 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
             torch torchvision torchaudio; \
     fi
 
-# Install zstd (required by the Ollama installer)
+# Install zstd (required to extract Ollama .tar.zst releases)
 RUN apt-get update && apt-get install -y zstd
 
-# Install Ollama binary for local LLM inference
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# Install Ollama binary for local LLM inference.
+# Use GitHub release artifacts directly so version selection is deterministic.
+RUN set -eux; \
+    case "$(uname -m)" in \
+        x86_64) ARCH=amd64 ;; \
+        aarch64) ARCH=arm64 ;; \
+        *) ARCH="$(uname -m)" ;; \
+    esac; \
+    if [ "${OLLAMA_VERSION}" = "latest" ]; then \
+        OLLAMA_VERSION_RESOLVED=$(curl -fsSL "https://api.github.com/repos/ollama/ollama/releases/latest" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/'); \
+    else \
+        OLLAMA_VERSION_RESOLVED="${OLLAMA_VERSION}"; \
+    fi; \
+    echo "Installing Ollama ${OLLAMA_VERSION_RESOLVED} for arch ${ARCH} (GPU_VARIANT=${GPU_VARIANT})"; \
+    curl --fail --show-error --location --retry 3 \
+        -o /tmp/ollama-base.tar.zst \
+        "https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION_RESOLVED}/ollama-linux-${ARCH}.tar.zst"; \
+    zstd -d /tmp/ollama-base.tar.zst --stdout | tar -xf - -C /usr/local; \
+    rm -f /tmp/ollama-base.tar.zst; \
+    if [ "${GPU_VARIANT}" = "rocm" ]; then \
+        curl --fail --show-error --location --retry 3 \
+            -o /tmp/ollama-rocm.tar.zst \
+            "https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION_RESOLVED}/ollama-linux-${ARCH}-rocm.tar.zst"; \
+        zstd -d /tmp/ollama-rocm.tar.zst --stdout | tar -xf - -C /usr/local; \
+        rm -f /tmp/ollama-rocm.tar.zst; \
+    fi; \
+    ollama --version
 
 # ------------------------------------------------------------
 # Node.js (LTS) -- required for React admin panel (Vite + TypeScript)

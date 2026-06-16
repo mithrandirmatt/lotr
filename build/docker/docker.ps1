@@ -448,6 +448,7 @@ $rocmEnvLdLibraryPath  = ''
 $rocmEnvHsaDxg         = ''
 $rocmEnvHsaGfx         = ''
 $rocmEnvWslInterop     = ''
+$rocmEnvRocprofDisable = ''
 
 # ---------------------------------------------------------------------------
 # build
@@ -580,6 +581,7 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
 
     # ROCm GPU device flags for container runtime (dev + ai containers).
     if ($GpuVariant -eq 'rocm') {
+        $rocmEnvRocprofDisable = 'ROCPROFILER_REGISTER_ENABLED=0'
         $kfdExists = wsl -d $DistroName -u root -- bash -c 'test -e /dev/kfd && echo yes || echo no' 2>$null
         $driExists = wsl -d $DistroName -u root -- bash -c 'test -d /dev/dri && echo yes || echo no' 2>$null
         if ($kfdExists -match 'yes' -and $driExists -match 'yes') {
@@ -598,8 +600,12 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
                 Write-Log "WSL_INTEROP=$wslInterop"
                 $gpuDeviceFlags = @(
                     '--device',        '/dev/dxg',
-                    '--volume',        '/opt/rocm:/opt/rocm:ro',
                     '--volume',        '/usr/lib/wsl/lib:/usr/lib/wsl/lib:ro',
+                    '--volume',        '/usr/lib/wsl/lib/libdxcore.so:/usr/lib/libdxcore.so:ro',
+                    '--volume',        '/usr/lib/wsl/lib/libd3d12.so:/usr/lib/libd3d12.so:ro',
+                    '--volume',        '/usr/lib/wsl/lib/libd3d12core.so:/usr/lib/libd3d12core.so:ro',
+                    '--volume',        '/opt/rocm/lib/librocdxg.so:/opt/rocm/lib/librocdxg.so:ro',
+                    '--volume',        '/opt/rocm/lib/librocdxg.so:/usr/lib/librocdxg.so:ro',
                     '--volume',        '/run/WSL:/run/WSL',
                     '--cap-add',       'SYS_PTRACE',
                     '--cap-add',       'SYS_ADMIN',
@@ -608,7 +614,7 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
                     '--shm-size',      '8g'
                 )
                 # Keep env vars as separate scalars so splatting doesn't mangle them
-                $rocmEnvLdPreload     = 'LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so'
+                $rocmEnvLdPreload     = ''
                 $rocmEnvLdLibraryPath = 'LD_LIBRARY_PATH=/opt/rocm/lib:/usr/lib/wsl/lib'
                 $rocmEnvHsaDxg        = 'HSA_ENABLE_DXG_DETECTION=1'
                 $rocmEnvHsaGfx        = 'HSA_OVERRIDE_GFX_VERSION=11.0.0'
@@ -705,14 +711,17 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
                 Write-Log "WSL_INTEROP=$wslInterop"
                 $gpuDeviceFlags = @(
                     '--device',        '/dev/dxg',
-                    '--volume',        '/opt/rocm:/opt/rocm:ro',
                     '--volume',        '/usr/lib/wsl/lib:/usr/lib/wsl/lib:ro',
+                    '--volume',        '/usr/lib/wsl/lib/libdxcore.so:/usr/lib/libdxcore.so:ro',
+                    '--volume',        '/usr/lib/wsl/lib/libd3d12.so:/usr/lib/libd3d12.so:ro',
+                    '--volume',        '/usr/lib/wsl/lib/libd3d12core.so:/usr/lib/libd3d12core.so:ro',
                     '--volume',        '/run/WSL:/run/WSL',
+                    '--volume',        '/opt/rocm/lib/librocdxg.so:/usr/lib/librocdxg.so:ro',
                     '--env',           'HSA_ENABLE_DXG_DETECTION=1',
                     '--env',           "WSL_INTEROP=$wslInterop",
                     '--env',           'OLLAMA_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama',
                     '--env',           'LD_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama:/opt/rocm/lib:/usr/lib/wsl/lib',
-                    '--env',           'LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so',
+                    '--env',           'LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so',
                     '--cap-add',       'SYS_PTRACE',
                     '--cap-add',       'SYS_ADMIN',
                     '--security-opt',  'seccomp=unconfined',
@@ -938,6 +947,7 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
     if ($rocmEnvHsaDxg)        { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvHsaDxg }
     if ($rocmEnvHsaGfx)        { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvHsaGfx }
     if ($rocmEnvWslInterop)    { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvWslInterop }
+    if ($rocmEnvRocprofDisable){ $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvRocprofDisable }
 
     # Combine gpu device flags + rocm env flags into a bash-safe argument string
     # so that values containing '=' and ':' survive the wsl -- boundary.

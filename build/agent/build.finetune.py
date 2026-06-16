@@ -2,17 +2,27 @@ import argparse
 import json
 import os
 from pathlib import Path
+from typing import Any
+
+from model_config import load_model_config, resolve_base_models, resolve_lora
 
 # Text-only LoRA training does not require torchvision. Disabling it avoids
 # optional vision import paths that can fail on mismatched torchvision ops.
 os.environ.setdefault("TRANSFORMERS_NO_TORCHVISION", "1")
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+os.environ.setdefault("PYTORCH_HIP_ALLOC_CONF", "garbage_collection_threshold:0.8,max_split_size_mb:128")
+# Work around intermittent ROCm allocator handle assertion failures in long-lived
+# training processes by disabling HIP caching allocator state reuse.
+os.environ.setdefault("PYTORCH_NO_HIP_MEMORY_CACHING", "1")
 
 import torch
 from datasets import Dataset
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+import transformers.modeling_utils as modeling_utils
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
+    BitsAndBytesConfig,
     DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
@@ -23,7 +33,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train a LoRA adapter from repository corpus")
     parser.add_argument("--repo_root", required=True)
     parser.add_argument("--profile", default="rx7900xtx-agentic")
-    parser.add_argument("--base_model", default="Qwen/Qwen2.5-Coder-7B-Instruct")
+    parser.add_argument("--model_config", default=None)
+    parser.add_argument("--base_model", default=None)
     parser.add_argument("--corpus", default=None)
     parser.add_argument("--output_dir", default=None)
     parser.add_argument("--epochs", type=float, default=None)
@@ -81,11 +92,37 @@ def resolve_training_device() -> str:
     return "cpu"
 
 
+def _parse_bool(value: Any, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
+def _disable_rocm_allocator_warmup_for_quantized_load() -> None:
+    original = getattr(modeling_utils, "caching_allocator_warmup", None)
+    if original is None:
+        return
+
+    def _rocm_safe_warmup(*args: Any, **kwargs: Any) -> None:
+        # HF allocator warmup can trip hipErrorInvalidValue on ROCm during
+        # quantized shard loading. Skipping the warmup is slower but stable.
+        return None
+
+    modeling_utils.caching_allocator_warmup = _rocm_safe_warmup
+
+
 def main() -> None:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
     profile = load_profile(repo_root, args.profile)
-    lora_cfg = profile.get("lora", {})
+    model_cfg, model_cfg_path = load_model_config(repo_root, args.model_config)
+    _, cfg_hf_model = resolve_base_models(model_cfg)
+    base_model = args.base_model or cfg_hf_model or "Qwen/Qwen2.5-Coder-7B-Instruct"
+    lora_cfg = resolve_lora(profile, model_cfg)
 
     corpus_path = (
         Path(args.corpus).resolve()
@@ -112,7 +149,9 @@ def main() -> None:
 
     print(f"Repo root: {repo_root}")
     print(f"Profile: {args.profile}")
-    print(f"Base model: {args.base_model}")
+    if model_cfg_path:
+        print(f"Model config: {model_cfg_path}")
+    print(f"Base model: {base_model}")
     print(f"Corpus: {corpus_path}")
     print(f"Output: {output_dir}")
 
@@ -127,18 +166,72 @@ def main() -> None:
 
     dataset = load_corpus(corpus_path)
 
-    tokenizer = AutoTokenizer.from_pretrained(args.base_model, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(base_model, use_fast=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    dtype = torch.bfloat16 if training_device == "cuda" else torch.float32
-    model = AutoModelForCausalLM.from_pretrained(
-        args.base_model,
-        dtype=dtype,
-        low_cpu_mem_usage=False,
-    )
+    load_in_4bit = _parse_bool(lora_cfg.get("load_in_4bit"), default=(training_device == "cuda"))
+    load_in_8bit = _parse_bool(lora_cfg.get("load_in_8bit"), default=False)
+    use_quantized = training_device == "cuda" and (load_in_4bit or load_in_8bit)
+    torch_dtype = torch.bfloat16 if training_device == "cuda" else torch.float32
+
+    model_kwargs: dict[str, Any] = {
+        "dtype": torch_dtype,
+        "low_cpu_mem_usage": True,
+    }
+    is_rocm = bool(getattr(torch.version, "hip", None))
+
+    if use_quantized:
+        if is_rocm:
+            torch_dtype = torch.float16
+            model_kwargs["dtype"] = torch_dtype
+            _disable_rocm_allocator_warmup_for_quantized_load()
+            model_kwargs["low_cpu_mem_usage"] = False
+            print("ROCm detected: using FP16 and disabling Transformers allocator warmup for quantized load stability.")
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=load_in_4bit,
+            load_in_8bit=load_in_8bit,
+            bnb_4bit_quant_type=str(lora_cfg.get("bnb_4bit_quant_type", "nf4")),
+            bnb_4bit_use_double_quant=_parse_bool(lora_cfg.get("bnb_4bit_use_double_quant"), default=True),
+            bnb_4bit_compute_dtype=torch_dtype,
+        )
+        model_kwargs["quantization_config"] = bnb_config
+        device_map_cfg = lora_cfg.get("device_map", "auto")
+        if is_rocm:
+            # bitsandbytes quantized ROCm modules can fail on a later model.to("cuda")
+            # with hipErrorInvalidValue. Place the quantized shards directly on the
+            # accelerator during load and skip the post-load model.to hop.
+            if str(device_map_cfg).lower() == "auto":
+                # Avoid HF auto-partitioning to CPU/disk on ROCm quantized loads.
+                # Keep the full quantized model on a single accelerator device.
+                model_kwargs["device_map"] = {"": 0}
+            else:
+                model_kwargs["device_map"] = str(device_map_cfg)
+        else:
+            model_kwargs["device_map"] = str(device_map_cfg)
+    try:
+        model = AutoModelForCausalLM.from_pretrained(base_model, **model_kwargs)
+    except Exception as exc:
+        if use_quantized:
+            if is_rocm:
+                raise RuntimeError(
+                    "ROCm quantized model loading failed on this stack. The current Transformers/bitsandbytes "
+                    "path is not loading this model reliably under ROCm in the dev container. "
+                    "Use a smaller non-quantized model config such as qwen25-coder-7b, or disable quantized loading "
+                    "by setting load_in_4bit=false in the model/profile config."
+                ) from exc
+            raise RuntimeError(
+                "Failed to load quantized base model for LoRA. "
+                "Ensure bitsandbytes is installed in the training venv and supported on this build. "
+                "You can temporarily disable quantized loading by setting load_in_4bit=false in the model/profile config."
+            ) from exc
+        raise
     model.config.use_cache = False
-    model.to(training_device)
+
+    if use_quantized:
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    elif training_device == "cuda":
+        model.to(training_device)
 
     peft_config = LoraConfig(
         r=int(lora_cfg.get("lora_r", 32)),
@@ -164,6 +257,12 @@ def main() -> None:
 
     tokenized = dataset.map(tokenize_batch, batched=True, remove_columns=["text"])
 
+    requested_optim = str(lora_cfg.get("optim", "paged_adamw_8bit" if use_quantized else "adamw_torch"))
+    if is_rocm and requested_optim.startswith("paged_adamw"):
+        # paged_adamw_8bit can be unstable on ROCm+bnb CPU backend; use torch optimizer.
+        requested_optim = "adamw_torch"
+        print("ROCm detected: overriding optimizer to adamw_torch for stability.")
+
     training_args = TrainingArguments(
         output_dir=str(output_dir),
         num_train_epochs=epochs,
@@ -173,14 +272,23 @@ def main() -> None:
         warmup_ratio=warmup_ratio,
         logging_steps=10,
         save_strategy="epoch",
-        bf16=training_device == "cuda",
-        fp16=False,
+        bf16=training_device == "cuda" and not is_rocm,
+        fp16=training_device == "cuda" and is_rocm,
         gradient_checkpointing=True,
+        optim=requested_optim,
         no_cuda=training_device != "cuda",
+        dataloader_pin_memory=not is_rocm,
         report_to="none",
     )
 
     collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+
+    if training_device == "cuda" and is_rocm:
+        # Force HIP context + allocator initialization before Trainer creates its
+        # first device tensor to avoid intermittent HIPCachingAllocator asserts.
+        torch.cuda.set_device(0)
+        _ = torch.empty(1, device="cuda")
+        torch.cuda.empty_cache()
 
     trainer = Trainer(
         model=model,
@@ -197,7 +305,8 @@ def main() -> None:
 
     metadata = {
         "profile": args.profile,
-        "base_model": args.base_model,
+        "model_config": model_cfg.get("id") if model_cfg else None,
+        "base_model": base_model,
         "corpus": str(corpus_path),
         "output_dir": str(output_dir),
         "epochs": epochs,
@@ -206,6 +315,9 @@ def main() -> None:
         "learning_rate": learning_rate,
         "warmup_ratio": warmup_ratio,
         "max_seq_length": max_seq_length,
+        "load_in_4bit": load_in_4bit,
+        "load_in_8bit": load_in_8bit,
+        "device_map": model_kwargs.get("device_map"),
     }
     (output_dir / "lora-metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
 

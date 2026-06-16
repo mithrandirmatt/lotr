@@ -6,11 +6,19 @@ build/do
 
 # virtual environments
 **/venv/**
+**/.venv/**
+server/.venv/*
 **/lotr_agent/lib/**
+build/agent/lotr_agent/venv/
+build/agent/lotr_agent/lib/
+build/agent/lotr_agent/lib64/
+build/agent/lotr_agent/pyvenv.cfg
+**/*.egg-info/
 
 # logs
 build/**/logs
 **/docker/logs/**
+server/server/server/logs/*.log
 
 # Godot game assets — card images are large, synced via make wiki_game_asset_creation
 gotdot/assets/cards/
@@ -39,3 +47,7 @@ build/agent/do/agent/models/
 .mono
 data_*/
 mono_crash.*.json
+
+# Caches
+build/docker/cache/*
+build/docker/cache/

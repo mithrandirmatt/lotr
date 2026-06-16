@@ -5,6 +5,8 @@ import os
 import sys
 from pathlib import Path
 
+from model_config import load_model_config
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Prepare repository corpus/profile artifacts for agentic model training")
@@ -13,6 +15,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--data_dir", required=True)
     parser.add_argument("--reasoning_dataset", default=None)
     parser.add_argument("--profile", default="rx7900xtx-agentic")
+    parser.add_argument("--model_config", default=None)
     return parser.parse_args()
 
 
@@ -111,6 +114,7 @@ def main() -> None:
     repo_root = Path(args.data_dir).resolve()
     profile_path = repo_root / "build" / "agent" / "profiles" / f"{args.profile}.json"
     profile = _load_profile(profile_path)
+    model_cfg, model_cfg_path = load_model_config(repo_root, args.model_config)
 
     print(f"Preparing training corpus for model={args.model} quantization={args.quantization}")
     print(f"Repository root: {repo_root}")
@@ -163,6 +167,8 @@ def main() -> None:
         "quantization": args.quantization,
         "profile": args.profile,
         "profile_path": profile_path.as_posix(),
+        "model_config": model_cfg.get("id") if model_cfg else None,
+        "model_config_path": model_cfg_path.as_posix() if model_cfg_path else None,
         "samples": len(corpus_rows),
         "gpu": profile.get("gpu", {}),
         "runtime": profile.get("runtime", {}),

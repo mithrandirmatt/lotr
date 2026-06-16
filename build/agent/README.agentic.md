@@ -11,6 +11,7 @@ This guide provides a practical path to get stronger local coding-agent behavior
 ## What This Pipeline Adds
 
 - Hardware/runtime profile: `build/agent/profiles/rx7900xtx-agentic.json`
+- Dedicated model configs: `build/agent/models/*.json`
 - Curated corpus generation from repo instructions, skills, and code contexts
 - Profile-based Ollama `Modelfile` generation wired to `.github/copilot-instructions.md`
 
@@ -61,7 +62,7 @@ Optional overrides:
 ```powershell
 ./build/docker/docker.ps1 exec "cd /workspace/build && make -f makefile agentic_build \
   AGENT_PROFILE=rx7900xtx-agentic \
-  AGENT_BASE_MODEL=qwen2.5-coder:7b \
+  AGENT_MODEL_CONFIG=qwen25-coder-14b \
   BASE_MODEL=llama3-8b \
   QUANTIZATION=4bit"
 ```
@@ -69,14 +70,22 @@ Optional overrides:
 Install just the profile model into Ollama:
 
 ```powershell
-./build/docker/docker.ps1 exec "cd /workspace/build && make -f makefile ollama-install-agentic AGENT_BASE_MODEL=qwen2.5-coder:7b"
+./build/docker/docker.ps1 exec "cd /workspace/build && make -f makefile ollama-install-agentic AGENT_MODEL_CONFIG=qwen25-coder-14b"
+```
+
+Use the MoE model config:
+
+```powershell
+./build/docker/docker.ps1 exec "cd /workspace/build && make -f makefile agentic_build \
+  AGENT_PROFILE=rx7900xtx-agentic \
+  AGENT_MODEL_CONFIG=qwen3-30b-a3b-moe"
 ```
 
 ## Recommended Local Models (7900 XTX)
 
-- Dev-container LoRA default: `qwen2.5-coder:7b`
-- Heavier inference-only coding: `qwen2.5-coder:14b`
-- Heavier reasoning: `qwen2.5:32b` (lower throughput)
+- Dense coding default config: `qwen25-coder-14b`
+- MoE coding/agentic config: `qwen3-30b-a3b-moe`
+- Very large MoE models (for example, 235B class) are not practical for this local 24GB workflow.
 - Use quantized formats that fit VRAM and context needs.
 
 ## Opus-like Behavior Strategy
@@ -105,8 +114,15 @@ Run full LoRA pipeline:
 ```powershell
 ./build/docker/docker.ps1 exec "cd /workspace/build && make -f makefile lora_build \
   AGENT_PROFILE=rx7900xtx-agentic \
-  AGENT_BASE_MODEL=qwen2.5-coder:7b \
-  AGENT_HF_BASE_MODEL=Qwen/Qwen2.5-Coder-7B-Instruct"
+  AGENT_MODEL_CONFIG=qwen25-coder-14b"
+```
+
+Run MoE LoRA smoke pipeline (optional, start conservative):
+
+```powershell
+./build/docker/docker.ps1 exec "cd /workspace/build && make -f makefile lora_build \
+  AGENT_PROFILE=rx7900xtx-agentic \
+  AGENT_MODEL_CONFIG=qwen3-30b-a3b-moe"
 ```
 
 Force ROCm wheel selection for training venv (optional, usually auto-detected):
@@ -124,9 +140,10 @@ Install dependencies for LoRA stage (inside the target):
 Notes:
 
 - LoRA quality depends heavily on corpus quality and base model choice.
-- The dev-container defaults are intentionally conservative for a single 24GB GPU: 7B base, sequence length 2048, LoRA rank 16, gradient accumulation 16.
+- Effective model settings now resolve with this precedence: CLI overrides > model config > profile defaults.
+- The 24GB-safe defaults are intentionally conservative; increase context or LoRA intensity only after validating GPU headroom.
 - Start with 1 epoch; iterate with better samples before raising epochs.
-- Treat 14B LoRA as an opt-in override after validating memory headroom in your container.
+- Treat MoE LoRA as opt-in after inference-only validation.
 - Keep system prompt and tool-policy alignment stable for best agentic behavior.
 
 ## Outputs

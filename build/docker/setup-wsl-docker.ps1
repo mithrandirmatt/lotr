@@ -21,7 +21,8 @@ param(
     [string]$RocmMetaPackage = 'amdrocm7.12-gfx950',
     [string]$AmdGPURepoVersion = '30.30',
     [switch]$SkipRocm,
-    [switch]$SkipHeadroom
+    [switch]$SkipHeadroom,
+    [switch]$SkipWslConfig
 )
 
 Set-StrictMode -Version Latest
@@ -68,6 +69,26 @@ function Ensure-Admin {
 Write-Log "Starting setup-wsl-docker.ps1"
 
 Ensure-Admin
+
+# Ensure host-level WSL configuration is applied (single-command flow).
+if ($SkipWslConfig) {
+    Write-Log "SkipWslConfig specified -- skipping host .wslconfig tuning."
+} else {
+    $wslConfigScript = Join-Path $PSScriptRoot 'setup-wslconfig.ps1'
+    if (Test-Path $wslConfigScript) {
+        Write-Log "Applying host WSL configuration via $wslConfigScript (forced, non-interactive)..."
+        & $wslConfigScript -Force -NoPause
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log ("WARNING: setup-wslconfig.ps1 exited with code {0}; continuing setup." -f $LASTEXITCODE)
+        } else {
+            Write-Log "Host WSL configuration applied successfully. Restarting WSL VM to apply settings..."
+            try { wsl --shutdown 2>$null } catch {}
+            Start-Sleep -Seconds 3
+        }
+    } else {
+        Write-Log ("WARNING: setup-wslconfig.ps1 not found at {0} -- skipping host WSL tuning." -f $wslConfigScript)
+    }
+}
 
 # Enable WSL features
 try {
