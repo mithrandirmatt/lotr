@@ -14,6 +14,7 @@ OLLAMA_FALLBACK_BASE ?= llama3.1:8b
 OLLAMA_HOST ?= http://host.docker.internal:11434
 OLLAMA_USE_LOCAL_DAEMON ?= 0
 LORA_ALLOW_CPU ?= 0
+LORA_GGUF_OUTTYPE ?= q4_k_m
 AGENT_TORCH_VARIANT ?= auto
 LORA_RECREATE_VENV ?= 0
 AGENT_CACHE_DIR ?= $(REPO_ROOT)/build/docker/cache
@@ -36,7 +37,8 @@ AGENT_PIP_BUILD_ENV ?= MAX_JOBS=$(AGENT_COMPILE_JOBS_VALUE) CMAKE_BUILD_PARALLEL
 LORA_OUTPUT_DIR := $(MODEL_DIR)/lora/$(AGENT_PROFILE)
 LORA_MODELFILE := $(MODEL_DIR)/Modelfile.$(AGENT_PROFILE).lora
 LORA_MERGED_DIR := $(MODEL_DIR)/lora-merged/$(AGENT_PROFILE)
-LORA_GGUF := $(MODEL_DIR)/lotr-lora-$(AGENT_PROFILE)-f16.gguf
+LORA_GGUF_TAG := $(shell printf '%s' "$(LORA_GGUF_OUTTYPE)" | tr '[:upper:]' '[:lower:]')
+LORA_GGUF := $(MODEL_DIR)/lotr-lora-$(AGENT_PROFILE)-$(LORA_GGUF_TAG).gguf
 LORA_CACHE_DIR := $(MODEL_DIR)/cache/$(AGENT_PROFILE)
 LORA_TRAIN_FP := $(LORA_CACHE_DIR)/lora-train.sha256
 LORA_TRAIN_FP_NEW := $(LORA_CACHE_DIR)/lora-train.sha256.new
@@ -366,6 +368,7 @@ lora-modelfile:
 .PHONY: lora-export-gguf
 lora-export-gguf:
 	@echo "Exporting LoRA profile $(AGENT_PROFILE) to merged GGUF..."
+	@echo "GGUF quantization outtype: $(LORA_GGUF_OUTTYPE)"
 	@if [ ! -d "$(LORA_OUTPUT_DIR)" ]; then \
 		echo "Error: LoRA adapter directory missing at $(LORA_OUTPUT_DIR)"; exit 1; \
 	fi
@@ -374,7 +377,7 @@ lora-export-gguf:
 		echo "Installing GGUF export dependencies..."; \
 		$(call AGENT_RUN_WITH_HEARTBEAT,$(AGENT_PIP_CMD) install $(AGENT_PIP_INSTALL_PROGRESS_FLAGS) transformers peft accelerate sentencepiece protobuf gguf $(AGENT_PIP_BREAK_SYSTEM)); \
 	fi
-	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/bin/python build.lora_export_gguf.py --repo_root "$(REPO_ROOT)" --profile "$(AGENT_PROFILE)" --model_config "$(AGENT_MODEL_CONFIG)" $(if $(strip $(AGENT_HF_BASE_MODEL)),--base_model "$(AGENT_HF_BASE_MODEL)",) --adapter_dir "$(LORA_OUTPUT_DIR)" --merged_dir "$(LORA_MERGED_DIR)" --output_gguf "$(LORA_GGUF)" --llama_cpp_dir "$(LLAMA_CPP_DIR)"
+	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/bin/python build.lora_export_gguf.py --repo_root "$(REPO_ROOT)" --profile "$(AGENT_PROFILE)" --model_config "$(AGENT_MODEL_CONFIG)" $(if $(strip $(AGENT_HF_BASE_MODEL)),--base_model "$(AGENT_HF_BASE_MODEL)",) --adapter_dir "$(LORA_OUTPUT_DIR)" --merged_dir "$(LORA_MERGED_DIR)" --output_gguf "$(LORA_GGUF)" --outtype "$(LORA_GGUF_OUTTYPE)" --llama_cpp_dir "$(LLAMA_CPP_DIR)"
 
 .PHONY: ollama-install-$(BASE_MODEL)
 ollama-install-$(BASE_MODEL):
@@ -430,35 +433,26 @@ ollama-install-agentic: profile-modelfile
 	@echo "Agentic profile model installation completed."
 
 .PHONY: ollama-install-lora
-ollama-install-lora: lora-modelfile
-	@echo "Installing LoRA profile $(AGENT_PROFILE) into Ollama as $(OLLAMA_LORA_MODEL_NAME)..."
+ollama-install-lora: lora-export-gguf
+	@echo "Installing LoRA profile $(AGENT_PROFILE) into Ollama as $(OLLAMA_LORA_MODEL_NAME) from GGUF..."
 	@echo "Preferred Ollama host: $(OLLAMA_HOST)"
-	@if [ ! -f $(LORA_MODELFILE) ]; then \
-		echo "Error: LoRA Modelfile missing at $(LORA_MODELFILE)"; exit 1; \
-	fi
-	@if [ ! -d $(LORA_OUTPUT_DIR) ]; then \
-		echo "Error: LoRA adapter directory missing at $(LORA_OUTPUT_DIR)"; exit 1; \
+	@if [ ! -f $(LORA_GGUF) ]; then \
+		echo "Error: merged GGUF not found at $(LORA_GGUF)"; exit 1; \
 	fi
 	@ACTIVE_OLLAMA_HOST="$(OLLAMA_HOST)"; \
 	LOCAL_OLLAMA_HOST="http://127.0.0.1:11435"; \
 	LOCAL_OLLAMA_BIND="127.0.0.1:11435"; \
-	LOCAL_OLLAMA_LOG="$(LORA_OUTPUT_DIR)/ollama-lora-serve.log"; \
+	LOCAL_OLLAMA_LOG="$(MODEL_DIR)/ollama-lora-serve.log"; \
 	if [ "$(OLLAMA_USE_LOCAL_DAEMON)" = "1" ]; then \
 		echo "Starting local Ollama daemon in container (forced)..."; \
 		pkill -x ollama >/dev/null 2>&1 || true; \
-		( cd "$(LORA_OUTPUT_DIR)" && nohup env OLLAMA_HOST="$$LOCAL_OLLAMA_BIND" ollama serve > "$$LOCAL_OLLAMA_LOG" 2>&1 & ); \
-		sleep 2; \
-		ACTIVE_OLLAMA_HOST="$$LOCAL_OLLAMA_HOST"; \
-	elif grep -q '^ADAPTER /' "$(LORA_MODELFILE)" && [ "$$ACTIVE_OLLAMA_HOST" != "$$LOCAL_OLLAMA_HOST" ] && [ "$$ACTIVE_OLLAMA_HOST" != "http://localhost:11435" ]; then \
-		echo "LoRA Modelfile uses container-local ADAPTER path; switching to local Ollama daemon in container."; \
-		pkill -x ollama >/dev/null 2>&1 || true; \
-		( cd "$(LORA_OUTPUT_DIR)" && nohup env OLLAMA_HOST="$$LOCAL_OLLAMA_BIND" ollama serve > "$$LOCAL_OLLAMA_LOG" 2>&1 & ); \
+		( cd "$(MODEL_DIR)" && nohup env OLLAMA_HOST="$$LOCAL_OLLAMA_BIND" ollama serve > "$$LOCAL_OLLAMA_LOG" 2>&1 & ); \
 		sleep 2; \
 		ACTIVE_OLLAMA_HOST="$$LOCAL_OLLAMA_HOST"; \
 	elif ! OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama list > /dev/null 2>&1; then \
 		echo "Preferred host $$ACTIVE_OLLAMA_HOST is not reachable; starting local Ollama daemon in container..."; \
 		pkill -x ollama >/dev/null 2>&1 || true; \
-		( cd "$(LORA_OUTPUT_DIR)" && nohup env OLLAMA_HOST="$$LOCAL_OLLAMA_BIND" ollama serve > "$$LOCAL_OLLAMA_LOG" 2>&1 & ); \
+		( cd "$(MODEL_DIR)" && nohup env OLLAMA_HOST="$$LOCAL_OLLAMA_BIND" ollama serve > "$$LOCAL_OLLAMA_LOG" 2>&1 & ); \
 		sleep 2; \
 		ACTIVE_OLLAMA_HOST="$$LOCAL_OLLAMA_HOST"; \
 	fi; \
@@ -477,46 +471,21 @@ ollama-install-lora: lora-modelfile
 	fi; \
 	echo "Using active Ollama host: $$ACTIVE_OLLAMA_HOST"; \
 	CREATE_RC=0; \
-	if [ -f "$(LORA_OUTPUT_DIR)/adapter_model.safetensors" ] && [ -f "$(LORA_OUTPUT_DIR)/adapter_config.json" ]; then \
-		TMP_ADAPTER_IMPORT_DIR="$(LORA_OUTPUT_DIR)/.ollama-adapter-import.$$$$"; \
-		mkdir -p "$$TMP_ADAPTER_IMPORT_DIR"; \
-		ln -f "$(LORA_OUTPUT_DIR)/adapter_model.safetensors" "$$TMP_ADAPTER_IMPORT_DIR/model.safetensors" 2>/dev/null || cp -f "$(LORA_OUTPUT_DIR)/adapter_model.safetensors" "$$TMP_ADAPTER_IMPORT_DIR/model.safetensors"; \
-		cp -f "$(LORA_OUTPUT_DIR)/adapter_config.json" "$$TMP_ADAPTER_IMPORT_DIR/adapter_config.json"; \
-		TMP_LORA_MODELFILE="Modelfile.$(AGENT_PROFILE).lora.local.$$$$"; \
-		sed "s|^ADAPTER .*|ADAPTER $$TMP_ADAPTER_IMPORT_DIR|" "$(LORA_MODELFILE)" > "$(LORA_OUTPUT_DIR)/$$TMP_LORA_MODELFILE"; \
-		echo "Using temp LoRA Modelfile: $(LORA_OUTPUT_DIR)/$$TMP_LORA_MODELFILE"; \
-		ls -l "$(LORA_OUTPUT_DIR)/$$TMP_LORA_MODELFILE"; \
-		OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama create $(OLLAMA_LORA_MODEL_NAME) -f "$(LORA_OUTPUT_DIR)/$$TMP_LORA_MODELFILE"; \
-		CREATE_RC=$$?; \
-		rm -f "$(LORA_OUTPUT_DIR)/$$TMP_LORA_MODELFILE"; \
-		rm -rf "$$TMP_ADAPTER_IMPORT_DIR"; \
-	else \
-		OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama create $(OLLAMA_LORA_MODEL_NAME) -f $(LORA_MODELFILE); \
-		CREATE_RC=$$?; \
-	fi; \
+	TMP_GGUF_MODELFILE="$(MODEL_DIR)/Modelfile.$(AGENT_PROFILE).lora.gguf.$$$$"; \
+	echo "FROM $(abspath $(LORA_GGUF))" > "$$TMP_GGUF_MODELFILE"; \
+	OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama create $(OLLAMA_LORA_MODEL_NAME) -f "$$TMP_GGUF_MODELFILE"; \
+	CREATE_RC=$$?; \
+	rm -f "$$TMP_GGUF_MODELFILE"; \
 	if [ $$CREATE_RC -ne 0 ] && [ -f "$$LOCAL_OLLAMA_LOG" ]; then \
 		echo "----- local ollama serve log (tail) -----"; \
 		tail -n 120 "$$LOCAL_OLLAMA_LOG"; \
 		echo "----- end local ollama serve log -----"; \
 	fi; \
-	if [ $$CREATE_RC -ne 0 ]; then \
-		echo "LoRA adapter install failed; trying merged GGUF fallback..."; \
-		$(MAKE) -f agent/agent.mk lora-export-gguf AGENT_PROFILE="$(AGENT_PROFILE)" AGENT_MODEL_CONFIG="$(AGENT_MODEL_CONFIG)" AGENT_HF_BASE_MODEL="$(AGENT_HF_BASE_MODEL)"; \
-		if [ ! -f "$(LORA_GGUF)" ]; then \
-			echo "Error: merged GGUF not found at $(LORA_GGUF)"; \
-			exit 1; \
-		fi; \
-		TMP_GGUF_MODELFILE="$(MODEL_DIR)/Modelfile.$(AGENT_PROFILE).lora.gguf.$$"; \
-		echo "FROM $(abspath $(LORA_GGUF))" > "$$TMP_GGUF_MODELFILE"; \
-		OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama create $(OLLAMA_LORA_MODEL_NAME) -f "$$TMP_GGUF_MODELFILE"; \
-		CREATE_RC=$$?; \
-		rm -f "$$TMP_GGUF_MODELFILE"; \
-	fi; \
 	test $$CREATE_RC -eq 0
 	@echo "LoRA profile model installation completed."
 
 .PHONY: agent_build
-agent_build: install-$(BASE_MODEL) lotr-$(BASE_MODEL)-$(QUANTIZATION) ollama-install-$(BASE_MODEL) profile-modelfile ollama-install-agentic lora-train lora-modelfile ollama-install-lora
+agent_build: install-$(BASE_MODEL) lotr-$(BASE_MODEL)-$(QUANTIZATION) ollama-install-$(BASE_MODEL) profile-modelfile ollama-install-agentic lora-train lora-export-gguf ollama-install-lora
 	@echo "\n=== Full build workflow completed for $(BASE_MODEL) with $(QUANTIZATION) quantization ==="
 	@echo "Base model artifact: $(OUTPUT_MODEL)"
 	@echo "Agentic corpus metadata: $(MODEL_DIR)/training/$(AGENT_PROFILE)-metadata.json"

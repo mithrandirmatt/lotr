@@ -1,0 +1,8 @@
+usage: build.lora_export_gguf.py [-h] --repo_root REPO_ROOT
+                                 [--profile PROFILE]
+                                 [--model_config MODEL_CONFIG]
+                                 [--base_model BASE_MODEL] --adapter_dir
+                                 ADAPTER_DIR --merged_dir MERGED_DIR
+                                 --output_gguf OUTPUT_GGUF --llama_cpp_dir
+                                 LLAMA_CPP_DIR
+build.lora_export_gguf.py: error: the following arguments are required: --repo_root, --adapter_dir, --merged_dir, --output_gguf, --llama_cpp_dir
