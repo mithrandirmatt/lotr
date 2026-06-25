@@ -1,0 +1,83 @@
+{
+  "id": "qwen25-coder-14b-with-opus-thinking",
+  "type": "dense-with-thinking-pipeline",
+  "description": "Qwen 2.5 Coder 14B with Opus 1.5 thinking pipeline preprocessing",
+  "reasoning_model": "opus-1.5",
+  "execution_model": "qwen25-coder-14b",
+  "hf_base_model": "Qwen/Qwen2.5-Coder-14B-Instruct",
+  "thinking_pipeline": {
+    "enabled": true,
+    "thinking_model_config": "opus-1.5",
+    "thinking_injection_method": "system_prompt",
+    "thinking_injection_prefix": "Based on the following analysis and reasoning, provide your response:",
+    "feedback_loop_enabled": true,
+    "max_feedback_rounds": 3,
+    "confidence_threshold": 0.8,
+    "trace_retention_days": 30
+  },
+  "runtime_overrides": {
+    "num_ctx": 65536,
+    "num_predict": 4096,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "top_k": 40,
+    "repeat_penalty": 1.08,
+    "_note": "Execution model runtime context set to 64K; thinking uses its own context"
+  },
+  "lora_overrides": {
+    "epochs": 1,
+    "batch_size": 1,
+    "grad_accum": 8,
+    "learning_rate": 0.0001,
+    "warmup_ratio": 0.03,
+    "max_seq_length": 8192,
+    "gradient_checkpointing": true,
+    "load_in_4bit": false,
+    "load_in_8bit": false,
+    "device_map": "cuda",
+    "torch_dtype": "float16",
+    "optim": "adamw_8bit_rocm",
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "capability_tags": [
+    "coding",
+    "agentic",
+    "reasoning-enhanced",
+    "dual-model",
+    "thinking-pipeline"
+  ],
+  "constraints": {
+    "vram_target_gb": 17,
+    "thinking_model_vram_gb": 2,
+    "execution_model_vram_gb": 15,
+    "thinking_model_note": "Opus 1.5 reasoning preprocessing (lightweight)",
+    "execution_model_note": "Qwen 14B execution/response generation",
+    "gpu_requirement": "AMD RX 7900 XTX or equivalent (24GB VRAM recommended)",
+    "note": "Dual-model setup: Opus 1.5 thinking pipeline preprocesses user input, Qwen 14B generates response. Only Qwen response visible to chat (VS Code Copilot compatible). Feedback loop: max 3 rounds if confidence < 0.8.",
+    "compatibility": {
+      "vs_code_copilot": "YES - only execution model response shown",
+      "thinking_tokens_visible": "NO - thinking is internal/hidden",
+      "chat_history_impact": "Minimal - thinking injected via system prompt"
+    }
+  },
+  "workflow_integration": {
+    "recommended_for_workflows": [
+      "workflow-planning.md - Design and architecture decisions",
+      "workflow-troubleshooting.md - Root cause analysis and debugging",
+      "workflow-new-feature.md - Complex feature implementation with reasoning"
+    ],
+    "always_on": true,
+    "user_facing": false
+  }
+}

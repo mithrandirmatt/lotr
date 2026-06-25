@@ -83,10 +83,40 @@ Use the MoE model config:
 
 ## Recommended Local Models (7900 XTX)
 
-- Dense coding default config: `qwen25-coder-14b`
-- MoE coding/agentic config: `qwen3-30b-a3b-moe`
-- Very large MoE models (for example, 235B class) are not practical for this local 24GB workflow.
-- Use quantized formats that fit VRAM and context needs.
+| Model | Type | Size | VRAM | Best For | Config Name |
+|-------|------|------|------|----------|-------------|
+| **Qwen 2.5 Coder 7B** | Dense | 7B | ~8 GB (fp16) | Balanced coding tasks | `qwen25-coder-7b` |
+| **Qwen 2.5 Coder 14B** | Dense | 14B | ~15 GB (fp16) | Complex coding, planning (default) | `qwen25-coder-14b` |
+| **Qwen3 30B MOE** | MOE | 30B | ~18 GB (mixed) | Agentic reasoning, multi-task | `qwen3-30b-a3b-moe` |
+
+For reasoning-enhanced responses, see **Opus Thinking Pipeline** section below.
+
+## Opus Thinking Pipeline (Experimental)
+
+Integrates **Opus 1.5** as a reasoning preprocessing engine that feeds thinking context to **Qwen** for execution.
+
+**Key characteristics:**
+- Opus 1.5 (0.88B params, 2GB VRAM) generates thinking/reasoning scaffold
+- Qwen 14B or 7B (execution model) receives thinking context via system prompt
+- Only Qwen responds to chat (VS Code Copilot compatible)
+- Feedback loop: If confidence < 0.8, up to 3 rounds of re-thinking
+- Full thinking traces logged for analysis
+
+**Use case:** Complex planning, root-cause analysis, multi-step reasoning tasks
+
+**Install dual-model setup:**
+
+```powershell
+./build/docker/docker.ps1 exec "cd /workspace/build && make -f makefile ollama-install-dual-model"
+```
+
+**Run with thinking pipeline (Qwen 14B + Opus thinking):**
+
+```powershell
+./build/docker/docker.ps1 exec "cd /workspace/build && make -f makefile agentic_build \
+  AGENT_PROFILE=rx7900xtx-agentic \
+  AGENT_MODEL_CONFIG=qwen25-coder-14b-with-opus-thinking"
+```
 
 ## Opus-like Behavior Strategy
 
@@ -97,6 +127,7 @@ You will get the largest gains by combining:
 3. Curated repository corpus focused on tooling/workflows
 4. Lower-temperature inference defaults for consistency
 5. Explicit verification/troubleshooting workflows
+6. (Optional) Opus thinking pipeline for complex reasoning tasks
 
 This repo currently prepares corpus + runtime profile and installs a policy-aligned model variant.
 Full weight fine-tuning (LoRA/SFT/DPO) can be added later on top of this scaffold.

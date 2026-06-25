@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-active">
+        <div class="splash-content">
+            <div class="loader"></div>
+            <h1>Loading...</h1>
+            <p>Please wait while we prepare your experience</p>
+        </div>
+
+        <!-- Progress indicators -->
+        <div id="progress-container" style="display: none;">
+            <div class="progress-bar">
+                <div id="progress-fill"></div>
+            </div>
+            <span id="progress-text">Initializing...</span>
+        </div>
+
+        <!-- Status messages -->
+        <div id="status-messages" style="display: none; margin-top: 20px;">
+            <p class="status-item">✓ Connecting to system</p>
+            <p class="status-item status-loading">⏳ Loading resources...</p>
+            <p class="status-item status-error"></p>
+        </div>
+    </div>
+
+    <!-- Hello World Screen -->
+    <div id="hello-screen" style="display: none;">
+        <div class="hello-content">
+            <h1>Hello, World!</h1>
+            <p>Welcome to the Easy Tier Project</p>
+            <p>This splash screen successfully transitioned to this final page.</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

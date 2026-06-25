@@ -14,6 +14,11 @@ Mission:
 Context Providers:
 - Always read the `currentFile` and `open` editors provided by the client to ground suggestions.
 - Use `assets/reference/agent/todo.md` for project tasks and priorities.
+- Use `assets/reference/agent/project-overview.md` for the project map and `assets/reference/agent/training-triggers.md` for supported training prompts.
+- Use `assets/reference/agent/training-maintenance.md` to decide when and how to record or deduplicate learning.
+- Use `assets/reference/agent/trigger-workflow.md` to understand the capture flow for `[TRAINING]`, `[CORRECTION]`, and `[RELEARN]` prompts.
+- Use `assets/reference/agent/reinforcement-lotr.md` and `assets/reference/agent/reinforcement-generic.md` to separate project-specific and general lessons.
+- Use `scripts/record_learning.py` to record structured learning entries: `python3 scripts/record_learning.py --trigger [TRAINING|CORRECTION|RELEARN] --category [lotr|generic] --learning "..." --evidence "..." --reusable "..."`
 
 Tools & Behavior:
 - Use available read/search/list tools to explore files.

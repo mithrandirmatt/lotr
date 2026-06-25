@@ -10,13 +10,12 @@ OLLAMA_SRC_MODEL ?= sorc/qwen3.5-claude-4.6-opus:latest
 OLLAMA_CAP_MODEL ?= sorc/qwen3.5-claude-4.6-opus:copilot
 
 # ollama_cap_model: create a VS Code Copilot-optimised variant of the model.
-# num_ctx=32768  -- tells VS Code the context window is 32k so it compresses
-#                   conversation history at ~21k tokens (66%) automatically.
-# /no_think      -- disables Qwen3 thinking blocks (saves tokens before answering).
+# num_ctx=65536  -- raises available context for complex multi-file sessions.
+# thinking       -- allow concise reasoning for complex prompts.
 # num_predict=2048 -- prevents runaway output ("Response too long" errors).
 ollama_cap_model:
 	$(call log_build,Creating Copilot model $(OLLAMA_CAP_MODEL) via $(OLLAMA_BASE)...)
-	@printf '{"model":"%s","from":"%s","system":"Think concisely if needed. Use at most 2 thinking blocks per response.","parameters":{"num_ctx":32768,"num_predict":2048}}' \
+	@printf '{"model":"%s","from":"%s","system":"Use concise reasoning for complex tasks. Keep final answers direct and actionable.","parameters":{"num_ctx":65536,"num_predict":2048}}' \
 	    "$(OLLAMA_CAP_MODEL)" "$(OLLAMA_SRC_MODEL)" | \
 	    curl -sSL --fail-with-body -X POST "$(OLLAMA_BASE)/api/create" \
 	        -H 'Content-Type: application/json' \

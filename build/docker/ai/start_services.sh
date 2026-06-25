@@ -181,9 +181,8 @@ PYEOF
 
     # --------------------------------------------------------
     # Create :copilot model variant for VS Code Copilot agent.
-    # num_ctx=32768 makes VS Code compress conversation history at ~21k tokens
-    # (66% threshold) instead of waiting for the model's native 262k limit.
-    # /no_think disables Qwen3 thinking blocks that consume tokens before answering.
+    # num_ctx=262144 provides more working memory for complex repository tasks.
+    # Keep reasoning concise so responses remain actionable and within limits.
     # num_predict=2048 prevents runaway output that triggers "Response too long".
     # Always recreate so parameters stay in sync with this script.
     # --------------------------------------------------------
@@ -192,7 +191,7 @@ PYEOF
         echo "[start_services] Creating/updating Copilot model ${COPILOT_MODEL}..."
         curl -sSL -X POST "http://localhost:${OLLAMA_BIND_PORT}/api/create" \
             -H 'Content-Type: application/json' \
-            -d "{\"model\":\"${COPILOT_MODEL}\",\"from\":\"${AI_MODEL}\",\"system\":\"Think concisely if needed. Use at most 2 thinking blocks per response.\",\"parameters\":{\"num_ctx\":32768,\"num_predict\":2048}}" \
+            -d "{\"model\":\"${COPILOT_MODEL}\",\"from\":\"${AI_MODEL}\",\"system\":\"Use concise reasoning for complex tasks. Keep final answers direct and actionable.\",\"parameters\":{\"num_ctx\":262144,\"num_predict\":2048}}" \
             >> "$OLLAMA_LOG" 2>&1 \
             && echo "[start_services] Copilot model ${COPILOT_MODEL} ready." \
             || echo "[start_services] WARNING: failed to create Copilot model ${COPILOT_MODEL}."

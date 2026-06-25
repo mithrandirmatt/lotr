@@ -26,6 +26,9 @@ Usage:
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run -ServerPort 8080 -AdminPort 3002
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -GpuVariant rocm
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableAi
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableOllamaProxy
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableHeadroom
+    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableHeadroom -EnableOllamaProxy
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build -Tag my-image:v2 -McpTag my-mcp:v2
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -Tag my-image:v2 -McpTag my-mcp:v2
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run -CommandArg "command"
@@ -54,6 +57,12 @@ param(
     # Pass -EnableAi to start the AI/Ollama container and related host Ollama management.
     # By default AI is disabled; use this flag when you want the container-side Ollama.
     [switch]$EnableAi,
+    # Pass -EnableOllamaProxy to start scripts/ollama_proxy.py on port 11436.
+    # Default is disabled; when disabled, any existing proxy process is stopped.
+    [switch]$EnableOllamaProxy,
+    # Pass -EnableHeadroom to start lotr-headroom on port 8787.
+    # Default is disabled for direct Copilot -> host Ollama communication.
+    [switch]$EnableHeadroom,
     # Dev services: lotr-server (FastAPI) and lotr-admin (React/Vite) are started automatically.
     # Pass -NoDevServices to skip them (AI-only or minimal runs).
     [switch]$NoDevServices,
@@ -235,7 +244,8 @@ function Start-OllamaProxy {
     param(
         [int]$ProxyPort = 11436,
         [string]$UpstreamUrl = 'http://localhost:11434',
-        [int]$MaxTokens = 4096
+        [int]$MaxTokens = 4096,
+        [int]$ForceNumCtx = 262144
     )
     # Script lives at <repo-root>/scripts/ollama_proxy.py
     $repoRoot    = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -259,11 +269,42 @@ function Start-OllamaProxy {
     $pyExe = if (Get-Command 'pythonw' -ErrorAction SilentlyContinue) { 'pythonw' } else { 'python' }
     try {
         Start-Process -FilePath $pyExe `
-            -ArgumentList "`"$proxyScript`" --port $ProxyPort --upstream $UpstreamUrl --max-tokens $MaxTokens" `
+            -ArgumentList "`"$proxyScript`" --port $ProxyPort --upstream $UpstreamUrl --max-tokens $MaxTokens --force-think-false --force-num-ctx $ForceNumCtx" `
             -WindowStyle Hidden
         Write-Log ("Ollama proxy launched via {0} (port {1})." -f $pyExe, $ProxyPort)
     } catch {
         Write-Log ("Failed to launch Ollama proxy: {0}" -f $_)
+    }
+}
+
+function Stop-OllamaProxyIfPresent {
+    param([int]$ProxyPort = 11436)
+
+    Write-Log ("Ensuring Ollama proxy is not running on port {0}..." -f $ProxyPort)
+
+    # Stop any listener bound to the proxy port.
+    try {
+        $conn = Get-NetTCPConnection -LocalPort $ProxyPort -State Listen -ErrorAction SilentlyContinue
+        if ($conn) {
+            Write-Log ("Stopping process PID {0} listening on proxy port {1}..." -f $conn.OwningProcess, $ProxyPort)
+            Stop-Process -Id $($conn.OwningProcess) -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Milliseconds 500
+        }
+    } catch {
+        Write-Log ("Proxy port check failed: {0}" -f $_)
+    }
+
+    # Also stop stray python/pythonw processes launched with ollama_proxy.py.
+    try {
+        $pyProcs = Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue |
+            Where-Object { $_.CommandLine -and $_.CommandLine -match 'ollama_proxy\.py' }
+
+        foreach ($p in $pyProcs) {
+            Write-Log ("Stopping Ollama proxy process PID {0} ({1})..." -f $p.ProcessId, $p.Name)
+            Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+    } catch {
+        Write-Log ("Proxy process scan failed: {0}" -f $_)
     }
 }
 
@@ -517,11 +558,19 @@ if ($Command -eq 'run') {
     Write-Log ("Running interactive shell in image '{0}' ..." -f $Tag)
     Write-Log ("Mounting {0} -> /workspace" -f $wslRepoRoot)
 
-    # Start (or restart) the Ollama think:false proxy on port 11436.
-    # Upstream is headroom (8787) so the full chain is:
-    #   Copilot -> proxy:11436 (strips thinking) -> headroom:8787 (compresses) -> Ollama:11434
-    # MaxTokens 16384: cap exists only as a hard backstop.
-    Start-OllamaProxy -ProxyPort 11436 -UpstreamUrl 'http://localhost:8787' -MaxTokens 16384
+    if ($EnableOllamaProxy) {
+        # Start (or restart) the Ollama think:false proxy on port 11436.
+        # Default upstream is host Ollama (11434). If headroom is enabled, route via 8787.
+        $proxyUpstream = if ($EnableHeadroom) { 'http://localhost:8787' } else { 'http://localhost:11434' }
+        # MaxTokens 16384: cap exists only as a hard backstop.
+        # ForceNumCtx 262144: request-side override so Copilot BYOM sessions keep
+        # larger effective history before compaction.
+        Start-OllamaProxy -ProxyPort 11436 -UpstreamUrl $proxyUpstream -MaxTokens 16384 -ForceNumCtx 262144
+        Write-Log ("Ollama proxy enabled on port 11436 with upstream {0}." -f $proxyUpstream)
+    } else {
+        Stop-OllamaProxyIfPresent -ProxyPort 11436
+        Write-Log 'Ollama proxy disabled (pass -EnableOllamaProxy to start it).'
+    }
 
 # Resolve Windows SSH key folder as a WSL path for the volume mount
 $sshWinPath  = Join-Path $env:USERPROFILE ".ssh"
@@ -896,35 +945,38 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
 
     # ---------------------------------------------------------------------------
     # Start headroom proxy container (port 8787 -> host Ollama on port 11434)
-    # Compresses LLM traffic from VS Code Copilot before it reaches Ollama.
-    # Always stops any existing instance so config changes are picked up.
-    # Run setup-headroom.ps1 once to pull the image before first use.
+    # only when explicitly enabled.
     # ---------------------------------------------------------------------------
-    $headroomImage = 'ghcr.io/chopratejas/headroom:latest'
-    $imageExists = wsl -d $DistroName -u root -- docker image inspect $headroomImage --format '{{.Id}}' 2>$null
-    if ($imageExists) {
-        # Resolve the WSL default-route gateway (= Windows host IP from inside WSL).
-        # host.docker.internal inside lotr-net resolves to the Docker bridge, not the
-        # Windows host, so we pass the gateway IP directly instead.
-        $wslGateway = (wsl -d $DistroName -u root -- ip route show default 2>$null) -replace '^default via (\S+).*','$1'
-        if (-not $wslGateway) { $wslGateway = 'host.docker.internal' }
-        Write-Log ("Headroom upstream Ollama: http://${wslGateway}:11434")
+    if ($EnableHeadroom) {
+        $headroomImage = 'ghcr.io/chopratejas/headroom:latest'
+        $imageExists = wsl -d $DistroName -u root -- docker image inspect $headroomImage --format '{{.Id}}' 2>$null
+        if ($imageExists) {
+            # Resolve the WSL default-route gateway (= Windows host IP from inside WSL).
+            # host.docker.internal inside lotr-net resolves to the Docker bridge, not the
+            # Windows host, so we pass the gateway IP directly instead.
+            $wslGateway = (wsl -d $DistroName -u root -- ip route show default 2>$null) -replace '^default via (\S+).*','$1'
+            if (-not $wslGateway) { $wslGateway = 'host.docker.internal' }
+            Write-Log ("Headroom upstream Ollama: http://${wslGateway}:11434")
 
-        wsl -d $DistroName -u root -- docker rm -f lotr-headroom 2>$null | Out-Null
-        wsl -d $DistroName -u root -- docker run `
-            --detach `
-            --name lotr-headroom `
-            --network lotr-net `
-            --publish 8787:8787 `
-            $headroomImage `
-            --openai-api-url "http://${wslGateway}:11434" --no-telemetry
-        if ($LASTEXITCODE -eq 0) {
-            Write-Log "Headroom proxy container started on port 8787."
+            wsl -d $DistroName -u root -- docker rm -f lotr-headroom 2>$null | Out-Null
+            wsl -d $DistroName -u root -- docker run `
+                --detach `
+                --name lotr-headroom `
+                --network lotr-net `
+                --publish 8787:8787 `
+                $headroomImage `
+                --openai-api-url "http://${wslGateway}:11434" --no-telemetry
+            if ($LASTEXITCODE -eq 0) {
+                Write-Log "Headroom proxy container started on port 8787."
+            } else {
+                Write-Log ("WARNING: Headroom container start failed (exit {0}); continuing." -f $LASTEXITCODE)
+            }
         } else {
-            Write-Log ("WARNING: Headroom container start failed (exit {0}); continuing." -f $LASTEXITCODE)
+            Write-Log "Headroom image not found; run setup-headroom.ps1 to pull it. Skipping."
         }
     } else {
-        Write-Log "Headroom image not found; run setup-headroom.ps1 to pull it. Skipping."
+        wsl -d $DistroName -u root -- docker rm -f lotr-headroom 2>$null | Out-Null
+        Write-Log 'Headroom disabled (pass -EnableHeadroom to start it).'
     }
 
     # -it: interactive + pseudo-TTY

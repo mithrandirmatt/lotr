@@ -123,10 +123,11 @@ PowerShell -ExecutionPolicy Bypass -File build/docker/setup-wsl-docker.ps1      
 PowerShell -ExecutionPolicy Bypass -File build/docker/start-wsl-docker.ps1                      # start Docker inside lotr-docker-service
 PowerShell -ExecutionPolicy Bypass -File build/docker/stop-wsl-docker.ps1                       # stop Docker inside lotr-docker-service
 PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build                          # build the lotr-dev image from build/docker/Dockerfile
-PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run                            # run interactive shell in the lotr-dev container
+PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run                            # run interactive shell in the lotr-dev container (direct host Ollama by default)
 PowerShell -ExecutionPolicy Bypass -File build/docker/trouble-shoot.ps1                         # Script to troubleshoot our setups
 PowerShell -ExecutionPolicy Bypass -File build/docker/check-ollama-endpoints.ps1                # Script to check ollama server
 PowerShell -ExecutionPolicy Bypass -File build/docker/ollama-latency-test.ps1 -Iterations 5     # Script to check ai lag
+PowerShell -ExecutionPolicy Bypass -File build/docker/llm-checker.ps1                            # Script to verify llm path, context override, and endpoint health
 ```
 
 Parameters of `setup-wsl-docker.ps1`:

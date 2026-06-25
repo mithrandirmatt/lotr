@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 ollama_proxy.py -- Thin proxy for Ollama that:
-  1. Injects `think: false` into every /api/chat and /api/generate request
-     (prevents Qwen3 reasoning tokens from consuming the entire response)
+  1. Optionally injects `think: false` into /api/chat and /api/generate
+      when forced, for strict low-latency response mode.
   2. Caps response length via `max_tokens` / `num_predict` to avoid the
      Copilot BYOM "Response too long" hard limit.
 
@@ -22,6 +22,11 @@ import urllib.parse
 from datetime import datetime
 
 INJECT_THINK_FALSE_PATHS = {"/api/chat", "/api/generate", "/v1/chat/completions"}
+
+SYSTEM_GUARDRAIL = (
+    "Never output raw JSON tool call payloads (for example objects with keys like "
+    "name/arguments for tools). Execute tools internally and answer with normal text only."
+)
 
 # Token ceiling. Keep this as a hard backstop only.
 # Rewriting finish_reason is disabled by default because masking truncation can
@@ -104,6 +109,8 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
     upstream_scheme: str  # "http" or "https"
     max_tokens: int = DEFAULT_MAX_TOKENS
     rewrite_finish_reason: bool = False
+    force_think_false: bool = False
+    force_num_ctx: int | None = None
 
     def log_message(self, fmt, *args):  # suppress default access log noise
         pass
@@ -226,12 +233,47 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
 
                 # Log what the caller sent (Copilot diagnostic)
                 caller_max = data.get("max_tokens", "not-set")
+                caller_ctx = data.get("options", {}).get("num_ctx", data.get("num_ctx", "not-set"))
                 caller_think = data.get("think", "not-set")
                 caller_stream = data.get("stream", "not-set")
                 model = data.get("model", "?")
 
-                # 1. Inject think:false (Ollama native endpoints)
-                data["think"] = False
+                # 1. Inject think:false only when strict low-latency mode is enabled.
+                if self.force_think_false:
+                    data["think"] = False
+
+                # 1b. Inject an explicit system guardrail to prevent raw tool-call JSON
+                # from being returned in user-visible chat output.
+                if path_only == "/v1/chat/completions":
+                    msgs = data.get("messages")
+                    if isinstance(msgs, list):
+                        has_guardrail = any(
+                            isinstance(m, dict)
+                            and m.get("role") == "system"
+                            and SYSTEM_GUARDRAIL in str(m.get("content", ""))
+                            for m in msgs
+                        )
+                        if not has_guardrail:
+                            msgs.insert(0, {"role": "system", "content": SYSTEM_GUARDRAIL})
+                else:
+                    msgs = data.get("messages")
+                    if isinstance(msgs, list):
+                        has_guardrail = any(
+                            isinstance(m, dict)
+                            and m.get("role") == "system"
+                            and SYSTEM_GUARDRAIL in str(m.get("content", ""))
+                            for m in msgs
+                        )
+                        if not has_guardrail:
+                            msgs.insert(0, {"role": "system", "content": SYSTEM_GUARDRAIL})
+                    else:
+                        existing_system = str(data.get("system", "")).strip()
+                        if SYSTEM_GUARDRAIL not in existing_system:
+                            data["system"] = (
+                                f"{existing_system}\n\n{SYSTEM_GUARDRAIL}".strip()
+                                if existing_system
+                                else SYSTEM_GUARDRAIL
+                            )
 
                 # 2. Cap token output to avoid Copilot's "Response too long" error.
                 # Always enforce the ceiling — Copilot BYOM sends its own max_tokens
@@ -241,6 +283,19 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
                     existing = data.get("max_tokens")
                     if existing is None or existing > self.max_tokens:
                         data["max_tokens"] = self.max_tokens
+
+                    # OpenAI-compat requests can still carry Ollama options.
+                    # Set both options.num_ctx and top-level num_ctx so at least one
+                    # path is honored depending on the upstream parser version.
+                    if self.force_num_ctx and self.force_num_ctx > 0:
+                        opts = data.setdefault("options", {})
+                        existing_ctx = opts.get("num_ctx")
+                        if existing_ctx is None or existing_ctx < self.force_num_ctx:
+                            opts["num_ctx"] = self.force_num_ctx
+
+                        top_ctx = data.get("num_ctx")
+                        if top_ctx is None or top_ctx < self.force_num_ctx:
+                            data["num_ctx"] = self.force_num_ctx
                 else:
                     # Ollama native: options.num_predict (-1 means unlimited)
                     opts = data.setdefault("options", {})
@@ -248,9 +303,18 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
                     if existing is None or existing < 0 or existing > self.max_tokens:
                         opts["num_predict"] = self.max_tokens
 
+                    # Force context window on every request so Copilot BYOM does not
+                    # silently inherit smaller model defaults.
+                    if self.force_num_ctx and self.force_num_ctx > 0:
+                        existing_ctx = opts.get("num_ctx")
+                        if existing_ctx is None or existing_ctx < self.force_num_ctx:
+                            opts["num_ctx"] = self.force_num_ctx
+
                 final_max = data.get("max_tokens") or data.get("options", {}).get("num_predict", "?")
+                final_ctx = data.get("options", {}).get("num_ctx", data.get("num_ctx", "not-set"))
                 log_prefix = (f"POST {path_only} model={model} "
                               f"caller_max_tokens={caller_max} -> capped={final_max} "
+                              f"caller_num_ctx={caller_ctx} -> effective_num_ctx={final_ctx} "
                               f"caller_think={caller_think} stream={caller_stream}")
                 _log(f"REQ  {log_prefix}")
 
@@ -278,7 +342,7 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Ollama think:false proxy")
+    parser = argparse.ArgumentParser(description="Ollama response-capping proxy")
     parser.add_argument("--port", type=int, default=11436, help="Port to listen on (default: 11436)")
     parser.add_argument("--upstream", default="http://localhost:11434", help="Ollama upstream URL")
     parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS,
@@ -289,6 +353,17 @@ def main():
         action="store_true",
         help="Rewrite finish_reason/done_reason length->stop (off by default).",
     )
+    parser.add_argument(
+        "--force-think-false",
+        action="store_true",
+        help="Force think=false injection on chat/generate requests (off by default).",
+    )
+    parser.add_argument(
+        "--force-num-ctx",
+        type=int,
+        default=262144,
+        help="Force request num_ctx for Ollama/native+OpenAI-compatible requests (default: 262144).",
+    )
     args = parser.parse_args()
 
     parsed = urllib.parse.urlparse(args.upstream)
@@ -297,11 +372,16 @@ def main():
     ProxyHandler.upstream_scheme = parsed.scheme
     ProxyHandler.max_tokens = args.max_tokens
     ProxyHandler.rewrite_finish_reason = args.rewrite_finish_reason
+    ProxyHandler.force_think_false = args.force_think_false
+    ProxyHandler.force_num_ctx = args.force_num_ctx if args.force_num_ctx > 0 else None
 
     server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), ProxyHandler)
     print(f"Ollama proxy listening on http://localhost:{args.port}")
     print(f"Forwarding to {args.upstream}")
-    print(f"  think:false injected | max_tokens cap: {args.max_tokens}")
+    print(
+        f"  force_think_false: {args.force_think_false} | "
+        f"max_tokens cap: {args.max_tokens} | force_num_ctx: {ProxyHandler.force_num_ctx}"
+    )
     print(f"  rewrite_finish_reason: {args.rewrite_finish_reason}")
     print(f'  Copilot serverUrl -> "http://localhost:{args.port}"')
     try:

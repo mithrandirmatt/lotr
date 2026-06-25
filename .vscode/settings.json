@@ -21,7 +21,11 @@
     //
     // To set on Windows (run once per machine, then relaunch Ollama):
     //   [System.Environment]::SetEnvironmentVariable("OLLAMA_ORIGINS","*","User")
+    //
+    // Use direct host Ollama by default (no proxy/headroom in the request path).
+    "github.copilot.chat.languageModel.ollama.serverUrl": "http://localhost:11434",
+    "github.copilot.chat.languageModel.ollama.model": "lotr-agentic-rx7900xtx-agentic-qwen35-262k:latest",
 
     // Auto-run task on workspace startup
-    "tasks.onTaskStart": "Setup LOTR Docker Workspace",
+    "tasks.onTaskStart": "Setup LOTR Docker Workspace"
 }

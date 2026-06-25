@@ -2,7 +2,7 @@ REPO_ROOT ?= $(CURDIR)/..
 BASE_MODEL ?= llama3-8b
 QUANTIZATION ?= 4bit
 AGENT_PROFILE ?= rx7900xtx-agentic
-AGENT_MODEL_CONFIG ?= qwen25-coder-14b
+AGENT_MODEL_CONFIG ?= qwen25-coder-7b
 AGENT_BASE_MODEL ?=
 AGENT_HF_BASE_MODEL ?=
 MODEL_DIR ?= $(REPO_ROOT)/do/agent/models
@@ -431,6 +431,34 @@ ollama-install-agentic: profile-modelfile
 	echo "Using active Ollama host: $$ACTIVE_OLLAMA_HOST"; \
 	OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama create $(OLLAMA_AGENTIC_MODEL_NAME) -f $(MODEL_DIR)/Modelfile.$(AGENT_PROFILE)
 	@echo "Agentic profile model installation completed."
+
+.PHONY: ollama-install-dual-model
+ollama-install-dual-model:
+	@echo "Installing dual-model setup (Opus 1.5 thinking + Qwen execution)..."
+	@echo "Preferred Ollama host: $(OLLAMA_HOST)"
+	@ACTIVE_OLLAMA_HOST="$(OLLAMA_HOST)"; \
+	if [ "$(OLLAMA_USE_LOCAL_DAEMON)" = "1" ]; then \
+		echo "Starting local Ollama daemon in container (forced)..."; \
+		pkill -x ollama >/dev/null 2>&1 || true; \
+		OLLAMA_HOST="127.0.0.1:11434" ollama serve > /dev/null 2>&1 & \
+		sleep 2; \
+		ACTIVE_OLLAMA_HOST="http://127.0.0.1:11434"; \
+	elif ! OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama list > /dev/null 2>&1; then \
+		echo "Preferred host $$ACTIVE_OLLAMA_HOST is not reachable; starting local Ollama daemon in container..."; \
+		OLLAMA_HOST="127.0.0.1:11434" ollama serve > /dev/null 2>&1 & \
+		sleep 2; \
+		ACTIVE_OLLAMA_HOST="http://127.0.0.1:11434"; \
+	fi; \
+	echo "Using active Ollama host: $$ACTIVE_OLLAMA_HOST"; \
+	echo "Pulling Opus 1.5 (thinking model)..."; \
+	OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama pull opus-research/opus-1.5; \
+	echo "Pulling Qwen 2.5 Coder 14B (execution model)..."; \
+	OLLAMA_HOST="$$ACTIVE_OLLAMA_HOST" ollama pull qwen2.5-coder:14b; \
+	echo "Dual-model setup installation completed."
+	@echo "Thinking pipeline ready:"
+	@echo "  - Thinking model: opus-research/opus-1.5"
+	@echo "  - Execution model: qwen2.5-coder:14b"
+	@echo "  - To use: AGENT_MODEL_CONFIG=qwen25-coder-14b-with-opus-thinking"
 
 .PHONY: ollama-install-lora
 ollama-install-lora: lora-export-gguf

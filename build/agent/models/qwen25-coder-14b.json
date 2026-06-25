@@ -4,7 +4,7 @@
   "ollama_base_model": "qwen2.5-coder:14b",
   "hf_base_model": "Qwen/Qwen2.5-Coder-14B-Instruct",
   "runtime_overrides": {
-    "num_ctx": 32768,
+    "num_ctx": 65536,
     "temperature": 0.2
   },
   "lora_overrides": {

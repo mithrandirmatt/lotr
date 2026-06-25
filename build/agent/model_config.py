@@ -48,3 +48,38 @@ def resolve_lora(profile: dict, model_cfg: dict) -> dict:
 
 def resolve_base_models(model_cfg: dict) -> tuple[str | None, str | None]:
     return model_cfg.get("ollama_base_model"), model_cfg.get("hf_base_model")
+
+
+def resolve_thinking_pipeline(repo_root: Path, model_cfg: dict) -> dict | None:
+    """Check if model config has a thinking pipeline.
+
+    Returns dict with reasoning_model and execution_model configs if present,
+    None otherwise.
+
+    Schema:
+    {
+        "reasoning_model_config": {...},
+        "reasoning_model_path": Path,
+        "execution_model_config": {...},
+        "execution_model_path": Path,
+        "thinking_config": {...}  # from model_cfg["thinking_pipeline"]
+    }
+    """
+    if "reasoning_model" not in model_cfg or "execution_model" not in model_cfg:
+        return None
+
+    reasoning_model_name = model_cfg["reasoning_model"]
+    execution_model_name = model_cfg["execution_model"]
+
+    # Load reasoning model config
+    reasoning_cfg, reasoning_path = load_model_config(repo_root, reasoning_model_name)
+    # Load execution model config
+    execution_cfg, execution_path = load_model_config(repo_root, execution_model_name)
+
+    return {
+        "reasoning_model_config": reasoning_cfg,
+        "reasoning_model_path": reasoning_path,
+        "execution_model_config": execution_cfg,
+        "execution_model_path": execution_path,
+        "thinking_config": model_cfg.get("thinking_pipeline", {}),
+    }

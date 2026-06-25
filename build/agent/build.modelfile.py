@@ -27,15 +27,68 @@ def load_profile(repo_root: Path, profile_name: str) -> dict:
 def load_system_prompt(repo_root: Path) -> str:
     prompt_path = repo_root / ".github" / "copilot-instructions.md"
     if not prompt_path.exists():
-        return "You are a coding agent. Follow repository rules and use tools correctly."
-    return prompt_path.read_text(encoding="utf-8").strip()
+        base_prompt = "You are a coding agent. Follow repository rules and use tools correctly."
+    else:
+        base_prompt = prompt_path.read_text(encoding="utf-8").strip()
+
+    training_corpus = load_agent_training_corpus(repo_root)
+    sections = [base_prompt]
+    if training_corpus:
+        sections.append("## Agent Training Corpus\n\n" + training_corpus)
+    return "\n\n".join(section.strip() for section in sections if section.strip())
+
+
+def load_agent_training_corpus(repo_root: Path) -> str:
+    reference_dir = repo_root / "assets" / "reference" / "agent"
+    if not reference_dir.exists():
+        return ""
+
+    priority_names = [
+        "agent.system.md",
+        "project-overview.md",
+        "training-triggers.md",
+        "training-maintenance.md",
+        "trigger-workflow.md",
+        "reinforcement-lotr.md",
+        "reinforcement-generic.md",
+        "rules-reference.md",
+        "game-plan.md",
+        "todo.md",
+        "issues-current.md",
+        "issues-completed.md",
+        "issues-tracker.md",
+        "issues.md",
+    ]
+
+    sections: list[str] = []
+    seen_paths: set[Path] = set()
+
+    for name in priority_names:
+        path = reference_dir / name
+        if path.is_file():
+            sections.append(format_agent_reference_doc(path, repo_root))
+            seen_paths.add(path.resolve())
+
+    for path in sorted(reference_dir.rglob("*.md")):
+        resolved_path = path.resolve()
+        if resolved_path in seen_paths:
+            continue
+        sections.append(format_agent_reference_doc(path, repo_root))
+
+    return "\n\n---\n\n".join(section for section in sections if section.strip()).strip()
+
+
+def format_agent_reference_doc(path: Path, repo_root: Path) -> str:
+    relative_path = path.relative_to(repo_root).as_posix()
+    content = path.read_text(encoding="utf-8").strip()
+    return f"## Source: {relative_path}\n\n{content}"
 
 
 def build_modelfile(base_model: str, system_prompt: str, runtime: dict, adapter_path: str | None = None) -> str:
     lines = [
         f"FROM {base_model}",
         "",
-        f"PARAMETER num_ctx {runtime.get('num_ctx', 32768)}",
+        f"PARAMETER num_ctx {runtime.get('num_ctx', 65536)}",
         f"PARAMETER num_predict {runtime.get('num_predict', 4096)}",
         f"PARAMETER temperature {runtime.get('temperature', 0.2)}",
         f"PARAMETER top_p {runtime.get('top_p', 0.9)}",
@@ -52,6 +105,21 @@ def build_modelfile(base_model: str, system_prompt: str, runtime: dict, adapter_
         # both adapter_model.safetensors and adapter_config.json together.
         lines.extend([
             f"ADAPTER {adapter_path}",
+            "",
+        ])
+
+    # Raw GGUF imports can default to a template that ignores system prompts.
+    # Force a system-aware template so instruction/training content is honored.
+    if str(base_model).lower().endswith(".gguf"):
+        lines.extend([
+            "TEMPLATE \"\"\"{{- if .System -}}<|im_start|>system",
+            "{{ .System }}<|im_end|>",
+            "{{- end -}}{{- if .Prompt -}}<|im_start|>user",
+            "{{ .Prompt }}<|im_end|>",
+            "<|im_start|>assistant",
+            "{{- end -}}\"\"\"",
+            "PARAMETER stop \"<|im_start|>\"",
+            "PARAMETER stop \"<|im_end|>\"",
             "",
         ])
 

@@ -1,34 +1,38 @@
 {
   "name": "rx7900xtx-agentic",
-  "description": "AMD RX 7900 XTX optimized profile for local agentic coding assistants",
+  "description": "AMD RX 7900 XTX optimized profile for local agentic coding assistants — UPDATED with 8K context and GPU-first VRAM allocation",
   "gpu": {
     "name": "AMD Radeon RX 7900 XTX",
     "vram_gb": 24,
-    "recommended_quantization": "Q5_K_M",
-    "max_practical_params_for_coding": "14B-32B (quantized, task-dependent)"
+    "recommended_quantization": "Q5_K_M (inference only); full precision with gradient checkpointing (training)",
+    "max_practical_params_for_coding": "7B-32B (quantized, task-dependent)"
   },
   "runtime": {
-    "num_ctx": 32768,
+    "num_ctx": 131072,
     "num_predict": 4096,
     "temperature": 0.2,
     "top_p": 0.9,
     "top_k": 40,
     "repeat_penalty": 1.08,
     "mirostat": 0,
-    "seed": 42
+    "seed": 42,
+    "_note": "Inference runtime context set to 128K; LoRA training uses 8K (see lora.max_seq_length)"
   },
   "lora": {
     "epochs": 1,
     "batch_size": 1,
-    "grad_accum": 16,
+    "grad_accum": 8,
     "learning_rate": 0.0001,
     "warmup_ratio": 0.03,
-    "max_seq_length": 1024,
-    "load_in_4bit": true,
-    "bnb_4bit_quant_type": "nf4",
-    "bnb_4bit_use_double_quant": true,
-    "device_map": "auto",
-    "optim": "paged_adamw_8bit",
+    "max_seq_length": 8192,
+    "gradient_checkpointing": true,
+    "load_in_4bit": false,
+    "load_in_8bit": false,
+    "bnb_4bit_quant_type": null,
+    "bnb_4bit_use_double_quant": null,
+    "device_map": "cuda",
+    "torch_dtype": "float16",
+    "optim": "adamw_8bit_rocm",
     "lora_r": 16,
     "lora_alpha": 32,
     "lora_dropout": 0.05,
@@ -49,6 +53,7 @@
       "deepseek-coder-v2:16b"
     ],
     "reasoning_heavy": [
+      "hf.co/mradermacher/ERNIE-21B-A3B-Claude-4.5-High-OPUS-Thinking-i1-GGUF:Q5_K_M",
       "qwen2.5:32b",
       "llama3.1:70b (remote/offload only)"
     ]

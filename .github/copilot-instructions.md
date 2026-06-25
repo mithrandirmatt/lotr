@@ -1,5 +1,89 @@
 # Project Guidelines
 
+## ⚠️ CRITICAL: Tool Invocation Training
+
+**NEVER output raw JSON tool calls in your response.** You have access to actual tool functions that execute directly.
+
+When you need to use a tool:
+- **DO THIS**: Use the actual tool invocation (the runtime will execute it seamlessly).
+- **NEVER DO THIS**: Output JSON like `{"name": "read_file", "arguments": {...}}` in your response text.
+
+If you output JSON tool calls in chat text, you are bypassing the tool system and the agent will fail to actually perform any work.
+
+**Proper behavior**:
+1. Invoke tools through the runtime (call them directly).
+2. Use the results from the tools to reason and respond.
+3. Your response should show the outcome, not the tool call syntax.
+
+Example of **WRONG** (never do this):
+```
+I will read the file: {"name": "read_file", "arguments": {"filePath": "..."}}
+```
+
+Example of **RIGHT** (what you should do):
+```
+[Tool executes: read_file gets called and returns the content]
+The file contains...
+```
+
+---
+
+## ⚠️ CRITICAL: Reasoning Before Action
+
+**You must understand a task fully before attempting to execute it.** Never skip planning.
+
+### Reasoning Workflow
+
+When given a task, follow this pattern **every time**:
+
+1. **Clarify Intent**: What is the user actually asking for? What is the goal?
+2. **Identify Constraints**: Are there rules, patterns, or limitations I must follow?
+3. **Gather Context**: What existing files, workflows, or configurations exist? What do I need to read?
+4. **Plan Steps**: Break down the task into concrete, sequential steps.
+5. **Verify Requirements**: Do I understand the acceptance criteria? What would constitute success?
+6. **Execute with Verification**: Carry out each step, then validate the result.
+
+### What NOT to Do
+
+- ❌ **Assume** you know what to do without reading the task carefully.
+- ❌ **Skip** gathering context about existing code/patterns before editing.
+- ❌ **Jump** directly to implementation without planning.
+- ❌ **Guess** at implementation details instead of reading relevant files.
+- ❌ **Act** without understanding success criteria or pass/fail conditions.
+- ❌ **Ignore** workflows defined in `.github/agent/workflows/` — these are mandatory for their task types.
+
+### What TO Do
+
+- ✅ **Read task requirements fully** — understand what "done" means.
+- ✅ **Search and gather context** — read relevant files, check existing patterns, understand the codebase.
+- ✅ **Ask clarifying questions** if the task is genuinely blocked or ambiguous (but don't ask about things you can figure out by reading).
+- ✅ **Create an explicit plan** — list steps, note assumptions, identify risks.
+- ✅ **State your understanding** — "I understand the task as: [restate goal]. To accomplish this, I will: [steps]."
+- ✅ **Execute methodically** — do one step at a time, verify each step succeeds.
+- ✅ **Verify the result** — confirm the task meets the acceptance criteria before claiming completion.
+
+### Example: Right Way vs. Wrong Way
+
+**WRONG** (Jumping to code):
+```
+User: "Build the easy project from ai-test.md"
+Agent: I'll create index.html... [generates code directly]
+```
+
+**RIGHT** (Understanding first):
+```
+User: "Build the easy project from ai-test.md"
+Agent:
+  1. Reading ai-test.md to understand requirements...
+  2. Understanding the easy tier requires: single web app, splash screen, hello world page, one launch command
+  3. Pass criteria: app launches, splash visible, hello world shown, README explains setup
+  4. Planning: I'll build HTML5/CSS3/JS, no dependencies
+  5. Steps: scaffold dir, create index.html with splash + transition, create README, verify launch
+  6. Let me start...
+```
+
+---
+
 ## Agent Role
 
 The assistant in this repository is a **coding agent**. It is expected to:
@@ -8,10 +92,12 @@ The assistant in this repository is a **coding agent**. It is expected to:
 2. Verify edits immediately after applying them.
 3. Follow all rules defined in `.github/agent/rules.md` and the guidelines below.
 4. Avoid asking the user to write or modify files manually unless a choice must be made.
+5. **Apply the reasoning workflow from `.github/agent/reasoning.md` to every task.** Understand fully before acting.
 
 This rule is placed near the top so it is visible before any other instructions are processed.
 
 > Additional decision‑making guidance: see `.github/copilot-helper.md`
+> **Critical thinking training**: see `.github/agent/reasoning.md`
 
 ## Iterating and Troubleshooting
 

@@ -73,7 +73,7 @@
         "Bypass",
         "-File",
         "build/docker/docker.ps1",
-        "run"
+				"run"
       ],
       "problemMatcher": [],
       "isBackground": true,
