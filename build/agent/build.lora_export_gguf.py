@@ -23,7 +23,88 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output_gguf", required=True)
     parser.add_argument("--outtype", default="f16")
     parser.add_argument("--llama_cpp_dir", required=True)
+    parser.add_argument("--cache_dir", default=None, help="Cache directory for export fingerprints")
     return parser.parse_args()
+
+
+def _check_gguf_fingerprint(
+    cache_dir: Path | None, adapter_dir: Path, base_model: str, outtype: str, output_gguf: Path
+) -> bool:
+    """Check if GGUF export can be skipped based on fingerprint.
+
+    Returns True if export was already done and fingerprint matches (skip export).
+    Returns False if export is needed.
+    """
+    if cache_dir is None:
+        return False
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    fingerprint_path = cache_dir / "gguf-export.fingerprint"
+
+    if not output_gguf.exists():
+        return False
+
+    # Compute current fingerprint
+    import hashlib
+
+    hasher = hashlib.sha256()
+    hasher.update(f"BASE_MODEL={base_model}\n".encode("utf-8"))
+    hasher.update(f"OUTTYPE={outtype}\n".encode("utf-8"))
+
+    # Hash adapter directory
+    for file_path in sorted(adapter_dir.rglob("*")):
+        if file_path.is_file():
+            with file_path.open("rb") as handle:
+                while True:
+                    chunk = handle.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    hasher.update(chunk)
+
+    current_fingerprint = hasher.hexdigest()
+
+    # Compare with saved fingerprint
+    if fingerprint_path.exists():
+        saved_fingerprint = fingerprint_path.read_text(encoding="utf-8").strip()
+        if current_fingerprint == saved_fingerprint:
+            print(f"[cache] GGUF export: cache hit (fingerprint unchanged)")
+            return True
+        else:
+            print(f"[cache] GGUF export: input checksum changed")
+            return False
+
+    # No saved fingerprint yet
+    print(f"[cache] GGUF export: no fingerprint file")
+    return False
+
+
+def _save_gguf_fingerprint(
+    cache_dir: Path | None, adapter_dir: Path, base_model: str, outtype: str
+) -> None:
+    """Save fingerprint after successful GGUF export."""
+    if cache_dir is None:
+        return
+
+    import hashlib
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    fingerprint_path = cache_dir / "gguf-export.fingerprint"
+
+    hasher = hashlib.sha256()
+    hasher.update(f"BASE_MODEL={base_model}\n".encode("utf-8"))
+    hasher.update(f"OUTTYPE={outtype}\n".encode("utf-8"))
+
+    for file_path in sorted(adapter_dir.rglob("*")):
+        if file_path.is_file():
+            with file_path.open("rb") as handle:
+                while True:
+                    chunk = handle.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    hasher.update(chunk)
+
+    fingerprint_path.write_text(hasher.hexdigest() + "\n", encoding="utf-8")
+
 
 
 def _ensure_llama_cpp(llama_cpp_dir: Path) -> Path:
@@ -116,17 +197,23 @@ def main() -> None:
     _, cfg_hf_model = resolve_base_models(model_cfg)
     base_model = args.base_model or cfg_hf_model or "Qwen/Qwen2.5-Coder-7B-Instruct"
 
-    print(f"Repo root: {repo_root}")
-    print(f"Profile: {args.profile}")
+    print(f"[INFO] Checking cache for GGUF export...")
+    cache_dir = Path(args.cache_dir) if args.cache_dir else None
+    if _check_gguf_fingerprint(cache_dir, adapter_dir, base_model, args.outtype, output_gguf):
+        print(f"[OK] Skipping GGUF export (unchanged inputs)")
+        return
+
+    print(f"\n[INFO] GGUF Export Configuration:")
+    print(f"  Repo root: {repo_root}")
+    print(f"  Profile: {args.profile}")
     if model_cfg_path:
-        print(f"Model config: {model_cfg_path}")
-    print(f"Base model: {base_model}")
-    print(f"Adapter dir: {adapter_dir}")
-    print(f"Merged dir: {merged_dir}")
-    print(f"Offload dir: {offload_dir}")
-    print(f"Output GGUF: {output_gguf}")
-    print(f"GGUF outtype: {args.outtype}")
-    print("Adapter apply is internal to export; GGUF is the deployment artifact.")
+        print(f"  Model config: {model_cfg_path}")
+    print(f"  Base model: {base_model}")
+    print(f"  Adapter dir: {adapter_dir}")
+    print(f"  Output GGUF: {output_gguf}")
+    print(f"  GGUF outtype: {args.outtype}")
+    print("  Adapter apply is internal to export; GGUF is the deployment artifact.")
+    print()
 
     use_cuda = torch.cuda.is_available() and os.environ.get("LOTR_LORA_EXPORT_USE_CUDA") == "1"
     # Keep CPU export memory footprint reasonable for 14B merges.
@@ -253,6 +340,9 @@ def main() -> None:
         tmp_f16.unlink(missing_ok=True)
 
     print(f"GGUF export completed: {output_gguf}")
+
+    # Save fingerprint for future skip detection
+    _save_gguf_fingerprint(cache_dir, adapter_dir, base_model, args.outtype)
 
     keep_merged = os.environ.get("LOTR_LORA_EXPORT_KEEP_MERGED") == "1"
     if keep_merged:

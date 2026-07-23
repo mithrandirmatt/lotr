@@ -25,9 +25,10 @@ This file contains heuristics and guidance that help the agent decide how to act
 ## Choosing Which Workflow to Use
 | Trigger phrase | Workflow |
 |----------------|----------|
+| Non-trivial request (default start) | `workflow-orchestration-baseline.md` |
 | "add a feature", "implement X", "build X" | `workflow-new-feature.md` |
 | "create an issue", "track this", "log this" | `workflow-issue-create.md` |
-| "test", "verify", "validate", "does it work" | `workflow-validation.md` |
+| "test", "verify", "validate", "does it work" | `workflow-task-verification.md` |
 | "server", "API", "backend infra", "docker service" | `workflow-server-infrastructure.md` |
 | "game logic", "card rules", "game mechanics" | `workflow-generate-game-logic.md` |
 | Unclear | Read `.github/agent/workflow.md` and ask if still ambiguous |

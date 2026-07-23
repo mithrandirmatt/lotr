@@ -18,6 +18,12 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install validator dependency
+        run: python -m pip install pyyaml
+
+      - name: Validate agent policy precedence
+        run: python .github/scripts/validate_policy.py
+
       - name: Run build script
         run: python .github/scripts/build_agents.py
 

@@ -7,8 +7,19 @@ interface AuthState {
   loading: boolean
 }
 
+type SignInResult = { requires2fa: false } | { requires2fa: true; mfaToken: string }
+
 interface AuthContextValue extends AuthState {
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<SignInResult>
+  completeMfaLogin: (mfaToken: string, code: string) => Promise<void>
+  recoverWithBackupCode: (mfaToken: string, recoveryCode: string) => Promise<void>
+  register: (data: {
+    email: string
+    uniqueName: string
+    password: string
+    confirmPassword: string
+  }) => Promise<{ message: string }>
+  refreshUser: () => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -33,10 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
   }, [])
 
-  async function signIn(email: string, password: string) {
-    const tokens = await api.login(email, password)
-    localStorage.setItem('access_token', tokens.access_token)
-    localStorage.setItem('refresh_token', tokens.refresh_token)
+  async function signIn(email: string, password: string): Promise<SignInResult> {
+    const result = await api.login(email, password)
+    if (api.isTwoFactorChallenge(result)) {
+      return { requires2fa: true, mfaToken: result.mfa_token }
+    }
+    localStorage.setItem('access_token', result.access_token)
+    localStorage.setItem('refresh_token', result.refresh_token)
     const user = await api.getMe()
     // Only allow panel admins to proceed
     if (!user.is_admin) {
@@ -45,10 +59,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Access denied: this account does not have admin panel privileges.')
     }
     setState({ user, loading: false })
+    return { requires2fa: false }
   }
 
-  async function register(data: { email: string; uniqueName: string; password: string }) {
+  async function completeMfaLogin(mfaToken: string, code: string) {
+    const tokens = await api.verify2faLogin(mfaToken, code)
+    localStorage.setItem('access_token', tokens.access_token)
+    localStorage.setItem('refresh_token', tokens.refresh_token)
+    const user = await api.getMe()
+    if (!user.is_admin) {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      throw new Error('Access denied: this account does not have admin panel privileges.')
+    }
+    setState({ user, loading: false })
+  }
+
+  async function recoverWithBackupCode(mfaToken: string, recoveryCode: string) {
+    const tokens = await api.recover2fa(mfaToken, recoveryCode)
+    localStorage.setItem('access_token', tokens.access_token)
+    localStorage.setItem('refresh_token', tokens.refresh_token)
+    const user = await api.getMe()
+    if (!user.is_admin) {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      throw new Error('Access denied: this account does not have admin panel privileges.')
+    }
+    // is_2fa_enabled is now false server-side; ProtectedRoute will redirect
+    // the user to /2fa-setup so they can scan a fresh QR code.
+    setState({ user, loading: false })
+  }
+
+  async function register(data: {
+    email: string
+    uniqueName: string
+    password: string
+    confirmPassword: string
+  }) {
     return await api.register(data)
+  }
+
+  async function refreshUser() {
+    const user = await api.getMe()
+    setState({ user, loading: false })
   }
 
   async function signOut() {
@@ -59,7 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{ ...state, signIn, completeMfaLogin, recoverWithBackupCode, register, refreshUser, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   )

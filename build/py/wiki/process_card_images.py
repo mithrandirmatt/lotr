@@ -12,6 +12,7 @@ import os
 import re
 import sys
 import colorsys
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT     = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
@@ -178,6 +179,26 @@ def find_source_jpg(card_dir):
     return None
 
 
+def _process_one_card(args):
+    """
+    Worker function run in a separate process: open, clean, and save one
+    card image. Runs in a ProcessPoolExecutor since remove_white_border()'s
+    per-pixel BFS/fringe passes are pure-Python and CPU-bound -- threads
+    wouldn't help here (the GIL isn't released during that work), but
+    separate processes let it use all available cores.
+    Returns (card_id, error_message_or_None).
+    """
+    card_id, src_jpg, out_path = args
+    try:
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        with Image.open(src_jpg) as img:
+            result = remove_white_border(img)
+            result.save(out_path, 'PNG')
+        return (card_id, None)
+    except Exception as e:
+        return (card_id, str(e))
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -200,29 +221,42 @@ def main():
 
     # -----------------------------------------------------------------------
     # Scan phase: collect (set_dir, card_id, src_jpg) and show progress.
-    # With 3200+ dirs over a mounted filesystem this can take a while.
+    #
+    # CARDS_DIR is a bind-mounted directory (WSL2/9p or similar), where each
+    # listdir/isdir/exists syscall carries real round-trip latency -- a fully
+    # sequential per-card scan over 3200+ cards is I/O-latency bound, not CPU
+    # bound, so isdir()/find_source_jpg() checks are parallelized with a
+    # thread pool (threads release the GIL during syscalls). Results are
+    # still collected in submission order, so `work` stays deterministic.
     # -----------------------------------------------------------------------
     print(f'Scanning {len(set_dirs)} sets...', flush=True)
 
-    # Count card dirs first (cheap — no per-card listdir needed yet)
-    total_dirs = sum(
-        1 for set_dir in set_dirs
-        for card_id in os.listdir(os.path.join(CARDS_DIR, set_dir))
-        if os.path.isdir(os.path.join(CARDS_DIR, set_dir, card_id))
-    )
+    max_workers = min(32, max(4, (os.cpu_count() or 4) * 4))
 
-    scan_bar = ProgressBar(label='scanning', min=0, max=total_dirs, units='dirs')
-    work = []          # (set_dir, card_id, src_jpg)
-    scanned = 0
-
+    # One listdir per set (not two, as a prior version did for a separate
+    # counting pass) to build the flat candidate list up front.
+    candidates = []
     for set_dir in set_dirs:
         set_path = os.path.join(CARDS_DIR, set_dir)
         for card_id in sorted(os.listdir(set_path)):
-            card_dir = os.path.join(set_path, card_id)
-            if not os.path.isdir(card_dir):
-                continue
+            candidates.append((set_dir, card_id, os.path.join(set_path, card_id)))
+
+    scan_bar = ProgressBar(label='scanning', min=0, max=len(candidates), units='dirs')
+
+    def _scan_one(item):
+        _set_dir, _card_id, card_dir = item
+        if not os.path.isdir(card_dir):
+            return None
+        return find_source_jpg(card_dir)
+
+    work = []          # (set_dir, card_id, src_jpg)
+    scanned = 0
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = [pool.submit(_scan_one, item) for item in candidates]
+        for (set_dir, card_id, _card_dir), future in zip(candidates, futures):
+            src_jpg = future.result()
             scanned += 1
-            src_jpg = find_source_jpg(card_dir)
             if src_jpg:
                 work.append((set_dir, card_id, src_jpg))
             scan_bar.update(scanned, task=card_id)
@@ -231,52 +265,45 @@ def main():
     print(f'Found {len(work)} card images across {len(set_dirs)} sets.', flush=True)
 
     # -----------------------------------------------------------------------
-    # Process phase: one progress bar per set
+    # Pre-check which outputs already exist, in parallel -- same rationale
+    # as the scan phase: batch the I/O-bound exists() round trips instead of
+    # interleaving them one at a time with the (CPU-bound) image processing
+    # loop below.
+    out_paths = [
+        os.path.join(PROCESSED_DIR, set_dir, card_id + '.png')
+        for set_dir, card_id, _ in work
+    ]
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        exists_flags = list(pool.map(os.path.exists, out_paths))
+
     # -----------------------------------------------------------------------
+    # Process phase: CPU-bound (per-pixel BFS + fringe passes), so this runs
+    # across a process pool (one worker per core) instead of sequentially --
+    # threads wouldn't help since remove_white_border() never releases the
+    # GIL. Only images whose processed PNG doesn't already exist are submitted.
+    # -----------------------------------------------------------------------
+    to_process = [
+        (card_id, src_jpg, out_path)
+        for (_set_dir, card_id, src_jpg), out_path, already_exists
+        in zip(work, out_paths, exists_flags)
+        if not already_exists
+    ]
+    skipped = len(work) - len(to_process)
     processed = 0
-    skipped   = 0
-    errors    = []
+    errors = []
 
-    # Pre-compute per-set counts
-    set_counts = {}
-    for set_dir, _, __ in work:
-        set_counts[set_dir] = set_counts.get(set_dir, 0) + 1
-
-    current_set = None
-    bar = None
-    set_pos = 0
-
-    for set_dir, card_id, src_jpg in work:
-        if set_dir != current_set:
-            if bar:
-                bar.done(task=current_set)
-            current_set = set_dir
-            bar = ProgressBar(label=f'{set_dir:<8}', min=0, max=set_counts[set_dir], units='cards')
-            set_pos = 0
-
-        set_pos += 1
-
-        out_dir  = os.path.join(PROCESSED_DIR, set_dir)
-        out_path = os.path.join(out_dir, card_id + '.png')
-
-        if os.path.exists(out_path):
-            skipped += 1
-            bar.update(set_pos, task=card_id)
-            continue
-
-        try:
-            os.makedirs(out_dir, exist_ok=True)
-            with Image.open(src_jpg) as img:
-                result = remove_white_border(img)
-                result.save(out_path, 'PNG')
-            processed += 1
-        except Exception as e:
-            errors.append(f'{card_id}: {e}')
-
-        bar.update(set_pos, task=card_id)
-
-    if bar:
-        bar.done(task=current_set)
+    if to_process:
+        max_procs = os.cpu_count() or 4
+        print(f'Processing {len(to_process)} card image(s) (up to {max_procs} parallel processes)...', flush=True)
+        proc_bar = ProgressBar(label='processing', min=0, max=len(to_process), units='cards')
+        with ProcessPoolExecutor(max_workers=max_procs) as pool:
+            for i, (card_id, error) in enumerate(pool.map(_process_one_card, to_process, chunksize=8), 1):
+                if error:
+                    errors.append(f'{card_id}: {error}')
+                else:
+                    processed += 1
+                proc_bar.update(i, task=card_id)
+        proc_bar.done()
 
     print(f'\nProcessed: {processed}  Skipped (already exists): {skipped}')
 

@@ -16,5 +16,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
+  if (!user.is_2fa_enabled) {
+    return <Navigate to="/2fa-setup" replace />
+  }
+
   return <>{children}</>
 }

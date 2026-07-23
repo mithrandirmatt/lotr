@@ -36,6 +36,11 @@ class User(Base):
     is_moderator = Column(Boolean, default=False)
     tolkien_balance = Column(Integer, nullable=False, default=0)
 
+    # Two-factor authentication (TOTP, RFC 6238)
+    totp_secret = Column(String(64), nullable=True)
+    is_2fa_enabled = Column(Boolean, default=False)
+    totp_recovery_codes = Column(JSON, nullable=True)  # list of bcrypt-hashed single-use codes
+
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -46,6 +51,7 @@ class User(Base):
     match_players = relationship("MatchPlayer", back_populates="user", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
     decks = relationship("Deck", back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_user_email", "email"),
@@ -65,7 +71,7 @@ class RefreshToken(Base):
     is_revoked = Column(Boolean, default=False)
 
     # Relationships
-    user = relationship("User", backref="refresh_tokens")
+    user = relationship("User", back_populates="refresh_tokens")
 
     __table_args__ = (
         Index("idx_refresh_token_user", "user_id"),

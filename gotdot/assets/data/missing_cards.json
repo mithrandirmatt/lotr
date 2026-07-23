@@ -1,0 +1,1962 @@
+[
+  {
+    "id": "lotr30010",
+    "cargo_id": "HDG-EN30S010.0",
+    "title": "Fili, Brother of Kili",
+    "collector_info": "30S10",
+    "kept_cargo_id": "HDG-EN30F010.0",
+    "kept_collector_info": "30P10"
+  },
+  {
+    "id": "lotr30012",
+    "cargo_id": "HDG-EN30S012.0",
+    "title": "Kili, Brother of Fili",
+    "collector_info": "30S12",
+    "kept_cargo_id": "HDG-EN30F012.0",
+    "kept_collector_info": "30P12"
+  },
+  {
+    "id": "lotr30014",
+    "cargo_id": "HDG-EN30S014.0",
+    "title": "Noble Intentions",
+    "collector_info": "30S14",
+    "kept_cargo_id": "HDG-EN30F014.0",
+    "kept_collector_info": "30P14"
+  },
+  {
+    "id": "lotr30019",
+    "cargo_id": "HDG-EN30S019.0",
+    "title": "Thorin, Oakenshield",
+    "collector_info": "30S19",
+    "kept_cargo_id": "HDG-EN30F019.0",
+    "kept_collector_info": "30P19"
+  },
+  {
+    "id": "lotr30021",
+    "cargo_id": "HDG-EN30S021.0",
+    "title": "Elrond, Elven Lord",
+    "collector_info": "30S21",
+    "kept_cargo_id": "HDG-EN30F021.0",
+    "kept_collector_info": "30P21"
+  },
+  {
+    "id": "lotr30022",
+    "cargo_id": "HDG-EN30S022.0",
+    "title": "Bard, The Bowman",
+    "collector_info": "30S22",
+    "kept_cargo_id": "HDG-EN30F022.0",
+    "kept_collector_info": "30P22"
+  },
+  {
+    "id": "lotr30024",
+    "cargo_id": "HDG-EN30S024.0",
+    "title": "Dawn Take You All!",
+    "collector_info": "30S24",
+    "kept_cargo_id": "HDG-EN30F024.0",
+    "kept_collector_info": "30P24"
+  },
+  {
+    "id": "lotr30030",
+    "cargo_id": "HDG-EN30S030.0",
+    "title": "He Gives Me Courage",
+    "collector_info": "30S30",
+    "kept_cargo_id": "HDG-EN30F030.0",
+    "kept_collector_info": "30P30"
+  },
+  {
+    "id": "lotr30034",
+    "cargo_id": "HDG-EN30S034.0",
+    "title": "Hatred Rekindled",
+    "collector_info": "30S34",
+    "kept_cargo_id": "HDG-EN30F034.0",
+    "kept_collector_info": "30P34"
+  },
+  {
+    "id": "lotr30037",
+    "cargo_id": "HDG-EN30S037.0",
+    "title": "Not at Home",
+    "collector_info": "30S37",
+    "kept_cargo_id": "HDG-EN30F037.0",
+    "kept_collector_info": "30P37"
+  },
+  {
+    "id": "lotr00001",
+    "cargo_id": "LOTR-EN00D001.0",
+    "title": "Buckland Homestead",
+    "collector_info": "0D1",
+    "kept_cargo_id": "LOTR-DE00T001.0",
+    "kept_collector_info": "12TF1"
+  },
+  {
+    "id": "lotr00001",
+    "cargo_id": "LOTR-EN00J001.0",
+    "title": "Goblet of the White City (SPD)",
+    "collector_info": "0SPD1",
+    "kept_cargo_id": "LOTR-DE00T001.0",
+    "kept_collector_info": "12TF1"
+  },
+  {
+    "id": "lotr00002",
+    "cargo_id": "LOTR-EN00J002.0",
+    "title": "Green Dragon Mug (SPD)",
+    "collector_info": "0SPD2",
+    "kept_cargo_id": "LOTR-EN00D002.0",
+    "kept_collector_info": "0D2"
+  },
+  {
+    "id": "lotr00003",
+    "cargo_id": "LOTR-EN00J003.0",
+    "title": "Rohirrim Stein (SPD)",
+    "collector_info": "0SPD3",
+    "kept_cargo_id": "LOTR-EN00D003.0",
+    "kept_collector_info": "0D3"
+  },
+  {
+    "id": "lotr00001",
+    "cargo_id": "LOTR-EN00M001.0",
+    "title": "The Lord of the Rings, Trading Card Game",
+    "collector_info": "0M1",
+    "kept_cargo_id": "LOTR-DE00T001.0",
+    "kept_collector_info": "12TF1"
+  },
+  {
+    "id": "lotr00002",
+    "cargo_id": "LOTR-EN00M002.0",
+    "title": "The Lord of the Rings, Trading Card Game",
+    "collector_info": "0M2",
+    "kept_cargo_id": "LOTR-EN00D002.0",
+    "kept_collector_info": "0D2"
+  },
+  {
+    "id": "lotr00001",
+    "cargo_id": "LOTR-EN00S001.0",
+    "title": "The Prancing Pony",
+    "collector_info": "0P1",
+    "kept_cargo_id": "LOTR-DE00T001.0",
+    "kept_collector_info": "12TF1"
+  },
+  {
+    "id": "lotr00002",
+    "cargo_id": "LOTR-EN00S002.0",
+    "title": "Bill the Pony",
+    "collector_info": "0P2",
+    "kept_cargo_id": "LOTR-EN00D002.0",
+    "kept_collector_info": "0D2"
+  },
+  {
+    "id": "lotr00003",
+    "cargo_id": "LOTR-EN00S003.0",
+    "title": "Fireworks",
+    "collector_info": "0P3",
+    "kept_cargo_id": "LOTR-EN00D003.0",
+    "kept_collector_info": "0D3"
+  },
+  {
+    "id": "lotr00004",
+    "cargo_id": "LOTR-EN00S004.0",
+    "title": "Council Courtyard",
+    "collector_info": "0P4",
+    "kept_cargo_id": "LOTR-EN00D004.0",
+    "kept_collector_info": "0D4"
+  },
+  {
+    "id": "lotr00005",
+    "cargo_id": "LOTR-EN00S005.0",
+    "title": "Horn of Boromir",
+    "collector_info": "0P5",
+    "kept_cargo_id": "LOTR-EN00D005.0",
+    "kept_collector_info": "0D5"
+  },
+  {
+    "id": "lotr00006",
+    "cargo_id": "LOTR-EN00S006.0",
+    "title": "Balin's Tomb",
+    "collector_info": "0P6",
+    "kept_cargo_id": "LOTR-EN00D006.0",
+    "kept_collector_info": "0D6"
+  },
+  {
+    "id": "lotr00007",
+    "cargo_id": "LOTR-EN00S007.0",
+    "title": "Book of Mazarbul",
+    "collector_info": "0P7",
+    "kept_cargo_id": "LOTR-EN00D007.0",
+    "kept_collector_info": "0D7"
+  },
+  {
+    "id": "lotr00008",
+    "cargo_id": "LOTR-EN00S008.0",
+    "title": "Galadriel's Glade",
+    "collector_info": "0P8",
+    "kept_cargo_id": "LOTR-EN00D008.0",
+    "kept_collector_info": "0D8"
+  },
+  {
+    "id": "lotr00009",
+    "cargo_id": "LOTR-EN00S009.0",
+    "title": "Phial of Galadriel",
+    "collector_info": "0P9",
+    "kept_cargo_id": "LOTR-EN00D009.0",
+    "kept_collector_info": "0D9"
+  },
+  {
+    "id": "lotr00010",
+    "cargo_id": "LOTR-EN00S010.0",
+    "title": "The Balrog, Durin's Bane",
+    "collector_info": "0P10",
+    "kept_cargo_id": "LOTR-EN00D010.0",
+    "kept_collector_info": "0D10"
+  },
+  {
+    "id": "lotr00011",
+    "cargo_id": "LOTR-EN00S011.0",
+    "title": "Saruman, Servant of the Eye",
+    "collector_info": "0P11",
+    "kept_cargo_id": "LOTR-EN00D011.0",
+    "kept_collector_info": "0D11"
+  },
+  {
+    "id": "lotr00012",
+    "cargo_id": "LOTR-EN00S012.0",
+    "title": "Gimli, Son of Gloin",
+    "collector_info": "0P12",
+    "kept_cargo_id": "LOTR-EN00D012.0",
+    "kept_collector_info": "0D12"
+  },
+  {
+    "id": "lotr00013",
+    "cargo_id": "LOTR-EN00S013.0",
+    "title": "Legolas, Greenleaf",
+    "collector_info": "0P13",
+    "kept_cargo_id": "LOTR-EN00D013.0",
+    "kept_collector_info": "0D13"
+  },
+  {
+    "id": "lotr00014",
+    "cargo_id": "LOTR-EN00S014.0",
+    "title": "Aragorn, Ranger of the North",
+    "collector_info": "0P14",
+    "kept_cargo_id": "LOTR-EN00D014.0",
+    "kept_collector_info": "0D14"
+  },
+  {
+    "id": "lotr00017",
+    "cargo_id": "LOTR-EN00S017.0",
+    "title": "Eowyn, Lady of Rohan",
+    "collector_info": "0P17",
+    "kept_cargo_id": "LOTR-EN00L017.0",
+    "kept_collector_info": "0D17"
+  },
+  {
+    "id": "lotr00020",
+    "cargo_id": "LOTR-EN00S020.0",
+    "title": "Black Rider",
+    "collector_info": "0P20",
+    "kept_cargo_id": "LOTR-EN00L020.0",
+    "kept_collector_info": "0D20"
+  },
+  {
+    "id": "lotr00021",
+    "cargo_id": "LOTR-EN00S021.0",
+    "title": "Treebeard, Guardian of the Forest",
+    "collector_info": "0P21",
+    "kept_cargo_id": "LOTR-EN00L021.0",
+    "kept_collector_info": "0D21"
+  },
+  {
+    "id": "lotr00023",
+    "cargo_id": "LOTR-EN00S023.0",
+    "title": "Aragorn, Captain of Gondor",
+    "collector_info": "0P23",
+    "kept_cargo_id": "LOTR-EN00L023.0",
+    "kept_collector_info": "0D23"
+  },
+  {
+    "id": "lotr00024",
+    "cargo_id": "LOTR-EN00S024.0",
+    "title": "Legolas, Elven Stalwart",
+    "collector_info": "0P24",
+    "kept_cargo_id": "LOTR-EN00L024.0",
+    "kept_collector_info": "0D24"
+  },
+  {
+    "id": "lotr00001",
+    "cargo_id": "LOTR-EN00W001.0",
+    "title": "Army of Dunland",
+    "collector_info": "0W1",
+    "kept_cargo_id": "LOTR-DE00T001.0",
+    "kept_collector_info": "12TF1"
+  },
+  {
+    "id": "lotr00002",
+    "cargo_id": "LOTR-EN00W002.0",
+    "title": "Dwarven Escort",
+    "collector_info": "0W2",
+    "kept_cargo_id": "LOTR-EN00D002.0",
+    "kept_collector_info": "0D2"
+  },
+  {
+    "id": "lotr00003",
+    "cargo_id": "LOTR-EN00W003.0",
+    "title": "Legolas, Nimble Elf",
+    "collector_info": "0W3",
+    "kept_cargo_id": "LOTR-EN00D003.0",
+    "kept_collector_info": "0D3"
+  },
+  {
+    "id": "lotr00004",
+    "cargo_id": "LOTR-EN00W004.0",
+    "title": "Treebeard, Enemy of the Hand",
+    "collector_info": "0W4",
+    "kept_cargo_id": "LOTR-EN00D004.0",
+    "kept_collector_info": "0D4"
+  },
+  {
+    "id": "lotr00005",
+    "cargo_id": "LOTR-EN00W005.0",
+    "title": "Gollum, Worker of Mischief",
+    "collector_info": "0W5",
+    "kept_cargo_id": "LOTR-EN00D005.0",
+    "kept_collector_info": "0D5"
+  },
+  {
+    "id": "lotr00006",
+    "cargo_id": "LOTR-EN00W006.0",
+    "title": "Aragorn, The Dunadan",
+    "collector_info": "0W6",
+    "kept_cargo_id": "LOTR-EN00D006.0",
+    "kept_collector_info": "0D6"
+  },
+  {
+    "id": "lotr00007",
+    "cargo_id": "LOTR-EN00W007.0",
+    "title": "Army of Isengard",
+    "collector_info": "0W7",
+    "kept_cargo_id": "LOTR-EN00D007.0",
+    "kept_collector_info": "0D7"
+  },
+  {
+    "id": "lotr00008",
+    "cargo_id": "LOTR-EN00W008.0",
+    "title": "Cave Troll of Moria, Menace of the Underdeeps",
+    "collector_info": "0W8",
+    "kept_cargo_id": "LOTR-EN00D008.0",
+    "kept_collector_info": "0D8"
+  },
+  {
+    "id": "lotr00009",
+    "cargo_id": "LOTR-EN00W009.0",
+    "title": "Army of Harad",
+    "collector_info": "0W9",
+    "kept_cargo_id": "LOTR-EN00D009.0",
+    "kept_collector_info": "0D9"
+  },
+  {
+    "id": "lotr00010",
+    "cargo_id": "LOTR-EN00W010.0",
+    "title": "The Nazgul",
+    "collector_info": "0W10",
+    "kept_cargo_id": "LOTR-EN00D010.0",
+    "kept_collector_info": "0D10"
+  },
+  {
+    "id": "lotr00011",
+    "cargo_id": "LOTR-EN00W011.0",
+    "title": "Eowyn, Daughter of Kings",
+    "collector_info": "0W11",
+    "kept_cargo_id": "LOTR-EN00D011.0",
+    "kept_collector_info": "0D11"
+  },
+  {
+    "id": "lotr00012",
+    "cargo_id": "LOTR-EN00W012.0",
+    "title": "Army of Sauron",
+    "collector_info": "0W12",
+    "kept_cargo_id": "LOTR-EN00D012.0",
+    "kept_collector_info": "0D12"
+  },
+  {
+    "id": "lotr00013",
+    "cargo_id": "LOTR-EN00W013.0",
+    "title": "Sam, Lover of Trees",
+    "collector_info": "0W13",
+    "kept_cargo_id": "LOTR-EN00D013.0",
+    "kept_collector_info": "0D13"
+  },
+  {
+    "id": "lotr00014",
+    "cargo_id": "LOTR-EN00W014.0",
+    "title": "Dunlending Brawler",
+    "collector_info": "0W14",
+    "kept_cargo_id": "LOTR-EN00D014.0",
+    "kept_collector_info": "0D14"
+  },
+  {
+    "id": "lotr00015",
+    "cargo_id": "LOTR-EN00W015.0",
+    "title": "Gimli, Dwarven Delegate",
+    "collector_info": "0W15",
+    "kept_cargo_id": "LOTR-EN00S015.0",
+    "kept_collector_info": "0P15"
+  },
+  {
+    "id": "lotr00016",
+    "cargo_id": "LOTR-EN00W016.0",
+    "title": "Arwen, Maiden of Rivendell",
+    "collector_info": "0W16",
+    "kept_cargo_id": "LOTR-EN00S016.0",
+    "kept_collector_info": "0P16"
+  },
+  {
+    "id": "lotr00017",
+    "cargo_id": "LOTR-EN00W017.0",
+    "title": "Gandalf, Stormcrow",
+    "collector_info": "0W17",
+    "kept_cargo_id": "LOTR-EN00L017.0",
+    "kept_collector_info": "0D17"
+  },
+  {
+    "id": "lotr00018",
+    "cargo_id": "LOTR-EN00W018.0",
+    "title": "Gollum, Wretched Creature",
+    "collector_info": "0W18",
+    "kept_cargo_id": "LOTR-EN00S018.0",
+    "kept_collector_info": "0P18"
+  },
+  {
+    "id": "lotr00019",
+    "cargo_id": "LOTR-EN00W019.0",
+    "title": "Boromir, Steward's Heir",
+    "collector_info": "0W19",
+    "kept_cargo_id": "LOTR-EN00S019.0",
+    "kept_collector_info": "0P19"
+  },
+  {
+    "id": "lotr00020",
+    "cargo_id": "LOTR-EN00W020.0",
+    "title": "Saruman, Many-coloured Wizard",
+    "collector_info": "0W20",
+    "kept_cargo_id": "LOTR-EN00L020.0",
+    "kept_collector_info": "0D20"
+  },
+  {
+    "id": "lotr00021",
+    "cargo_id": "LOTR-EN00W021.0",
+    "title": "Moria Skirmishers",
+    "collector_info": "0W21",
+    "kept_cargo_id": "LOTR-EN00L021.0",
+    "kept_collector_info": "0D21"
+  },
+  {
+    "id": "lotr00022",
+    "cargo_id": "LOTR-EN00W022.0",
+    "title": "Easterling Herald",
+    "collector_info": "0W22",
+    "kept_cargo_id": "LOTR-EN00S022.0",
+    "kept_collector_info": "0P22"
+  },
+  {
+    "id": "lotr00023",
+    "cargo_id": "LOTR-EN00W023.0",
+    "title": "Eomer, Forthwith Banished",
+    "collector_info": "0W23",
+    "kept_cargo_id": "LOTR-EN00L023.0",
+    "kept_collector_info": "0D23"
+  },
+  {
+    "id": "lotr00024",
+    "cargo_id": "LOTR-EN00W024.0",
+    "title": "Morgul Patrol",
+    "collector_info": "0W24",
+    "kept_cargo_id": "LOTR-EN00L024.0",
+    "kept_collector_info": "0D24"
+  },
+  {
+    "id": "lotr00025",
+    "cargo_id": "LOTR-EN00W025.0",
+    "title": "Frodo, Mr. Underhill",
+    "collector_info": "0W25",
+    "kept_cargo_id": "LOTR-EN00S025.0",
+    "kept_collector_info": "0P25"
+  },
+  {
+    "id": "lotr00026",
+    "cargo_id": "LOTR-EN00W026.0",
+    "title": "Ulaire Toldea, Relentless Wraith",
+    "collector_info": "0W26",
+    "kept_cargo_id": "LOTR-EN00S026.0",
+    "kept_collector_info": "0P26"
+  },
+  {
+    "id": "lotr00027",
+    "cargo_id": "LOTR-EN00W027.0",
+    "title": "Far Harad Mercenary",
+    "collector_info": "0W27",
+    "kept_cargo_id": "LOTR-EN00S027.0",
+    "kept_collector_info": "0P27"
+  },
+  {
+    "id": "lotr00028",
+    "cargo_id": "LOTR-EN00W028.0",
+    "title": "Gorgoroth Swarm",
+    "collector_info": "0W28",
+    "kept_cargo_id": "LOTR-EN00S028.0",
+    "kept_collector_info": "0P28"
+  },
+  {
+    "id": "lotr00029",
+    "cargo_id": "LOTR-EN00W029.0",
+    "title": "Easterling Pillager",
+    "collector_info": "0W29",
+    "kept_cargo_id": "LOTR-EN00S029.0",
+    "kept_collector_info": "0P29"
+  },
+  {
+    "id": "lotr00030",
+    "cargo_id": "LOTR-EN00W030.0",
+    "title": "A Shadow Rises",
+    "collector_info": "0W30",
+    "kept_cargo_id": "LOTR-EN00S030.0",
+    "kept_collector_info": "0P30"
+  },
+  {
+    "id": "lotr00031",
+    "cargo_id": "LOTR-EN00W031.0",
+    "title": "Ulaire Otsea, Seventh of the Nine Riders",
+    "collector_info": "0W31",
+    "kept_cargo_id": "LOTR-EN00S031.0",
+    "kept_collector_info": "0P31"
+  },
+  {
+    "id": "lotr00032",
+    "cargo_id": "LOTR-EN00W032.0",
+    "title": "Gandalf, Returned",
+    "collector_info": "0W32",
+    "kept_cargo_id": "LOTR-EN00S032.0",
+    "kept_collector_info": "0P32"
+  },
+  {
+    "id": "lotr00033",
+    "cargo_id": "LOTR-EN00W033.0",
+    "title": "Aragorn, Heir to the Throne of Gondor",
+    "collector_info": "0W33",
+    "kept_cargo_id": "LOTR-EN00S033.0",
+    "kept_collector_info": "0P33"
+  },
+  {
+    "id": "lotr00034",
+    "cargo_id": "LOTR-EN00W034.0",
+    "title": "Gimli, Sprinter",
+    "collector_info": "0W34",
+    "kept_cargo_id": "LOTR-EN00S034.0",
+    "kept_collector_info": "0P34"
+  },
+  {
+    "id": "lotr00035",
+    "cargo_id": "LOTR-EN00W035.0",
+    "title": "Lurtz, Halfling Hunter",
+    "collector_info": "0W35",
+    "kept_cargo_id": "LOTR-EN00S035.0",
+    "kept_collector_info": "0P35"
+  },
+  {
+    "id": "lotr00036",
+    "cargo_id": "LOTR-EN00W036.0",
+    "title": "Saruman, Instigator of Insurrection",
+    "collector_info": "0W36",
+    "kept_cargo_id": "LOTR-EN00S036.0",
+    "kept_collector_info": "0P36"
+  },
+  {
+    "id": "lotr00037",
+    "cargo_id": "LOTR-EN00W037.0",
+    "title": "The Witch-King, Conqueror of Arthedain",
+    "collector_info": "0W37",
+    "kept_cargo_id": "LOTR-EN00S037.0",
+    "kept_collector_info": "0P37"
+  },
+  {
+    "id": "lotr00038",
+    "cargo_id": "LOTR-EN00W038.0",
+    "title": "Gandalf, Powerful Guide",
+    "collector_info": "0W38",
+    "kept_cargo_id": "LOTR-EN00S038.0",
+    "kept_collector_info": "0P38"
+  },
+  {
+    "id": "lotr01001",
+    "cargo_id": "LOTR-EN01S001.0",
+    "title": "The One Ring, Isildur's Bane",
+    "collector_info": "1R1",
+    "kept_cargo_id": "LOTR-EN01M001.0",
+    "kept_collector_info": "1M1"
+  },
+  {
+    "id": "lotr01002",
+    "cargo_id": "LOTR-EN01S002.0",
+    "title": "The One Ring, The Ruling Ring",
+    "collector_info": "1C2",
+    "kept_cargo_id": "LOTR-EN01M002.0",
+    "kept_collector_info": "1M2"
+  },
+  {
+    "id": "lotr01003",
+    "cargo_id": "LOTR-EN01S003.0",
+    "title": "Axe Strike",
+    "collector_info": "1C3",
+    "kept_cargo_id": "LOTR-EN01M003.0",
+    "kept_collector_info": "1M3"
+  },
+  {
+    "id": "lotr02001",
+    "cargo_id": "LOTR-EN02S001.0",
+    "title": "Beneath the Mountains",
+    "collector_info": "2R1",
+    "kept_cargo_id": "LOTR-EN02M001.0",
+    "kept_collector_info": "2M1"
+  },
+  {
+    "id": "lotr02002",
+    "cargo_id": "LOTR-EN02S002.0",
+    "title": "Disquiet of Our People",
+    "collector_info": "2C2",
+    "kept_cargo_id": "LOTR-EN02M002.0",
+    "kept_collector_info": "2M2"
+  },
+  {
+    "id": "lotr02003",
+    "cargo_id": "LOTR-EN02S003.0",
+    "title": "Dwarven Bracers",
+    "collector_info": "2U3",
+    "kept_cargo_id": "LOTR-EN02M003.0",
+    "kept_collector_info": "2M3"
+  },
+  {
+    "id": "lotr02004",
+    "cargo_id": "LOTR-EN02S004.0",
+    "title": "Endurance of Dwarves",
+    "collector_info": "2U4",
+    "kept_cargo_id": "LOTR-EN02M004.0",
+    "kept_collector_info": "2M4"
+  },
+  {
+    "id": "lotr03001",
+    "cargo_id": "LOTR-EN03S001.0",
+    "title": "Book of Mazarbul",
+    "collector_info": "3R1",
+    "kept_cargo_id": "LOTR-EN03M001.0",
+    "kept_collector_info": "3M1"
+  },
+  {
+    "id": "lotr03002",
+    "cargo_id": "LOTR-EN03S002.0",
+    "title": "Gimli's Pipe",
+    "collector_info": "3U2",
+    "kept_cargo_id": "LOTR-EN03M002.0",
+    "kept_collector_info": "3M2"
+  },
+  {
+    "id": "lotr04001",
+    "cargo_id": "LOTR-EN04S001.0",
+    "title": "The One Ring, Answer To All Riddles",
+    "collector_info": "4R1",
+    "kept_cargo_id": "LOTR-EN04M001.0",
+    "kept_collector_info": "4M1"
+  },
+  {
+    "id": "lotr04002",
+    "cargo_id": "LOTR-EN04S002.0",
+    "title": "The One Ring, The Ruling Ring",
+    "collector_info": "4C2",
+    "kept_cargo_id": "LOTR-EN04M002.0",
+    "kept_collector_info": "4M2"
+  },
+  {
+    "id": "lotr05001",
+    "cargo_id": "LOTR-EN05S001.0",
+    "title": "Dunlending Rampager",
+    "collector_info": "5U1",
+    "kept_cargo_id": "LOTR-EN05M001.0",
+    "kept_collector_info": "5M1"
+  },
+  {
+    "id": "lotr05002",
+    "cargo_id": "LOTR-EN05S002.0",
+    "title": "Dunlending Renegade",
+    "collector_info": "5U2",
+    "kept_cargo_id": "LOTR-EN05M002.0",
+    "kept_collector_info": "5M2"
+  },
+  {
+    "id": "lotr06001",
+    "cargo_id": "LOTR-EN06S001.0",
+    "title": "Bound By Rage",
+    "collector_info": "6C1",
+    "kept_cargo_id": "LOTR-EN06M001.0",
+    "kept_collector_info": "6M1"
+  },
+  {
+    "id": "lotr06002",
+    "cargo_id": "LOTR-EN06S002.0",
+    "title": "Dunlending Elder",
+    "collector_info": "6C2",
+    "kept_cargo_id": "LOTR-EN06M002.0",
+    "kept_collector_info": "6M2"
+  },
+  {
+    "id": "lotr06003",
+    "cargo_id": "LOTR-EN06S003.0",
+    "title": "Dunlending Footmen",
+    "collector_info": "6C3",
+    "kept_cargo_id": "LOTR-EN06M003.0",
+    "kept_collector_info": "6M3"
+  },
+  {
+    "id": "lotr10001",
+    "cargo_id": "LOTR-EN10S001.0",
+    "title": "Great Day, Great Hour",
+    "collector_info": "10R1",
+    "kept_cargo_id": "LOTR-EN10M001.0",
+    "kept_collector_info": "10M1"
+  },
+  {
+    "id": "lotr11001",
+    "cargo_id": "LOTR-EN11S001.0",
+    "title": "The One Ring, The Ring of Rings",
+    "collector_info": "11R1",
+    "kept_cargo_id": "LOTR-EN11A001.0",
+    "kept_collector_info": "11RF1"
+  },
+  {
+    "id": "lotr11002",
+    "cargo_id": "LOTR-EN11S002.0",
+    "title": "The One Ring, The Ruling Ring",
+    "collector_info": "11S2",
+    "kept_cargo_id": "LOTR-EN11A002.0",
+    "kept_collector_info": "11RF2"
+  },
+  {
+    "id": "lotr11003",
+    "cargo_id": "LOTR-EN11S003.0",
+    "title": "Axe of Khazad-dum",
+    "collector_info": "11U3",
+    "kept_cargo_id": "LOTR-EN11A003.0",
+    "kept_collector_info": "11RF3"
+  },
+  {
+    "id": "lotr11004",
+    "cargo_id": "LOTR-EN11S004.0",
+    "title": "Battle to the Last",
+    "collector_info": "11C4",
+    "kept_cargo_id": "LOTR-EN11A004.0",
+    "kept_collector_info": "11RF4"
+  },
+  {
+    "id": "lotr11005",
+    "cargo_id": "LOTR-EN11S005.0",
+    "title": "Dwarven Embassy",
+    "collector_info": "11C5",
+    "kept_cargo_id": "LOTR-EN11A005.0",
+    "kept_collector_info": "11RF5"
+  },
+  {
+    "id": "lotr11006",
+    "cargo_id": "LOTR-EN11S006.0",
+    "title": "Fallen Lord",
+    "collector_info": "11U6",
+    "kept_cargo_id": "LOTR-EN11A006.0",
+    "kept_collector_info": "11RF6"
+  },
+  {
+    "id": "lotr11007",
+    "cargo_id": "LOTR-EN11S007.0",
+    "title": "Farin, Emissary of Erebor",
+    "collector_info": "11C7",
+    "kept_cargo_id": "LOTR-EN11A007.0",
+    "kept_collector_info": "11RF7"
+  },
+  {
+    "id": "lotr11008",
+    "cargo_id": "LOTR-EN11S008.0",
+    "title": "Gimli, Lively Combatant",
+    "collector_info": "11U8",
+    "kept_cargo_id": "LOTR-EN11A008.0",
+    "kept_collector_info": "11RF8"
+  },
+  {
+    "id": "lotr11009",
+    "cargo_id": "LOTR-EN11S009.0",
+    "title": "Gimli's Battle Axe, Vicious Weapon",
+    "collector_info": "11R9",
+    "kept_cargo_id": "LOTR-EN11A009.0",
+    "kept_collector_info": "11RF9"
+  },
+  {
+    "id": "lotr11010",
+    "cargo_id": "LOTR-EN11S010.0",
+    "title": "Grimir, Dwarven Emissary",
+    "collector_info": "11R10",
+    "kept_cargo_id": "LOTR-EN11A010.0",
+    "kept_collector_info": "11RF10"
+  },
+  {
+    "id": "lotr11011",
+    "cargo_id": "LOTR-EN11S011.0",
+    "title": "Hall of Our Fathers",
+    "collector_info": "11R11",
+    "kept_cargo_id": "LOTR-EN11A011.0",
+    "kept_collector_info": "11RF11"
+  },
+  {
+    "id": "lotr11012",
+    "cargo_id": "LOTR-EN11S012.0",
+    "title": "Mountain Homestead",
+    "collector_info": "11U12",
+    "kept_cargo_id": "LOTR-EN11A012.0",
+    "kept_collector_info": "11RF12"
+  },
+  {
+    "id": "lotr11013",
+    "cargo_id": "LOTR-EN11S013.0",
+    "title": "On Guard",
+    "collector_info": "11C13",
+    "kept_cargo_id": "LOTR-EN11A013.0",
+    "kept_collector_info": "11RF13"
+  },
+  {
+    "id": "lotr11014",
+    "cargo_id": "LOTR-EN11S014.0",
+    "title": "Well-equipped",
+    "collector_info": "11R14",
+    "kept_cargo_id": "LOTR-EN11A014.0",
+    "kept_collector_info": "11RF14"
+  },
+  {
+    "id": "lotr11015",
+    "cargo_id": "LOTR-EN11S015.0",
+    "title": "Arwen, Staunch Defender",
+    "collector_info": "11U15",
+    "kept_cargo_id": "LOTR-EN11A015.0",
+    "kept_collector_info": "11RF15"
+  },
+  {
+    "id": "lotr11016",
+    "cargo_id": "LOTR-EN11S016.0",
+    "title": "Blade of Lindon",
+    "collector_info": "11U16",
+    "kept_cargo_id": "LOTR-EN11A016.0",
+    "kept_collector_info": "11RF16"
+  },
+  {
+    "id": "lotr11017",
+    "cargo_id": "LOTR-EN11S017.0",
+    "title": "Elven Marksmanship",
+    "collector_info": "11R17",
+    "kept_cargo_id": "LOTR-EN11A017.0",
+    "kept_collector_info": "11RF17"
+  },
+  {
+    "id": "lotr11018",
+    "cargo_id": "LOTR-EN11S018.0",
+    "title": "Elven Scout",
+    "collector_info": "11S18",
+    "kept_cargo_id": "LOTR-EN11A018.0",
+    "kept_collector_info": "11RF18"
+  },
+  {
+    "id": "lotr12001",
+    "cargo_id": "LOTR-EN12O001.0",
+    "title": "Gandalf, The White Rider",
+    "collector_info": "12O1",
+    "kept_cargo_id": "LOTR-EN12A001.0",
+    "kept_collector_info": "12RF1"
+  },
+  {
+    "id": "lotr12002",
+    "cargo_id": "LOTR-EN12O002.0",
+    "title": "Faramir, Dunadan of Gondor",
+    "collector_info": "12O2",
+    "kept_cargo_id": "LOTR-EN12A002.0",
+    "kept_collector_info": "12RF2"
+  },
+  {
+    "id": "lotr12003",
+    "cargo_id": "LOTR-EN12O003.0",
+    "title": "Faramir's Sword",
+    "collector_info": "12O3",
+    "kept_cargo_id": "LOTR-EN12A003.0",
+    "kept_collector_info": "12RF3"
+  },
+  {
+    "id": "lotr12004",
+    "cargo_id": "LOTR-EN12O004.0",
+    "title": "The Balrog, The Terror of Khazad-dum",
+    "collector_info": "12O4",
+    "kept_cargo_id": "LOTR-EN12A004.0",
+    "kept_collector_info": "12RF4"
+  },
+  {
+    "id": "lotr12005",
+    "cargo_id": "LOTR-EN12O005.0",
+    "title": "Dark Approach",
+    "collector_info": "12O5",
+    "kept_cargo_id": "LOTR-EN12A005.0",
+    "kept_collector_info": "12RF5"
+  },
+  {
+    "id": "lotr12006",
+    "cargo_id": "LOTR-EN12O006.0",
+    "title": "Ulaire Attea, Black Predator",
+    "collector_info": "12O6",
+    "kept_cargo_id": "LOTR-EN12A006.0",
+    "kept_collector_info": "12RF6"
+  },
+  {
+    "id": "lotr12007",
+    "cargo_id": "LOTR-EN12O007.0",
+    "title": "Ulaire Cantea, Black Assassin",
+    "collector_info": "12O7",
+    "kept_cargo_id": "LOTR-EN12A007.0",
+    "kept_collector_info": "12RF7"
+  },
+  {
+    "id": "lotr12008",
+    "cargo_id": "LOTR-EN12O008.0",
+    "title": "Ulaire Enquea, Black Threat",
+    "collector_info": "12O8",
+    "kept_cargo_id": "LOTR-EN12A008.0",
+    "kept_collector_info": "12RF8"
+  },
+  {
+    "id": "lotr12009",
+    "cargo_id": "LOTR-EN12O009.0",
+    "title": "The Witch-king, Black Lord",
+    "collector_info": "12O9",
+    "kept_cargo_id": "LOTR-EN12A009.0",
+    "kept_collector_info": "12RF9"
+  },
+  {
+    "id": "lotr12001",
+    "cargo_id": "LOTR-EN12S001.0",
+    "title": "Argument Ready to Hand",
+    "collector_info": "12U1",
+    "kept_cargo_id": "LOTR-EN12A001.0",
+    "kept_collector_info": "12RF1"
+  },
+  {
+    "id": "lotr12002",
+    "cargo_id": "LOTR-EN12S002.0",
+    "title": "Belt of Erebor",
+    "collector_info": "12U2",
+    "kept_cargo_id": "LOTR-EN12A002.0",
+    "kept_collector_info": "12RF2"
+  },
+  {
+    "id": "lotr12003",
+    "cargo_id": "LOTR-EN12S003.0",
+    "title": "A Clamour of Many Voices",
+    "collector_info": "12U3",
+    "kept_cargo_id": "LOTR-EN12A003.0",
+    "kept_collector_info": "12RF3"
+  },
+  {
+    "id": "lotr12004",
+    "cargo_id": "LOTR-EN12S004.0",
+    "title": "Durability",
+    "collector_info": "12C4",
+    "kept_cargo_id": "LOTR-EN12A004.0",
+    "kept_collector_info": "12RF4"
+  },
+  {
+    "id": "lotr12005",
+    "cargo_id": "LOTR-EN12S005.0",
+    "title": "Dwarven Bracers",
+    "collector_info": "12U5",
+    "kept_cargo_id": "LOTR-EN12A005.0",
+    "kept_collector_info": "12RF5"
+  },
+  {
+    "id": "lotr12006",
+    "cargo_id": "LOTR-EN12S006.0",
+    "title": "Dwarven Skill",
+    "collector_info": "12C6",
+    "kept_cargo_id": "LOTR-EN12A006.0",
+    "kept_collector_info": "12RF6"
+  },
+  {
+    "id": "lotr12007",
+    "cargo_id": "LOTR-EN12S007.0",
+    "title": "Dwarven Warrior",
+    "collector_info": "12C7",
+    "kept_cargo_id": "LOTR-EN12A007.0",
+    "kept_collector_info": "12RF7"
+  },
+  {
+    "id": "lotr12008",
+    "cargo_id": "LOTR-EN12S008.0",
+    "title": "His Father's Charge",
+    "collector_info": "12C8",
+    "kept_cargo_id": "LOTR-EN12A008.0",
+    "kept_collector_info": "12RF8"
+  },
+  {
+    "id": "lotr12009",
+    "cargo_id": "LOTR-EN12S009.0",
+    "title": "Loud and Strong",
+    "collector_info": "12R9",
+    "kept_cargo_id": "LOTR-EN12A009.0",
+    "kept_collector_info": "12RF9"
+  },
+  {
+    "id": "lotr12010",
+    "cargo_id": "LOTR-EN12S010.0",
+    "title": "No Pauses, No Spills",
+    "collector_info": "12R10",
+    "kept_cargo_id": "LOTR-EN12A010.0",
+    "kept_collector_info": "12RF10"
+  },
+  {
+    "id": "lotr12011",
+    "cargo_id": "LOTR-EN12S011.0",
+    "title": "Nobody Tosses a Dwarf",
+    "collector_info": "12U11",
+    "kept_cargo_id": "LOTR-EN12A011.0",
+    "kept_collector_info": "12RF11"
+  },
+  {
+    "id": "lotr12012",
+    "cargo_id": "LOTR-EN12S012.0",
+    "title": "Proud and Able",
+    "collector_info": "12U12",
+    "kept_cargo_id": "LOTR-EN12A012.0",
+    "kept_collector_info": "12RF12"
+  },
+  {
+    "id": "lotr12013",
+    "cargo_id": "LOTR-EN12S013.0",
+    "title": "Sharp Defense",
+    "collector_info": "12U13",
+    "kept_cargo_id": "LOTR-EN12A013.0",
+    "kept_collector_info": "12RF13"
+  },
+  {
+    "id": "lotr12014",
+    "cargo_id": "LOTR-EN12S014.0",
+    "title": "Stalwart Support",
+    "collector_info": "12U14",
+    "kept_cargo_id": "LOTR-EN12A014.0",
+    "kept_collector_info": "12RF14"
+  },
+  {
+    "id": "lotr12015",
+    "cargo_id": "LOTR-EN12S015.0",
+    "title": "Thrarin, Smith of Erebor",
+    "collector_info": "12U15",
+    "kept_cargo_id": "LOTR-EN12A015.0",
+    "kept_collector_info": "12RF15"
+  },
+  {
+    "id": "lotr12016",
+    "cargo_id": "LOTR-EN12S016.0",
+    "title": "Attunement",
+    "collector_info": "12C16",
+    "kept_cargo_id": "LOTR-EN12A016.0",
+    "kept_collector_info": "12RF16"
+  },
+  {
+    "id": "lotr12017",
+    "cargo_id": "LOTR-EN12S017.0",
+    "title": "Elrond, Witness to History",
+    "collector_info": "12R17",
+    "kept_cargo_id": "LOTR-EN12A017.0",
+    "kept_collector_info": "12RF17"
+  },
+  {
+    "id": "lotr12018",
+    "cargo_id": "LOTR-EN12S018.0",
+    "title": "Hadafang",
+    "collector_info": "12R18",
+    "kept_cargo_id": "LOTR-EN12A018.0",
+    "kept_collector_info": "12RF18"
+  },
+  {
+    "id": "lotr13001",
+    "cargo_id": "LOTR-EN13O001.0",
+    "title": "Celeborn, The Wise",
+    "collector_info": "13O1",
+    "kept_cargo_id": "LOTR-EN13A001.0",
+    "kept_collector_info": "13RF1"
+  },
+  {
+    "id": "lotr13002",
+    "cargo_id": "LOTR-EN13O002.0",
+    "title": "Galadriel, Sorceress of the Hidden Land",
+    "collector_info": "13O2",
+    "kept_cargo_id": "LOTR-EN13A002.0",
+    "kept_collector_info": "13RF2"
+  },
+  {
+    "id": "lotr13003",
+    "cargo_id": "LOTR-EN13O003.0",
+    "title": "Legolas, of the Grey Company",
+    "collector_info": "13O3",
+    "kept_cargo_id": "LOTR-EN13A003.0",
+    "kept_collector_info": "13RF3"
+  },
+  {
+    "id": "lotr13004",
+    "cargo_id": "LOTR-EN13O004.0",
+    "title": "Gandalf, Bearer of Obligation",
+    "collector_info": "13O4",
+    "kept_cargo_id": "LOTR-EN13A004.0",
+    "kept_collector_info": "13RF4"
+  },
+  {
+    "id": "lotr13005",
+    "cargo_id": "LOTR-EN13O005.0",
+    "title": "Pallando, Far-traveling One",
+    "collector_info": "13O5",
+    "kept_cargo_id": "LOTR-EN13A005.0",
+    "kept_collector_info": "13RF5"
+  },
+  {
+    "id": "lotr13006",
+    "cargo_id": "LOTR-EN13O006.0",
+    "title": "Aragorn, Isildur's Heir",
+    "collector_info": "13O6",
+    "kept_cargo_id": "LOTR-EN13A006.0",
+    "kept_collector_info": "13RF6"
+  },
+  {
+    "id": "lotr13007",
+    "cargo_id": "LOTR-EN13O007.0",
+    "title": "Denethor, Last Ruling Steward",
+    "collector_info": "13O7",
+    "kept_cargo_id": "LOTR-EN13A007.0",
+    "kept_collector_info": "13RF7"
+  },
+  {
+    "id": "lotr13008",
+    "cargo_id": "LOTR-EN13O008.0",
+    "title": "Eomer, Heir to Meduseld",
+    "collector_info": "13O8",
+    "kept_cargo_id": "LOTR-EN13A008.0",
+    "kept_collector_info": "13RF8"
+  },
+  {
+    "id": "lotr13009",
+    "cargo_id": "LOTR-EN13O009.0",
+    "title": "Theoden, The Renowned",
+    "collector_info": "13O9",
+    "kept_cargo_id": "LOTR-EN13A009.0",
+    "kept_collector_info": "13RF9"
+  },
+  {
+    "id": "lotr13001",
+    "cargo_id": "LOTR-EN13S001.0",
+    "title": "Arod, Rohirrim Steed",
+    "collector_info": "13R1",
+    "kept_cargo_id": "LOTR-EN13A001.0",
+    "kept_collector_info": "13RF1"
+  },
+  {
+    "id": "lotr13002",
+    "cargo_id": "LOTR-EN13S002.0",
+    "title": "Awkward Moment",
+    "collector_info": "13C2",
+    "kept_cargo_id": "LOTR-EN13A002.0",
+    "kept_collector_info": "13RF2"
+  },
+  {
+    "id": "lotr13003",
+    "cargo_id": "LOTR-EN13S003.0",
+    "title": "Deep Hatred",
+    "collector_info": "13U3",
+    "kept_cargo_id": "LOTR-EN13A003.0",
+    "kept_collector_info": "13RF3"
+  },
+  {
+    "id": "lotr13004",
+    "cargo_id": "LOTR-EN13S004.0",
+    "title": "Dwarf-lords",
+    "collector_info": "13U4",
+    "kept_cargo_id": "LOTR-EN13A004.0",
+    "kept_collector_info": "13RF4"
+  },
+  {
+    "id": "lotr13005",
+    "cargo_id": "LOTR-EN13S005.0",
+    "title": "Gimli, Lord of the Glittering Caves",
+    "collector_info": "13R5",
+    "kept_cargo_id": "LOTR-EN13A005.0",
+    "kept_collector_info": "13RF5"
+  },
+  {
+    "id": "lotr13006",
+    "cargo_id": "LOTR-EN13S006.0",
+    "title": "Honoring His Kinfolk",
+    "collector_info": "13C6",
+    "kept_cargo_id": "LOTR-EN13A006.0",
+    "kept_collector_info": "13RF6"
+  },
+  {
+    "id": "lotr13007",
+    "cargo_id": "LOTR-EN13S007.0",
+    "title": "Sorrow Shared",
+    "collector_info": "13C7",
+    "kept_cargo_id": "LOTR-EN13A007.0",
+    "kept_collector_info": "13RF7"
+  },
+  {
+    "id": "lotr13008",
+    "cargo_id": "LOTR-EN13S008.0",
+    "title": "Subterranean Homestead",
+    "collector_info": "13R8",
+    "kept_cargo_id": "LOTR-EN13A008.0",
+    "kept_collector_info": "13RF8"
+  },
+  {
+    "id": "lotr13009",
+    "cargo_id": "LOTR-EN13S009.0",
+    "title": "Arwen, Reflection of Luthien",
+    "collector_info": "13S9",
+    "kept_cargo_id": "LOTR-EN13A009.0",
+    "kept_collector_info": "13RF9"
+  },
+  {
+    "id": "lotr13010",
+    "cargo_id": "LOTR-EN13S010.0",
+    "title": "Asfaloth, Swift Blossom",
+    "collector_info": "13R10",
+    "kept_cargo_id": "LOTR-EN13A010.0",
+    "kept_collector_info": "13RF10"
+  },
+  {
+    "id": "lotr13011",
+    "cargo_id": "LOTR-EN13S011.0",
+    "title": "Celeborn, The Wise",
+    "collector_info": "13R11",
+    "kept_cargo_id": "LOTR-EN13A011.0",
+    "kept_collector_info": "13RF11"
+  },
+  {
+    "id": "lotr13012",
+    "cargo_id": "LOTR-EN13S012.0",
+    "title": "City of the Trees",
+    "collector_info": "13C12",
+    "kept_cargo_id": "LOTR-EN13A012.0",
+    "kept_collector_info": "13RF12"
+  },
+  {
+    "id": "lotr13013",
+    "cargo_id": "LOTR-EN13S013.0",
+    "title": "Crashing Cavalry",
+    "collector_info": "13C13",
+    "kept_cargo_id": "LOTR-EN13A013.0",
+    "kept_collector_info": "13RF13"
+  },
+  {
+    "id": "lotr13014",
+    "cargo_id": "LOTR-EN13S014.0",
+    "title": "Final Shot",
+    "collector_info": "13C14",
+    "kept_cargo_id": "LOTR-EN13A014.0",
+    "kept_collector_info": "13RF14"
+  },
+  {
+    "id": "lotr13015",
+    "cargo_id": "LOTR-EN13S015.0",
+    "title": "Galadriel, Sorceress of the Hidden Land",
+    "collector_info": "13R15",
+    "kept_cargo_id": "LOTR-EN13A015.0",
+    "kept_collector_info": "13RF15"
+  },
+  {
+    "id": "lotr13016",
+    "cargo_id": "LOTR-EN13S016.0",
+    "title": "Inside a Song",
+    "collector_info": "13C16",
+    "kept_cargo_id": "LOTR-EN13A016.0",
+    "kept_collector_info": "13RF16"
+  },
+  {
+    "id": "lotr13017",
+    "cargo_id": "LOTR-EN13S017.0",
+    "title": "Kindreds Estranged",
+    "collector_info": "13U17",
+    "kept_cargo_id": "LOTR-EN13A017.0",
+    "kept_collector_info": "13RF17"
+  },
+  {
+    "id": "lotr13018",
+    "cargo_id": "LOTR-EN13S018.0",
+    "title": "Legolas, of the Grey Company",
+    "collector_info": "13R18",
+    "kept_cargo_id": "LOTR-EN13A018.0",
+    "kept_collector_info": "13RF18"
+  },
+  {
+    "id": "lotr15060",
+    "cargo_id": "LOTR-EN15G060.0",
+    "title": "Forth the Three Hunters!",
+    "collector_info": "15C60",
+    "kept_cargo_id": "LOTR-EN15E060.0",
+    "kept_collector_info": "15C60"
+  },
+  {
+    "id": "lotr15001",
+    "cargo_id": "LOTR-EN15O001.0",
+    "title": "Legolas, of the Woodland Realm",
+    "collector_info": "15O1",
+    "kept_cargo_id": "LOTR-EN15A001.0",
+    "kept_collector_info": "15RF1"
+  },
+  {
+    "id": "lotr15002",
+    "cargo_id": "LOTR-EN15O002.0",
+    "title": "Gandalf, Powerful Guide",
+    "collector_info": "15O2",
+    "kept_cargo_id": "LOTR-EN15A002.0",
+    "kept_collector_info": "15RF2"
+  },
+  {
+    "id": "lotr15003",
+    "cargo_id": "LOTR-EN15O003.0",
+    "title": "Quickbeam, Hastiest of All Ents",
+    "collector_info": "15O3",
+    "kept_cargo_id": "LOTR-EN15A003.0",
+    "kept_collector_info": "15RF3"
+  },
+  {
+    "id": "lotr15004",
+    "cargo_id": "LOTR-EN15O004.0",
+    "title": "Aragorn, Thorongil",
+    "collector_info": "15O4",
+    "kept_cargo_id": "LOTR-EN15A004.0",
+    "kept_collector_info": "15RF4"
+  },
+  {
+    "id": "lotr15005",
+    "cargo_id": "LOTR-EN15O005.0",
+    "title": "Madril, Defender of Osgiliath",
+    "collector_info": "15O5",
+    "kept_cargo_id": "LOTR-EN15A005.0",
+    "kept_collector_info": "15RF5"
+  },
+  {
+    "id": "lotr15006",
+    "cargo_id": "LOTR-EN15O006.0",
+    "title": "Eomer, Horsemaster",
+    "collector_info": "15O6",
+    "kept_cargo_id": "LOTR-EN15A006.0",
+    "kept_collector_info": "15RF6"
+  },
+  {
+    "id": "lotr15007",
+    "cargo_id": "LOTR-EN15O007.0",
+    "title": "Ulaire Attea, Desirous of Power",
+    "collector_info": "15O7",
+    "kept_cargo_id": "LOTR-EN15A007.0",
+    "kept_collector_info": "15RF7"
+  },
+  {
+    "id": "lotr15008",
+    "cargo_id": "LOTR-EN15O008.0",
+    "title": "Ulaire Lemenya, Eternally Threatening",
+    "collector_info": "15O8",
+    "kept_cargo_id": "LOTR-EN15A008.0",
+    "kept_collector_info": "15RF8"
+  },
+  {
+    "id": "lotr15009",
+    "cargo_id": "LOTR-EN15O009.0",
+    "title": "Ulaire Nelya, Fell Rider",
+    "collector_info": "15O9",
+    "kept_cargo_id": "LOTR-EN15A009.0",
+    "kept_collector_info": "15RF9"
+  },
+  {
+    "id": "lotr15001",
+    "cargo_id": "LOTR-EN15S001.0",
+    "title": "The One Ring, The Ring of Doom",
+    "collector_info": "15R1",
+    "kept_cargo_id": "LOTR-EN15A001.0",
+    "kept_collector_info": "15RF1"
+  },
+  {
+    "id": "lotr15002",
+    "cargo_id": "LOTR-EN15S002.0",
+    "title": "The One Ring, The Ruling Ring",
+    "collector_info": "15S2",
+    "kept_cargo_id": "LOTR-EN15A002.0",
+    "kept_collector_info": "15RF2"
+  },
+  {
+    "id": "lotr15003",
+    "cargo_id": "LOTR-EN15S003.0",
+    "title": "Chamber of Records",
+    "collector_info": "15U3",
+    "kept_cargo_id": "LOTR-EN15A003.0",
+    "kept_collector_info": "15RF3"
+  },
+  {
+    "id": "lotr15004",
+    "cargo_id": "LOTR-EN15S004.0",
+    "title": "The Fortunes of Balin's Folk",
+    "collector_info": "15U4",
+    "kept_cargo_id": "LOTR-EN15A004.0",
+    "kept_collector_info": "15RF4"
+  },
+  {
+    "id": "lotr15005",
+    "cargo_id": "LOTR-EN15S005.0",
+    "title": "Gimli, Eager Hunter",
+    "collector_info": "15C5",
+    "kept_cargo_id": "LOTR-EN15A005.0",
+    "kept_collector_info": "15RF5"
+  },
+  {
+    "id": "lotr15006",
+    "cargo_id": "LOTR-EN15S006.0",
+    "title": "Gloin, Son of Groin",
+    "collector_info": "15R6",
+    "kept_cargo_id": "LOTR-EN15A006.0",
+    "kept_collector_info": "15RF6"
+  },
+  {
+    "id": "lotr15007",
+    "cargo_id": "LOTR-EN15S007.0",
+    "title": "Heavy Axe",
+    "collector_info": "15U7",
+    "kept_cargo_id": "LOTR-EN15A007.0",
+    "kept_collector_info": "15RF7"
+  },
+  {
+    "id": "lotr15008",
+    "cargo_id": "LOTR-EN15S008.0",
+    "title": "Sturdy Stock",
+    "collector_info": "15C8",
+    "kept_cargo_id": "LOTR-EN15A008.0",
+    "kept_collector_info": "15RF8"
+  },
+  {
+    "id": "lotr15009",
+    "cargo_id": "LOTR-EN15S009.0",
+    "title": "Well-crafted Armor",
+    "collector_info": "15R9",
+    "kept_cargo_id": "LOTR-EN15A009.0",
+    "kept_collector_info": "15RF9"
+  },
+  {
+    "id": "lotr15010",
+    "cargo_id": "LOTR-EN15S010.0",
+    "title": "Whatever End",
+    "collector_info": "15C10",
+    "kept_cargo_id": "LOTR-EN15A010.0",
+    "kept_collector_info": "15RF10"
+  },
+  {
+    "id": "lotr15011",
+    "cargo_id": "LOTR-EN15S011.0",
+    "title": "Arwen, She-Elf",
+    "collector_info": "15R11",
+    "kept_cargo_id": "LOTR-EN15A011.0",
+    "kept_collector_info": "15RF11"
+  },
+  {
+    "id": "lotr15012",
+    "cargo_id": "LOTR-EN15S012.0",
+    "title": "Dinendal, Mirkwood Archer",
+    "collector_info": "15R12",
+    "kept_cargo_id": "LOTR-EN15A012.0",
+    "kept_collector_info": "15RF12"
+  },
+  {
+    "id": "lotr15013",
+    "cargo_id": "LOTR-EN15S013.0",
+    "title": "Elven Bow",
+    "collector_info": "15C13",
+    "kept_cargo_id": "LOTR-EN15A013.0",
+    "kept_collector_info": "15RF13"
+  },
+  {
+    "id": "lotr15014",
+    "cargo_id": "LOTR-EN15S014.0",
+    "title": "Elven Warrior",
+    "collector_info": "15C14",
+    "kept_cargo_id": "LOTR-EN15A014.0",
+    "kept_collector_info": "15RF14"
+  },
+  {
+    "id": "lotr15015",
+    "cargo_id": "LOTR-EN15S015.0",
+    "title": "Focus",
+    "collector_info": "15C15",
+    "kept_cargo_id": "LOTR-EN15A015.0",
+    "kept_collector_info": "15RF15"
+  },
+  {
+    "id": "lotr15016",
+    "cargo_id": "LOTR-EN15S016.0",
+    "title": "Gift of the Evenstar, Blessed Light",
+    "collector_info": "15U16",
+    "kept_cargo_id": "LOTR-EN15A016.0",
+    "kept_collector_info": "15RF16"
+  },
+  {
+    "id": "lotr15017",
+    "cargo_id": "LOTR-EN15S017.0",
+    "title": "Haldir, Sentry of the Golden Wood",
+    "collector_info": "15U17",
+    "kept_cargo_id": "LOTR-EN15A017.0",
+    "kept_collector_info": "15RF17"
+  },
+  {
+    "id": "lotr15018",
+    "cargo_id": "LOTR-EN15S018.0",
+    "title": "Legolas, Fleet-footed Hunter",
+    "collector_info": "15S18",
+    "kept_cargo_id": "LOTR-EN15A018.0",
+    "kept_collector_info": "15RF18"
+  },
+  {
+    "id": "lotr15060",
+    "cargo_id": "LOTR-EN15S060.0",
+    "title": "Forth the Three Hunters!",
+    "collector_info": "15C60",
+    "kept_cargo_id": "LOTR-EN15E060.0",
+    "kept_collector_info": "15C60"
+  },
+  {
+    "id": "lotr17001",
+    "cargo_id": "LOTR-EN17O001.0",
+    "title": "Shadowfax, Greatest of the Mearas",
+    "collector_info": "17O1",
+    "kept_cargo_id": "LOTR-EN17A001.0",
+    "kept_collector_info": "17RF1"
+  },
+  {
+    "id": "lotr17002",
+    "cargo_id": "LOTR-EN17O002.0",
+    "title": "Gwaihir, The Windlord",
+    "collector_info": "17O2",
+    "kept_cargo_id": "LOTR-EN17A002.0",
+    "kept_collector_info": "17RF2"
+  },
+  {
+    "id": "lotr17003",
+    "cargo_id": "LOTR-EN17O003.0",
+    "title": "Throne of Minas Tirith",
+    "collector_info": "17O3",
+    "kept_cargo_id": "LOTR-EN17A003.0",
+    "kept_collector_info": "17RF3"
+  },
+  {
+    "id": "lotr17004",
+    "cargo_id": "LOTR-EN17O004.0",
+    "title": "Aragorn, Defender of Rohan",
+    "collector_info": "17O4",
+    "kept_cargo_id": "LOTR-EN17A004.0",
+    "kept_collector_info": "17RF4"
+  },
+  {
+    "id": "lotr17005",
+    "cargo_id": "LOTR-EN17O005.0",
+    "title": "Throne of the Golden Hall",
+    "collector_info": "17O5",
+    "kept_cargo_id": "LOTR-EN17A005.0",
+    "kept_collector_info": "17RF5"
+  },
+  {
+    "id": "lotr17006",
+    "cargo_id": "LOTR-EN17O006.0",
+    "title": "Theoden, Northman, King of Rohan",
+    "collector_info": "17O6",
+    "kept_cargo_id": "LOTR-EN17A006.0",
+    "kept_collector_info": "17RF6"
+  },
+  {
+    "id": "lotr17007",
+    "cargo_id": "LOTR-EN17O007.0",
+    "title": "Ulaire Otsea, Duplicitous Specter",
+    "collector_info": "17O7",
+    "kept_cargo_id": "LOTR-EN17A007.0",
+    "kept_collector_info": "17RF7"
+  },
+  {
+    "id": "lotr17008",
+    "cargo_id": "LOTR-EN17O008.0",
+    "title": "Ring of Savagery",
+    "collector_info": "17O8",
+    "kept_cargo_id": "LOTR-EN17A008.0",
+    "kept_collector_info": "17RF8"
+  },
+  {
+    "id": "lotr17009",
+    "cargo_id": "LOTR-EN17O009.0",
+    "title": "Ring of Terror",
+    "collector_info": "17O9",
+    "kept_cargo_id": "LOTR-EN17A009.0",
+    "kept_collector_info": "17RF9"
+  },
+  {
+    "id": "lotr17001",
+    "cargo_id": "LOTR-EN17S001.0",
+    "title": "Armor of Khazad",
+    "collector_info": "17U1",
+    "kept_cargo_id": "LOTR-EN17A001.0",
+    "kept_collector_info": "17RF1"
+  },
+  {
+    "id": "lotr17002",
+    "cargo_id": "LOTR-EN17S002.0",
+    "title": "Balin Avenged",
+    "collector_info": "17R2",
+    "kept_cargo_id": "LOTR-EN17A002.0",
+    "kept_collector_info": "17RF2"
+  },
+  {
+    "id": "lotr17003",
+    "cargo_id": "LOTR-EN17S003.0",
+    "title": "Dwarven Stratagem",
+    "collector_info": "17U3",
+    "kept_cargo_id": "LOTR-EN17A003.0",
+    "kept_collector_info": "17RF3"
+  },
+  {
+    "id": "lotr17004",
+    "cargo_id": "LOTR-EN17S004.0",
+    "title": "Ring of Artifice",
+    "collector_info": "17R4",
+    "kept_cargo_id": "LOTR-EN17A004.0",
+    "kept_collector_info": "17RF4"
+  },
+  {
+    "id": "lotr17005",
+    "cargo_id": "LOTR-EN17S005.0",
+    "title": "Axe-work",
+    "collector_info": "17U5",
+    "kept_cargo_id": "LOTR-EN17A005.0",
+    "kept_collector_info": "17RF5"
+  },
+  {
+    "id": "lotr17006",
+    "cargo_id": "LOTR-EN17S006.0",
+    "title": "Thorin III, Stonehelm",
+    "collector_info": "17R6",
+    "kept_cargo_id": "LOTR-EN17A006.0",
+    "kept_collector_info": "17RF6"
+  },
+  {
+    "id": "lotr17007",
+    "cargo_id": "LOTR-EN17S007.0",
+    "title": "Elven Guardian",
+    "collector_info": "17S7",
+    "kept_cargo_id": "LOTR-EN17A007.0",
+    "kept_collector_info": "17RF7"
+  },
+  {
+    "id": "lotr17008",
+    "cargo_id": "LOTR-EN17S008.0",
+    "title": "Hearth and Hall",
+    "collector_info": "17U8",
+    "kept_cargo_id": "LOTR-EN17A008.0",
+    "kept_collector_info": "17RF8"
+  },
+  {
+    "id": "lotr17009",
+    "cargo_id": "LOTR-EN17S009.0",
+    "title": "Lothlorien Guides",
+    "collector_info": "17U9",
+    "kept_cargo_id": "LOTR-EN17A009.0",
+    "kept_collector_info": "17RF9"
+  },
+  {
+    "id": "lotr17010",
+    "cargo_id": "LOTR-EN17S010.0",
+    "title": "Namarie",
+    "collector_info": "17U10",
+    "kept_cargo_id": "LOTR-EN17A010.0",
+    "kept_collector_info": "17RF10"
+  },
+  {
+    "id": "lotr17011",
+    "cargo_id": "LOTR-EN17S011.0",
+    "title": "Orophin, Silvan Elf",
+    "collector_info": "17S11",
+    "kept_cargo_id": "LOTR-EN17A011.0",
+    "kept_collector_info": "17RF11"
+  },
+  {
+    "id": "lotr17012",
+    "cargo_id": "LOTR-EN17S012.0",
+    "title": "Rumil, Silvan Elf",
+    "collector_info": "17S12",
+    "kept_cargo_id": "LOTR-EN17A012.0",
+    "kept_collector_info": "17RF12"
+  },
+  {
+    "id": "lotr17013",
+    "cargo_id": "LOTR-EN17S013.0",
+    "title": "The World Ahead",
+    "collector_info": "17R13",
+    "kept_cargo_id": "LOTR-EN17A013.0",
+    "kept_collector_info": "17RF13"
+  },
+  {
+    "id": "lotr17014",
+    "cargo_id": "LOTR-EN17S014.0",
+    "title": "Weapons of Lothlorien",
+    "collector_info": "17U14",
+    "kept_cargo_id": "LOTR-EN17A014.0",
+    "kept_collector_info": "17RF14"
+  },
+  {
+    "id": "lotr17015",
+    "cargo_id": "LOTR-EN17S015.0",
+    "title": "A New Light",
+    "collector_info": "17U15",
+    "kept_cargo_id": "LOTR-EN17A015.0",
+    "kept_collector_info": "17RF15"
+  },
+  {
+    "id": "lotr17016",
+    "cargo_id": "LOTR-EN17S016.0",
+    "title": "Barliman Butterbur, Red-faced Landlord",
+    "collector_info": "17U16",
+    "kept_cargo_id": "LOTR-EN17A016.0",
+    "kept_collector_info": "17RF16"
+  },
+  {
+    "id": "lotr17017",
+    "cargo_id": "LOTR-EN17S017.0",
+    "title": "Gandalf, Returned",
+    "collector_info": "17R17",
+    "kept_cargo_id": "LOTR-EN17A017.0",
+    "kept_collector_info": "17RF17"
+  },
+  {
+    "id": "lotr17018",
+    "cargo_id": "LOTR-EN17S018.0",
+    "title": "Glamdring, Orc Beater",
+    "collector_info": "17R18",
+    "kept_cargo_id": "LOTR-EN17A018.0",
+    "kept_collector_info": "17RF18"
+  },
+  {
+    "id": "lotr18001",
+    "cargo_id": "LOTR-EN18O001.0",
+    "title": "Beorning Axe",
+    "collector_info": "18O1",
+    "kept_cargo_id": "LOTR-EN18A001.0",
+    "kept_collector_info": "18RF1"
+  },
+  {
+    "id": "lotr18002",
+    "cargo_id": "LOTR-EN18O002.0",
+    "title": "Radagast's Herb Bag",
+    "collector_info": "18O2",
+    "kept_cargo_id": "LOTR-EN18A002.0",
+    "kept_collector_info": "18RF2"
+  },
+  {
+    "id": "lotr18003",
+    "cargo_id": "LOTR-EN18O003.0",
+    "title": "Crown of Gondor",
+    "collector_info": "18O3",
+    "kept_cargo_id": "LOTR-EN18A003.0",
+    "kept_collector_info": "18RF3"
+  },
+  {
+    "id": "lotr18004",
+    "cargo_id": "LOTR-EN18O004.0",
+    "title": "Denethor's Sword",
+    "collector_info": "18O4",
+    "kept_cargo_id": "LOTR-EN18A004.0",
+    "kept_collector_info": "18RF4"
+  },
+  {
+    "id": "lotr18005",
+    "cargo_id": "LOTR-EN18O005.0",
+    "title": "Watcher at Sarn Ford, Ranger of the North",
+    "collector_info": "18O5",
+    "kept_cargo_id": "LOTR-EN18A005.0",
+    "kept_collector_info": "18RF5"
+  },
+  {
+    "id": "lotr18006",
+    "cargo_id": "LOTR-EN18O006.0",
+    "title": "Erkenbrand's Horn",
+    "collector_info": "18O6",
+    "kept_cargo_id": "LOTR-EN18A006.0",
+    "kept_collector_info": "18RF6"
+  },
+  {
+    "id": "lotr18007",
+    "cargo_id": "LOTR-EN18O007.0",
+    "title": "Erkenbrand's Shield",
+    "collector_info": "18O7",
+    "kept_cargo_id": "LOTR-EN18A007.0",
+    "kept_collector_info": "18RF7"
+  },
+  {
+    "id": "lotr18008",
+    "cargo_id": "LOTR-EN18O008.0",
+    "title": "Rohirrim Diadem",
+    "collector_info": "18O8",
+    "kept_cargo_id": "LOTR-EN18A008.0",
+    "kept_collector_info": "18RF8"
+  },
+  {
+    "id": "lotr18009",
+    "cargo_id": "LOTR-EN18O009.0",
+    "title": "Pull of the Ring",
+    "collector_info": "18O9",
+    "kept_cargo_id": "LOTR-EN18A009.0",
+    "kept_collector_info": "18RF9"
+  },
+  {
+    "id": "lotr18001",
+    "cargo_id": "LOTR-EN18S001.0",
+    "title": "Gimli, Sprinter",
+    "collector_info": "18R1",
+    "kept_cargo_id": "LOTR-EN18A001.0",
+    "kept_collector_info": "18RF1"
+  },
+  {
+    "id": "lotr18002",
+    "cargo_id": "LOTR-EN18S002.0",
+    "title": "Run Until Found",
+    "collector_info": "18U2",
+    "kept_cargo_id": "LOTR-EN18A002.0",
+    "kept_collector_info": "18RF2"
+  },
+  {
+    "id": "lotr18003",
+    "cargo_id": "LOTR-EN18S003.0",
+    "title": "Thorin's Harp",
+    "collector_info": "18C3",
+    "kept_cargo_id": "LOTR-EN18A003.0",
+    "kept_collector_info": "18RF3"
+  },
+  {
+    "id": "lotr18004",
+    "cargo_id": "LOTR-EN18S004.0",
+    "title": "Arwen's Bow",
+    "collector_info": "18R4",
+    "kept_cargo_id": "LOTR-EN18A004.0",
+    "kept_collector_info": "18RF4"
+  },
+  {
+    "id": "lotr18005",
+    "cargo_id": "LOTR-EN18S005.0",
+    "title": "Arwen's Dagger",
+    "collector_info": "18R5",
+    "kept_cargo_id": "LOTR-EN18A005.0",
+    "kept_collector_info": "18RF5"
+  },
+  {
+    "id": "lotr18006",
+    "cargo_id": "LOTR-EN18S006.0",
+    "title": "Back to the Light",
+    "collector_info": "18R6",
+    "kept_cargo_id": "LOTR-EN18A006.0",
+    "kept_collector_info": "18RF6"
+  },
+  {
+    "id": "lotr18007",
+    "cargo_id": "LOTR-EN18S007.0",
+    "title": "Celebring, Elven-smith",
+    "collector_info": "18R7",
+    "kept_cargo_id": "LOTR-EN18A007.0",
+    "kept_collector_info": "18RF7"
+  },
+  {
+    "id": "lotr18008",
+    "cargo_id": "LOTR-EN18S008.0",
+    "title": "Elven Armaments",
+    "collector_info": "18U8",
+    "kept_cargo_id": "LOTR-EN18A008.0",
+    "kept_collector_info": "18RF8"
+  },
+  {
+    "id": "lotr18009",
+    "cargo_id": "LOTR-EN18S009.0",
+    "title": "Elven Defender",
+    "collector_info": "18C9",
+    "kept_cargo_id": "LOTR-EN18A009.0",
+    "kept_collector_info": "18RF9"
+  },
+  {
+    "id": "lotr18010",
+    "cargo_id": "LOTR-EN18S010.0",
+    "title": "Elven Supplies",
+    "collector_info": "18U10",
+    "kept_cargo_id": "LOTR-EN18A010.0",
+    "kept_collector_info": "18RF10"
+  },
+  {
+    "id": "lotr18011",
+    "cargo_id": "LOTR-EN18S011.0",
+    "title": "Galadriel's Silver Ewer",
+    "collector_info": "18R11",
+    "kept_cargo_id": "LOTR-EN18A011.0",
+    "kept_collector_info": "18RF11"
+  },
+  {
+    "id": "lotr18012",
+    "cargo_id": "LOTR-EN18S012.0",
+    "title": "Gil-galad, High King of the Noldor",
+    "collector_info": "18R12",
+    "kept_cargo_id": "LOTR-EN18A012.0",
+    "kept_collector_info": "18RF12"
+  },
+  {
+    "id": "lotr18013",
+    "cargo_id": "LOTR-EN18S013.0",
+    "title": "Glorfindel, Eldarin Lord",
+    "collector_info": "18R13",
+    "kept_cargo_id": "LOTR-EN18A013.0",
+    "kept_collector_info": "18RF13"
+  },
+  {
+    "id": "lotr18014",
+    "cargo_id": "LOTR-EN18S014.0",
+    "title": "Haldir, Warrior Messenger",
+    "collector_info": "18R14",
+    "kept_cargo_id": "LOTR-EN18A014.0",
+    "kept_collector_info": "18RF14"
+  },
+  {
+    "id": "lotr18015",
+    "cargo_id": "LOTR-EN18S015.0",
+    "title": "Lembas Bread",
+    "collector_info": "18R15",
+    "kept_cargo_id": "LOTR-EN18A015.0",
+    "kept_collector_info": "18RF15"
+  },
+  {
+    "id": "lotr18016",
+    "cargo_id": "LOTR-EN18S016.0",
+    "title": "Miruvore",
+    "collector_info": "18C16",
+    "kept_cargo_id": "LOTR-EN18A016.0",
+    "kept_collector_info": "18RF16"
+  },
+  {
+    "id": "lotr18017",
+    "cargo_id": "LOTR-EN18S017.0",
+    "title": "Woodhall Elf, Exile",
+    "collector_info": "18C17",
+    "kept_cargo_id": "LOTR-EN18A017.0",
+    "kept_collector_info": "18RF17"
+  },
+  {
+    "id": "lotr18018",
+    "cargo_id": "LOTR-EN18S018.0",
+    "title": "Beorning Axe",
+    "collector_info": "18R18",
+    "kept_cargo_id": "LOTR-EN18A018.0",
+    "kept_collector_info": "18RF18"
+  }
+]

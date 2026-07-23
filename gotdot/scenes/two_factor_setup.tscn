@@ -1,0 +1,146 @@
+[gd_scene load_steps=2 format=3 uid="uid://lotr_2fa_setup"]
+
+[ext_resource type="Script" path="res://scripts/two_factor_setup.gd" id="1_2fa_setup"]
+
+; ── Mandatory Two-Factor Authentication Setup (LOT-007) ──────────────────────
+; Shown right after a user's first successful login when 2FA isn't enabled yet.
+
+[node name="TwoFactorSetup" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_2fa_setup")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.07, 0.15, 1)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="SetupBox" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 340.0
+offset_top = 60.0
+offset_right = 940.0
+offset_bottom = 660.0
+alignment = 1
+theme_override_constants/separation = 14
+visible = true
+
+[node name="Title" type="Label" parent="CanvasLayer/SetupBox"]
+layout_mode = 2
+text = "Set Up Two-Factor Authentication"
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="Instructions" type="Label" parent="CanvasLayer/SetupBox"]
+layout_mode = 2
+text = "Scan this QR code with Google Authenticator, Authy, 1Password, or a similar app."
+autowrap_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="QrImage" type="TextureRect" parent="CanvasLayer/SetupBox"]
+custom_minimum_size = Vector2(220, 220)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SecretRow" type="HBoxContainer" parent="CanvasLayer/SetupBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="SecretLabel" type="Label" parent="CanvasLayer/SetupBox/SecretRow"]
+text = "Manual entry code:"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="SecretValue" type="LineEdit" parent="CanvasLayer/SetupBox/SecretRow"]
+custom_minimum_size = Vector2(280, 32)
+layout_mode = 2
+editable = false
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+
+[node name="CodeLabel" type="Label" parent="CanvasLayer/SetupBox"]
+text = "Enter the 6-digit code from your app"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="CodeInput" type="LineEdit" parent="CanvasLayer/SetupBox"]
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+placeholder_text = "000000"
+max_length = 6
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/placeholder_color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="EnableBtn" type="Button" parent="CanvasLayer/SetupBox"]
+custom_minimum_size = Vector2(250, 45)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Enable 2FA"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+
+[node name="StatusLabel" type="Label" parent="CanvasLayer/SetupBox"]
+text = ""
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+
+[node name="RecoveryBox" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 340.0
+offset_top = 100.0
+offset_right = 940.0
+offset_bottom = 620.0
+alignment = 1
+theme_override_constants/separation = 14
+visible = false
+
+[node name="RecoveryTitle" type="Label" parent="CanvasLayer/RecoveryBox"]
+layout_mode = 2
+text = "Save Your Recovery Codes"
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="RecoveryWarning" type="Label" parent="CanvasLayer/RecoveryBox"]
+layout_mode = 2
+text = "Each code can be used once if you lose access to your authenticator app. These will not be shown again — save them somewhere safe."
+autowrap_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
+
+[node name="RecoveryCodesText" type="TextEdit" parent="CanvasLayer/RecoveryBox"]
+custom_minimum_size = Vector2(400, 220)
+layout_mode = 2
+size_flags_horizontal = 4
+editable = false
+theme_override_font_sizes/font_size = 18
+
+[node name="ContinueBtn" type="Button" parent="CanvasLayer/RecoveryBox"]
+custom_minimum_size = Vector2(280, 45)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Continue to Menu"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+
+[connection signal="pressed" from="CanvasLayer/SetupBox/EnableBtn" to="." method="_on_enable_btn_pressed"]
+[connection signal="pressed" from="CanvasLayer/RecoveryBox/ContinueBtn" to="." method="_on_continue_btn_pressed"]

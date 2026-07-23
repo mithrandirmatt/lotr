@@ -12,113 +12,23 @@ Once complete, remove from this file and move it to the issues-completed.md file
 
 ## Current Issue(s) Being Worked:
 
-- **LOT-007** - Login Screen.
-  - First time launch without login.
-    - UI Page will be Sign In / Register page.
-      - Sign in:
-        - UI:
-          - Email or Unique Name text input
-            - While typing, validate format (basic email regex or non-empty unique name) and show error if invalid.
-            - While empty show nothing.
-            - While invalid format, show red error text "Please enter a valid email or unique name."
-            - While valid, show green text "Looks good!" or something.
-          - Password
-            - Text input, masked.
-            - Validate on submit (not while typing) for minimum length (e.g. 8 characters) and show error if too short.
-          - Button to submit
-        - Submit:
-          - Backend:
-            - Endpoint: POST /api/v1/auth/login
-            - Request body: { email, password }
-            - Response:
-              - success:{ access_token, refresh_token, user: { id, email, is_admin, is_moderator } }
-              - failure: { error }
-          - UI:
-            - On submit:
-              - call the login endpoint
-              - Hide submit button.
-              - Show loading indicator.
-                - Filler for now, later will have a proper loader animation.
-                - Just show text "Logging in..." for now.
-                  - Cycle the dots every 500ms: "Logging in.", "Logging in..", "Logging in...", "Logging in."
-            - On success: store access_token, refresh_token, user info in localStorage; redirect to Dashboard
-              - Go to the homepage/dashboard page.
-            - On failure:
-              - show error message
-              - allow retry
-              - Show the submit button again.
-              - Hide the loading indicator.
-  - Register page:
-    - UI:
-      - Email text input
-        - While typing, validate format (basic email regex) and show error if invalid.
-        - While empty show nothing.
-        - While invalid format, show red error text "Please enter a valid email."
-        - While valid, show green text "Looks good!" or something.
-        - On typing:
-          - Check if email is already registered (call backend endpoint) and show error if so.
-          - Endpoint: GET /api/v1/auth/check-email?email={email}
-          - Response: { exists: true/false }
-          - debounce the API call by 500ms to avoid excessive calls while typing.
-            - This means only make the API call if the user has stopped typing for 500ms, to avoid making a call on every keystroke.
-          - If exists, show red error text "This email is already registered."
-          - If not exists, show green text "Email is available!" or something.
-      - Unique Name text input
-        - While typing, validate format (non-empty, no spaces) and show error if invalid.
-        - While empty show nothing.
-        - While invalid format, show red error text "Please enter a valid unique name (no spaces)."
-        - While valid, show green text "Looks good!" or something.
-        - On typing:
-          - Check if unique name is already taken (call backend endpoint) and show error if so.
-          - Endpoint: GET /api/v1/auth/check-unique-name?unique_name={unique_name}
-          - Response: { exists: true/false }
-          - debounce the API call by 500ms to avoid excessive calls while typing.
-            - This means only make the API call if the user has stopped typing for 500ms, to avoid making a call on every keystroke.
-          - If exists, show red error text "This unique name is already taken."
-          - If not exists, show green text "Unique name is available!" or something.
-      - Password
-        - Text input, masked.
-        - Validate on submit (not while typing) for minimum length (e.g. 8 characters) and show error if too short.
-      - Confirm Password
-        - Text input, masked.
-        - Validate on submit (not while typing) to ensure it matches the password field and show error if it doesn't.
-      - Button to submit
-    - On Submit:
-      - Backend:
-        - Endpoint: POST /api/v1/auth/register
-        - Request body: { email, unique_name, password, confirm_password }
-        - Response:
-          - success: { message: "Registration successful. Please log in." }
-          - failure: { error }
-      - UI:
-        - On submit:
-          - call the register endpoint
-          - Hide submit button.
-          - Show loading indicator.
-            - Just show text "Registering..." for now.
-              - Cycle the dots every 500ms: "Registering.", "Registering..", "Registering..."
-        - On success: show success message, redirect to login page after 2 seconds
-          - Show message "Registration successful. Please log in."
-          - After 2 seconds, redirect to login page.
-        - On failure:
-          - show error message
-          - allow retry
-          - Show the submit button again.
-          - Hide the loading indicator.
-      - On Registration:
-        - Create a new user in the database with the provided email and password (hashed).
-        - Ensure the email is unique; if not, return an error.
-        - By default, new users should have `is_admin=False` and `is_moderator=False`.
-        - Return a success message on successful registration.
-        - Users will need a database association to track their collection and decks.
-          -  Database:
-            - TBD.
-
-
-
-
+(none — see issues-completed.md for LOT-007 and LOT-007.1)
 
 ## Queued Issues:
+
+- **LOT-6.5** — Fix issues found in comprehensive review of LOT-001 through LOT-006 (2026-07-23).
+  - Review verdicts: LOT-005 and LOT-006 accurately completed; LOT-001, LOT-003, LOT-004 partially complete; LOT-002 falsely marked complete.
+  - **Critical (fix first)**:
+    - `SECRET_KEY = secrets.token_urlsafe(32)` in `server/server/routes/api.py` is regenerated on every server restart, invalidating all issued JWTs. Must load from env var/config instead.
+    - Anti-cheat is non-functional (LOT-002 goal not met): `validate_deck()` in `server/server/engine/validator.py` has no real logic (always valid); `apply_action()` in `server/server/engine/core.py` is a placeholder that only increments the turn counter; `join_match()` never verifies the joining player's deck cards are owned by them; match audit "integrity score" is fabricated, not derived from real analysis.
+  - **Data accuracy**:
+    - `gotdot/assets/data/game_logic_database.json` contains only ~200 parsed cards, not the claimed 3,216 (LOT-001). Either re-run `scripts/generate_game_logic.py` against the full card database or correct the tracked count.
+  - **Missing functionality**:
+    - No endpoint exists to grant/revoke `is_admin` status (LOT-003) — only `is_moderator` toggle exists via `PUT /admin/users/{id}/moderator`.
+  - **Security hardening**:
+    - Default local-admin shortcut password `"yourmommalooksfunny"` is hardcoded as a source fallback in `api.py`; `ENABLE_LOCAL_ADMIN_SHORTCUT` defaults to enabled (`"1"`). Should require explicit opt-in with no source-code default.
+    - No password complexity rules beyond 8-char minimum; 24h access token lifetime is long; `is_verified=True` is set on register with no real email verification flow.
+  - Full findings saved in repo memory: `/memories/repo/issues-lot001-006-review.md`.
 
 - **LOT-008** - Add AI play.
   - This will allow users to play against an AI opponent locally.

@@ -186,10 +186,15 @@ RUN set -eux; \
 
 # ------------------------------------------------------------
 # Godot 4 export templates (headless export requires these)
+# NOTE: GitHub release tags use a dash (e.g. "4.4.1-stable"), but Godot's
+# runtime looks up export templates in a directory named with dots
+# (e.g. "4.4.1.stable"). Installing under the dash-named directory only
+# causes "No export template found" errors during `godot --export-release`.
 # ------------------------------------------------------------
 RUN set -eux; \
     TEMPLATES_FILE="Godot_v${GODOT_VERSION}_export_templates.tpz"; \
-    TEMPLATES_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}"; \
+    GODOT_VERSION_DOTTED="$(echo ${GODOT_VERSION} | tr '-' '.')"; \
+    TEMPLATES_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION_DOTTED}"; \
     curl -fsSL \
         "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${TEMPLATES_FILE}" \
         -o /tmp/templates.tpz; \

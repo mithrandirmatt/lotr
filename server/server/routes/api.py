@@ -5,13 +5,20 @@ API routes for the LOTR TCG server.
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from uuid import uuid4
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
+from passlib.context import CryptContext
 import jwt
 import secrets
+import ipaddress
+import os
+import io
+import base64
+import pyotp
+import qrcode
 
 from ..core.database import get_db
 from ..models.models import (
@@ -21,9 +28,13 @@ from ..models.models import (
 )
 from ..models.schemas import (
     # User schemas
-    UserCreate, UserUpdate, UserResponse,
+    UserCreate, UserUpdate, UserResponse, RegisterRequest,
     # Auth schemas
     Token, LoginRequest, RefreshTokenRequest,
+    # Two-factor auth schemas
+    CheckExistsResponse, TwoFactorSetupResponse, TwoFactorEnableRequest,
+    TwoFactorEnableResponse, TwoFactorDisableRequest, TwoFactorVerifyLoginRequest,
+    TwoFactorRecoverRequest,
     # Card schemas
     CardCreate, CardUpdate, CardResponse, CardListResponse,
     # Ownership schemas
@@ -59,6 +70,81 @@ STORE_PRODUCT_PRICES_TOLKIENS = {
     "starter_deck": 5,
     "booster_box": 30,
 }
+
+LOCAL_ADMIN_USERNAME = os.getenv("LOTR_LOCAL_ADMIN_USERNAME", "lotradmin")
+LOCAL_ADMIN_PASSWORD = os.getenv("LOTR_LOCAL_ADMIN_PASSWORD", "yourmommalooksfunny")
+LOCAL_ADMIN_EMAIL = os.getenv("LOTR_LOCAL_ADMIN_EMAIL", "lotradmin@example.com")
+ENABLE_LOCAL_ADMIN_SHORTCUT = os.getenv("LOTR_ENABLE_LOCAL_ADMIN_SHORTCUT", "1").strip().lower() in {
+    "1", "true", "yes", "on"
+}
+
+# Shared password hashing context for the 2FA helpers below.
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+MFA_TOKEN_EXPIRE_MINUTES = 5
+TOTP_ISSUER_NAME = "LotR TCG"
+RECOVERY_CODE_COUNT = 10
+
+
+def create_mfa_token(user_id: str) -> str:
+    """Create a short-lived JWT proving the password step of login succeeded,
+    used to gate the follow-up TOTP code submission."""
+    to_encode = {
+        "sub": user_id,
+        "type": "mfa",
+        "exp": datetime.utcnow() + timedelta(minutes=MFA_TOKEN_EXPIRE_MINUTES),
+    }
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_mfa_token(token: str) -> str:
+    """Verify an MFA token and return the associated user id."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired MFA session")
+    if payload.get("type") != "mfa" or not payload.get("sub"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid MFA session")
+    return payload["sub"]
+
+
+def generate_totp_secret() -> str:
+    return pyotp.random_base32()
+
+
+def totp_provisioning_uri(secret: str, email: str) -> str:
+    return pyotp.totp.TOTP(secret).provisioning_uri(name=email, issuer_name=TOTP_ISSUER_NAME)
+
+
+def qr_code_png_base64(uri: str) -> str:
+    img = qrcode.make(uri)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def verify_totp_code(secret: str, code: str) -> bool:
+    if not secret or not code:
+        return False
+    return pyotp.totp.TOTP(secret).verify(code, valid_window=1)
+
+
+def generate_recovery_codes(count: int = RECOVERY_CODE_COUNT) -> List[str]:
+    return [f"{secrets.token_hex(4)}-{secrets.token_hex(4)}" for _ in range(count)]
+
+
+def consume_recovery_code(user: User, code: str) -> bool:
+    """Check `code` against the user's remaining hashed recovery codes; if it
+    matches, remove that code (single-use) and return True."""
+    if not user.totp_recovery_codes:
+        return False
+    for hashed in user.totp_recovery_codes:
+        if pwd_context.verify(code, hashed):
+            remaining = list(user.totp_recovery_codes)
+            remaining.remove(hashed)
+            user.totp_recovery_codes = remaining
+            return True
+    return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -96,6 +182,58 @@ def verify_token(token: str, credentials_exception: HTTPException) -> dict:
         raise credentials_exception
 
 
+def _is_local_address(raw_host: Optional[str]) -> bool:
+    if not raw_host:
+        return False
+    host = raw_host.strip().split(",")[0].strip()
+    if host.lower() == "localhost":
+        return True
+    try:
+        parsed = ipaddress.ip_address(host)
+        return parsed.is_loopback or parsed.is_private
+    except ValueError:
+        return False
+
+
+def _is_local_request(request: Request) -> bool:
+    forwarded = request.headers.get("x-forwarded-for")
+    if _is_local_address(forwarded):
+        return True
+    if request.client and _is_local_address(request.client.host):
+        return True
+    return False
+
+
+def _is_local_admin_shortcut(request: Request, username: str, password: str) -> bool:
+    return (
+        ENABLE_LOCAL_ADMIN_SHORTCUT
+        and username == LOCAL_ADMIN_USERNAME
+        and password == LOCAL_ADMIN_PASSWORD
+        and _is_local_request(request)
+    )
+
+
+def _issue_tokens_for_user(db: Session, user: User) -> Token:
+    access_token = create_access_token(data={"sub": user.id})
+    refresh_token = create_refresh_token(data={"sub": user.id})
+
+    refresh_token_record = RefreshToken(
+        user_id=user.id,
+        token=refresh_token,
+        refresh_secret=secrets.token_urlsafe(32),
+        expires_at=datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    db.add(refresh_token_record)
+    db.commit()
+
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+
+
 # ============== DEPENDENCIES ==============
 
 async def get_current_user(
@@ -130,9 +268,29 @@ async def require_admin(current_user: User = Depends(get_current_user)) -> User:
 
 # ============== AUTH ROUTES ==============
 
-@router.post("/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate, db: Session = Depends(get_db)):
+@router.get("/auth/check-email", response_model=CheckExistsResponse)
+async def check_email(email: str, db: Session = Depends(get_db)):
+    """Check whether an email address is already registered."""
+    exists = db.query(User).filter(User.email == email).first() is not None
+    return CheckExistsResponse(exists=exists)
+
+
+@router.get("/auth/check-unique-name", response_model=CheckExistsResponse)
+async def check_unique_name(unique_name: str, db: Session = Depends(get_db)):
+    """Check whether a unique name (username) is already taken."""
+    exists = db.query(User).filter(User.username == unique_name).first() is not None
+    return CheckExistsResponse(exists=exists)
+
+
+@router.post("/auth/register", status_code=status.HTTP_201_CREATED)
+async def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
     """Register a new user."""
+    if user_data.password != user_data.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match"
+        )
+
     # Check if email exists
     if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(
@@ -140,39 +298,33 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
 
-    # Check if username exists
-    if db.query(User).filter(User.username == user_data.username).first():
+    # Check if unique name exists
+    if db.query(User).filter(User.username == user_data.unique_name).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already taken"
+            detail="Unique name already taken"
         )
 
-    # Hash password
-    from passlib.context import CryptContext
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     hashed_password = pwd_context.hash(user_data.password)
 
-    # Create user
+    # Create user. New accounts always start with 2FA disabled — LOT-007
+    # requires it be set up right after the user's first login.
     user = User(
         email=user_data.email,
-        username=user_data.username,
+        username=user_data.unique_name,
         password_hash=hashed_password,
-        first_name=user_data.first_name,
-        last_name=user_data.last_name,
-        is_verified=True  # Email verification can be added later
+        is_active=True,
+        is_verified=True,  # Email verification can be added later
+        is_admin=False,
+        is_moderator=False,
+        is_2fa_enabled=False,
     )
 
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    # Create refresh token
-    refresh_token = create_refresh_token({"sub": user.id})
-
-    return {
-        "user": user,
-        "refresh_token": refresh_token
-    }
+    return {"message": "Registration successful. Please log in."}
 
 
 import logging
@@ -185,10 +337,59 @@ handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"
 
 logging.basicConfig(level=logging.INFO, handlers=[handler])
 
-@router.post("/auth/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/auth/login")
+async def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
     """Login and get access token."""
     logging.info("Login attempt for %s", form_data.username)
+
+    if _is_local_admin_shortcut(request, form_data.username, form_data.password):
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+        user = db.query(User).filter(User.username == LOCAL_ADMIN_USERNAME).first()
+        if not user:
+            user = User(
+                email=LOCAL_ADMIN_EMAIL,
+                username=LOCAL_ADMIN_USERNAME,
+                password_hash=pwd_context.hash(LOCAL_ADMIN_PASSWORD),
+                first_name="Local",
+                last_name="Admin",
+                is_active=True,
+                is_verified=True,
+                is_admin=True,
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            logging.info("Local admin account created for shortcut login")
+        else:
+            changed = False
+            if not user.is_active:
+                user.is_active = True
+                changed = True
+            if not user.is_verified:
+                user.is_verified = True
+                changed = True
+            if not user.is_admin:
+                user.is_admin = True
+                changed = True
+            if user.email != LOCAL_ADMIN_EMAIL:
+                # Repair rows created before LOCAL_ADMIN_EMAIL's default was
+                # fixed to a validly-formatted address (e.g. "lotradmin@localhost",
+                # which fails EmailStr validation on response serialization).
+                user.email = LOCAL_ADMIN_EMAIL
+                changed = True
+            if changed:
+                db.commit()
+                db.refresh(user)
+
+        logging.info("Local admin shortcut login succeeded")
+        return _issue_tokens_for_user(db, user)
+
     user = db.query(User).filter(
         or_(User.email == form_data.username, User.username == form_data.username)
     ).first()
@@ -212,26 +413,108 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create tokens
-    access_token = create_access_token(data={"sub": user.id})
-    refresh_token = create_refresh_token(data={"sub": user.id})
+    if user.is_2fa_enabled:
+        logging.info("Password verified for %s; awaiting 2FA code", form_data.username)
+        return {"requires_2fa": True, "mfa_token": create_mfa_token(user.id)}
 
-    # Store refresh token
-    refresh_token_record = RefreshToken(
-        user_id=user.id,
-        token=refresh_token,
-        refresh_secret=secrets.token_urlsafe(32),
-        expires_at=datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    )
-    db.add(refresh_token_record)
+    return _issue_tokens_for_user(db, user)
+
+
+@router.post("/auth/2fa/setup", response_model=TwoFactorSetupResponse)
+async def setup_2fa(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Generate a new (not-yet-active) TOTP secret for the current user."""
+    secret = generate_totp_secret()
+    current_user.totp_secret = secret
     db.commit()
 
-    return Token(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES
+    uri = totp_provisioning_uri(secret, current_user.email)
+    return TwoFactorSetupResponse(
+        secret=secret,
+        otpauth_uri=uri,
+        qr_code_png_base64=qr_code_png_base64(uri),
     )
+
+
+@router.post("/auth/2fa/enable", response_model=TwoFactorEnableResponse)
+async def enable_2fa(
+    body: TwoFactorEnableRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Confirm the pending TOTP secret with a code and turn 2FA on."""
+    if not current_user.totp_secret:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Call /auth/2fa/setup first")
+
+    if not verify_totp_code(current_user.totp_secret, body.code):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid authentication code")
+
+    recovery_codes = generate_recovery_codes()
+    current_user.is_2fa_enabled = True
+    current_user.totp_recovery_codes = [pwd_context.hash(c) for c in recovery_codes]
+    db.commit()
+
+    return TwoFactorEnableResponse(recovery_codes=recovery_codes)
+
+
+@router.post("/auth/2fa/disable")
+async def disable_2fa(
+    body: TwoFactorDisableRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Disable 2FA; requires the account password plus a valid TOTP or recovery code."""
+    if not pwd_context.verify(body.password, current_user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password")
+
+    valid = verify_totp_code(current_user.totp_secret, body.code) or consume_recovery_code(current_user, body.code)
+    if not valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid authentication code")
+
+    current_user.is_2fa_enabled = False
+    current_user.totp_secret = None
+    current_user.totp_recovery_codes = None
+    db.commit()
+
+    return {"message": "Two-factor authentication disabled"}
+
+
+@router.post("/auth/2fa/verify-login", response_model=Token)
+async def verify_2fa_login(body: TwoFactorVerifyLoginRequest, db: Session = Depends(get_db)):
+    """Complete login by exchanging an mfa_token + TOTP/recovery code for real tokens."""
+    user_id = verify_mfa_token(body.mfa_token)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.is_active or not user.is_2fa_enabled:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid MFA session")
+
+    valid = verify_totp_code(user.totp_secret, body.code) or consume_recovery_code(user, body.code)
+    if not valid:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication code")
+
+    db.commit()
+    return _issue_tokens_for_user(db, user)
+
+
+@router.post("/auth/2fa/recover", response_model=Token)
+async def recover_2fa(body: TwoFactorRecoverRequest, db: Session = Depends(get_db)):
+    """Log in with a recovery code when the authenticator app itself is no
+    longer available (LOT-007.1). Unlike /auth/2fa/verify-login, this also
+    clears the account's 2FA state (secret + remaining recovery codes), so
+    the caller lands back on the normal /auth/2fa/setup flow to scan a fresh
+    QR code instead of being left with a stale, unusable TOTP secret."""
+    user_id = verify_mfa_token(body.mfa_token)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.is_active or not user.is_2fa_enabled:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid MFA session")
+
+    if not consume_recovery_code(user, body.recovery_code):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or already-used recovery code")
+
+    user.is_2fa_enabled = False
+    user.totp_secret = None
+    user.totp_recovery_codes = None
+    db.commit()
+
+    return _issue_tokens_for_user(db, user)
 
 
 @router.post("/auth/refresh", response_model=Token)

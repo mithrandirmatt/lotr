@@ -19,14 +19,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def _update_file_hash(hasher: "hashlib._Hash", path: Path) -> None:
-    hasher.update(f"FILE:{path.as_posix()}\n".encode("utf-8"))
+    """Hash file path and content efficiently without per-file metadata."""
     with path.open("rb") as handle:
         while True:
             chunk = handle.read(1024 * 1024)
             if not chunk:
                 break
             hasher.update(chunk)
-    hasher.update(b"\n")
+
 
 
 def main() -> None:

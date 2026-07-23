@@ -34,13 +34,30 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     """User response schema (includes ID)."""
+    model_config = ConfigDict(from_attributes=True)
     id: str
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
     is_active: bool = True
     is_verified: bool = False
     is_admin: bool = False
     tolkien_balance: int = 0
+    is_2fa_enabled: bool = False
+
+
+class RegisterRequest(BaseModel):
+    """Schema for the account-creation form (LOT-007)."""
+    email: EmailStr
+    unique_name: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=8, max_length=100)
+    confirm_password: str = Field(..., min_length=8, max_length=100)
+
+    @field_validator("unique_name")
+    @classmethod
+    def unique_name_no_spaces(cls, v: str) -> str:
+        if " " in v:
+            raise ValueError("Unique name cannot contain spaces")
+        return v
 
 
 # ============== AUTH SCHEMAS ==============
@@ -70,6 +87,60 @@ class LoginRequest(BaseModel):
 class RefreshTokenRequest(BaseModel):
     """Refresh token request schema."""
     refresh_token: str
+
+
+# ============== TWO-FACTOR AUTH SCHEMAS ==============
+
+class CheckExistsResponse(BaseModel):
+    """Response for check-email / check-unique-name lookups."""
+    exists: bool
+
+
+class TwoFactorSetupResponse(BaseModel):
+    """Response for POST /auth/2fa/setup."""
+    secret: str
+    otpauth_uri: str
+    qr_code_png_base64: str
+
+
+class TwoFactorEnableRequest(BaseModel):
+    """Request for POST /auth/2fa/enable."""
+    code: str = Field(..., min_length=6, max_length=6)
+
+
+class TwoFactorEnableResponse(BaseModel):
+    """Response for POST /auth/2fa/enable."""
+    recovery_codes: List[str]
+
+
+class TwoFactorDisableRequest(BaseModel):
+    """Request for POST /auth/2fa/disable."""
+    password: str
+    code: str
+
+
+class TwoFactorLoginChallenge(BaseModel):
+    """Response for POST /auth/login when the account has 2FA enabled."""
+    requires_2fa: bool = True
+    mfa_token: str
+
+
+class TwoFactorVerifyLoginRequest(BaseModel):
+    """Request for POST /auth/2fa/verify-login."""
+    mfa_token: str
+    code: str
+
+
+class TwoFactorRecoverRequest(BaseModel):
+    """Request for POST /auth/2fa/recover.
+
+    Used when the user has lost access to their authenticator app (and thus
+    cannot produce a live TOTP code): a valid recovery code both completes
+    login and clears the account's 2FA state, so the user is routed back
+    through the normal /auth/2fa/setup flow to re-enroll with a fresh QR code.
+    """
+    mfa_token: str
+    recovery_code: str
 
 
 # ============== CARD SCHEMAS ==============

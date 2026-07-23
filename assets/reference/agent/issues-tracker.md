@@ -8,7 +8,446 @@ Note, update this file with issues that are active, pending, complete, or new.
 
 ### New:
 
-- **LOT-001** — Generate game-logic database: parse `card_database.json`, extract structured actions (triggers, costs, conditions, effects) from each card's `game_text`, and produce `game_logic_database.json` for runtime use.
+- **LOT-008** — Recapture LOT-003 admin login failure in admin panel.
+	- **Type**: bug/auth-integration
+	- **Priority**: 1
+	- **Problem statement**:
+		- `lotradmin:yourmommalooksfunny` login behavior is inconsistent and blocks admin access.
+		- Auth contract differs between frontend expectations and backend runtime behavior.
+	- **Implementation details**:
+		- Standardize canonical auth path and credential handling for local-admin shortcut and normal admin login.
+		- Align register/login payload contracts and restore missing availability-check endpoints or adjust frontend usage.
+		- Add integration tests for local vs non-local shortcut behavior and admin-only gate checks.
+	- **Acceptance criteria**:
+		- Admin login works deterministically in intended local-dev scenario.
+		- Non-admin users are denied admin panel access with clear message.
+		- Auth behavior is documented and covered by tests.
+
+- **LOT-009** — Canonical rules engine core (deterministic state + invariants).
+	- **Type**: feature/game-engine
+	- **Priority**: 1
+	- **Problem statement**:
+		- Core game state model is not yet formalized for deterministic rules execution.
+	- **Implementation details**:
+		- Define normalized state schema: players, board zones, piles, burdens/wounds, twilight, and phase cursor.
+		- Add event journal and state-hash checkpoints for replay/debug.
+		- Add invariant validators after every state mutation.
+	- **Acceptance criteria**:
+		- Engine initializes legal match state from validated inputs.
+		- Invariant violations are detected and surfaced with actionable diagnostics.
+		- State replay reproduces identical state hashes.
+
+- **LOT-010** — Turn and phase state machine (Fellowship to Regroup).
+	- **Type**: feature/game-engine
+	- **Priority**: 1
+	- **Problem statement**:
+		- Turn/phase progression must match rules timing and skip behavior exactly.
+	- **Implementation details**:
+		- Implement deterministic phase transitions and pass-priority loops.
+		- Add skip logic for no-minion branches and move-again loop constraints.
+		- Support v4.2/v5 timing differences via configurable rules flags.
+	- **Acceptance criteria**:
+		- Full turn cycle executes correctly under scripted scenarios.
+		- Illegal phase actions are rejected with stable error codes.
+
+- **LOT-011** — Action legality and cost-payment engine.
+	- **Type**: feature/rules-enforcement
+	- **Priority**: 1
+	- **Problem statement**:
+		- Actions need a unified legality checker and atomic cost resolution.
+	- **Implementation details**:
+		- Validate timing windows, conditions, targets, and costs in one legality path.
+		- Implement costs: exert, burden, discard, twilight pay, and spot checks.
+		- Enforce "cannot overrides can" precedence.
+	- **Acceptance criteria**:
+		- Action attempts return deterministic legal/illegal outcomes and reasons.
+		- Failed actions leave no partial state mutation.
+
+- **LOT-012** — Combat resolution (archery, skirmish, overwhelm, fierce).
+	- **Type**: feature/combat
+	- **Priority**: 1
+	- **Problem statement**:
+		- Combat stack needs complete implementation for core gameplay.
+	- **Implementation details**:
+		- Implement archery totals and wound assignment order.
+		- Implement skirmish resolution, tie handling, damage bonuses, and overwhelm.
+		- Implement fierce second-round behavior and edge cases.
+	- **Acceptance criteria**:
+		- Combat outcomes match rules fixtures and deterministic snapshots.
+		- Edge cases are test-covered and reproducible.
+
+- **LOT-013** — Runtime card-text execution from `game_logic_database.json`.
+	- **Type**: feature/card-text-engine
+	- **Priority**: 1
+	- **Problem statement**:
+		- Parsed card logic must execute in runtime without hand-coded drift.
+	- **Implementation details**:
+		- Build interpreter for triggers, costs, conditions, effects, and targets.
+		- Add ambiguity guardrails and manual override hooks.
+		- Add parser-diff regression checks against approved baselines.
+	- **Acceptance criteria**:
+		- High-confidence parsed cards execute correctly in runtime tests.
+		- Ambiguous actions are blocked or routed to explicit fallback handling.
+
+- **LOT-014** — Deck legality and format enforcement service.
+	- **Type**: feature/deck-validation
+	- **Priority**: 1
+	- **Problem statement**:
+		- Decks must be validated consistently across client and server.
+	- **Implementation details**:
+		- Enforce deck size, FP/Shadow split, site rules, uniqueness/copy limits.
+		- Enforce format + X-list/R-list/errata constraints.
+		- Return structured violations suitable for UI display.
+	- **Acceptance criteria**:
+		- Illegal decks fail with precise per-rule diagnostics.
+		- Legal deck validation is deterministic and shared across consumers.
+
+- **LOT-015** — Server-authoritative match protocol and replay audit trail.
+	- **Type**: feature/server-infrastructure
+	- **Priority**: 1
+	- **Problem statement**:
+		- Match integrity requires server authority for all game actions.
+	- **Implementation details**:
+		- Define command protocol with expected state hash and actor context.
+		- Validate all commands server-side and broadcast signed deltas.
+		- Persist auditable event log for deterministic replay.
+	- **Acceptance criteria**:
+		- Clients cannot commit illegal transitions.
+		- Replays reconstruct final state exactly from recorded events.
+
+- **LOT-016** — Rules regression suite and golden scenarios.
+	- **Type**: testing/verification
+	- **Priority**: 1
+	- **Problem statement**:
+		- Rules changes need protection from regressions.
+	- **Implementation details**:
+		- Build scenario fixtures for turn flow, corruption, overwhelm, fierce, and move limits.
+		- Add golden snapshot tests and CI gate.
+		- Provide fast smoke + full-suite commands.
+	- **Acceptance criteria**:
+		- Core rules fixtures pass in CI.
+		- Regressions fail with localized diff output.
+
+- **LOT-017** — Set-release schedule and active-set gating (Fellowship-only launch).
+	- **Type**: feature/content-release
+	- **Priority**: 1
+	- **Program linkage**:
+		- Backend policy and admin-control foundation for LOT-025. The monthly set availability UI/flow is implemented as part of LOT-025 execution, while this issue remains the canonical source for activation rules and hard constraints.
+	- **Problem statement**:
+		- Launch must expose only Fellowship, with controlled monthly set activation.
+	- **Implementation details**:
+		- Add release schedule model with activation status and timestamps.
+		- Enforce active-set checks in listing, purchase, and redemption endpoints.
+		- Add admin release activation API with idempotency.
+		- Add an admin panel "Set Releases" page: a simple list of every set, each with an enable/disable checkbox that calls the activation API directly (no separate save step). The launch set (Fellowship) is hardcoded as always-active — its checkbox renders disabled/read-only client-side, and the activation endpoint independently rejects any attempt to deactivate it server-side, regardless of caller.
+	- **Acceptance criteria**:
+		- Fellowship-only behavior is enforced at launch.
+		- Inactive sets cannot be purchased/redeemed.
+		- Release activation is auditable.
+		- Admins can toggle any non-launch set's availability from a checkbox list in the admin panel; the launch set's checkbox cannot be unchecked in the UI, and a direct API call attempting to deactivate it is rejected.
+
+- **LOT-018** — New-user and set-unlock entitlement bundles (1 starter deck + 5 booster packs).
+	- **Type**: feature/onboarding-economy
+	- **Priority**: 1
+	- **Program linkage**:
+		- Entitlement definitions and redemption policy are executed as supporting scope inside LOT-025 delivery (still tracked here as the canonical entitlement-policy record).
+	- **Problem statement**:
+		- New users need deterministic starter grants controlled by server entitlements.
+	- **Implementation details**:
+		- Add entitlement model and one-time bootstrap grant workflow.
+		- Persist a canonical user registration timestamp at account creation time; this timestamp is the anchor for weekly reward windows used by LOT-025.
+		- Backfill guardrail: if a legacy user is missing registration timestamp data, populate it on the next successful login before reward-eligibility evaluation.
+		- New account baseline rewards: 1 starter deck (chosen from set 1 only) and 5 booster packs (chosen from set 1 only).
+		- On every newly unlocked set release, grant the same release gift bundle for that set: 1 starter deck from that set + 5 booster packs from that set.
+		- Add entitlement types/state to represent both account-bootstrap bundles and per-release bundles, with idempotent per-user, per-set grant guards.
+		- Gate redemption by active set and starter availability.
+	- **Acceptance criteria**:
+		- Registration timestamp is always captured for newly registered accounts and is available for weekly reward eligibility logic.
+		- Legacy accounts missing registration timestamp are backfilled on successful login before any weekly reward checks are run.
+		- Every new account receives the exact set-1 bundle once: 1 starter deck + 5 booster packs.
+		- On each set activation, each eligible user receives exactly one release bundle for that set: 1 starter deck + 5 booster packs.
+		- Entitlement consumption is tracked and idempotent.
+
+- **LOT-019** — Gift ledger and redemption lifecycle tracking.
+	- **Type**: feature/gifting
+	- **Priority**: 1
+	- **Program linkage**:
+		- Gift lifecycle and redemption states are executed as supporting scope inside LOT-025 delivery, including booster pack, booster box, starter deck, and promo-card prize redemption surfaces.
+	- **Problem statement**:
+		- Gifts need a reliable lifecycle to prevent double spend and audit gaps.
+	- **Implementation details**:
+		- Implement states: created, granted, redeemed, consumed, expired, revoked.
+		- Add transaction locks and idempotent state transitions.
+		- Expose user gift list/redeem APIs with audit linkage.
+	- **Acceptance criteria**:
+		- Gift transitions are valid and irreversible where required.
+		- Concurrent redemption attempts cannot double-consume gifts.
+
+- **LOT-020** — Unified server-authoritative distribution transaction pipeline.
+	- **Type**: feature/inventory-integrity
+	- **Priority**: 1
+	- **Program linkage**:
+		- Canonical issuance/sale transaction engine is executed as supporting scope inside LOT-025 delivery for purchases, redemptions, promo prizes, and sell-back flows.
+	- **Problem statement**:
+		- Card issuance paths are fragmented and need one source of truth.
+	- **Implementation details**:
+		- Add distribution transaction records with source metadata and RNG seed support.
+		- Route purchase/gift/starter/event issuance through one service.
+		- Pricing baseline for LOT-025 storefront operations: starter deck = 5 Tolkien, booster pack = 1 Tolkien, booster box = 25 Tolkien.
+		- Sell-back value policy: always 50% of purchase price equivalent. Card-level sell-back values should be derived from normalized rarity-weighted expected pack value, then halved.
+		- Card generation is server-side only: gift unlocks, pack openings, and prize grants all generate cards on the server (no client-authored card outcomes).
+		- Starter deck generation is deterministic/fixed per set definition.
+		- Booster generation baseline (set-overridable later): 11 cards per pack with rarity composition 1 Rare, 3 Uncommon, 7 Common.
+		- Add foil flag/variant tracking on owned card instances so foil and non-foil are uniquely tracked even before visual differentiation is implemented.
+		- Foil insertion baseline probabilities per opened booster pack (set-overridable later): Common foil 1/13 packs, Uncommon foil 1/18 packs, Rare foil 1/26 packs; enforce at most one foil insertion event per pack.
+		- Persist per-user ownership and issuance records sufficient for non-trading economy operations (purchase, gift, prize, sell-back, collection, deck construction).
+		- Apply inventory and history updates atomically.
+	- **Acceptance criteria**:
+		- Every card delta has a transaction ID.
+		- All pack/starter/prize card outcomes are generated and auditable server-side.
+		- Foil status is uniquely represented and queryable per owned card instance.
+		- Rollback behavior is correct on partial failures.
+
+- **LOT-021** — Circulation metrics and balancing telemetry.
+	- **Type**: feature/economy-observability
+	- **Priority**: 1
+	- **Program linkage**:
+		- Economy telemetry is executed as supporting scope inside LOT-025 delivery for pricing/balance tuning, set release balancing, foil cadence, and sell-back impact analysis.
+	- **Note**:
+		- Account-closure reclaim remains future scope.
+	- **Problem statement**:
+		- Circulation balance cannot be managed without metrics.
+	- **Implementation details**:
+		- Aggregate circulation by set, rarity, and card ID.
+		- Add admin summary endpoint and threshold alerts.
+		- Add foil issuance telemetry by rarity/source (booster foil rolls, event prizes, weekly active random rewards).
+		- Track weekly active eligibility (logged in at least once in the week), weekly random foil reward trigger rate, and non-stacking enforcement metrics (max 1 reward/week/user).
+		- Track registration-timestamp coverage and login-time backfill events for legacy users to ensure weekly reward window anchoring quality.
+		- Track sell-back economy metrics by rarity/value-band (total sell-back volume, Tolkien returned, and net circulation impact).
+		- Build trend snapshots for release-window monitoring.
+	- **Acceptance criteria**:
+		- Admin can inspect current totals and trends.
+		- Drift alerts trigger on configured thresholds.
+
+- **LOT-022** — Monthly release events and participation schema foundation.
+	- **Type**: feature/events
+	- **Priority**: 2
+	- **Program linkage**:
+		- Event definitions and participation records are executed as supporting scope inside LOT-025 delivery, providing the awarding pathway for promo-card prizes and monthly release operations.
+	- **Problem statement**:
+		- Monthly releases require structured event records and participant tracking.
+	- **Implementation details**:
+		- Add release event and participation entities.
+		- Add scheduled/live/closed status model and API operations.
+		- Keep reward policy pluggable for future detail work.
+	- **Acceptance criteria**:
+		- Set activations are linked to event records.
+		- Participation records are queryable and auditable.
+
+- **LOT-023** — Multiplayer lobby, ready-check, and bootstrap.
+	- **Type**: feature/multiplayer
+	- **Priority**: 2
+	- **Problem statement**:
+		- Multiplayer requires a deterministic pre-match orchestration layer.
+	- **Implementation details**:
+		- Build room model, invites, seating, and host controls.
+		- Add ready-check flow and pre-match legality validation.
+		- Produce deterministic match seed and bootstrap state.
+	- **Acceptance criteria**:
+		- Players can create/join/start matches with validated setup.
+		- Invalid setup fails safely with actionable messages.
+
+- **LOT-024** — Reconnect, pause, and continuity controls.
+	- **Type**: feature/multiplayer-resilience
+	- **Priority**: 2
+	- **Problem statement**:
+		- Disconnects must not corrupt match state.
+	- **Implementation details**:
+		- Add reconnect tokens and resume handshake.
+		- Add grace timers and pause policy for non-ranked modes.
+		- Verify resumed state hash before continuing turns.
+	- **Acceptance criteria**:
+		- Reconnect restores exact authoritative match context.
+		- Timeout outcomes are deterministic and logged.
+
+- **LOT-025** — Unified player economy, release control, and deck builder experience.
+	- **Type**: feature/godot-economy-release-deckbuilder
+	- **Priority**: 1
+	- **Note**:
+		- This is now the primary consolidation issue for release scheduling operations, Tolkien economy surfaces, gifting/prizing, sell-back strategy, store UX, and deck-building UX. Related LOTs remain as domain foundations but execution sequencing and user-facing integration are coordinated here.
+		- Live legality diagnostics are still split into LOT-032; LOT-025 defines how legality/rules controls are presented and selected in the builder UX.
+		- Supporting dependency work from LOT-017/018/019/020/021/022 is to be worked as part of LOT-025 execution, with those LOTs serving as canonical policy/engine records.
+	- **Problem statement**:
+		- The game needs one cohesive player/admin experience spanning: manual monthly set release control, store purchases and rewards, currency movement, and a high-clarity deck-building workflow. These areas are interdependent and should be delivered as one coordinated program, not fragmented features.
+	- **Release schedule and admin control**:
+		- Monthly release activation is manual for now (no automation): admins explicitly enable/disable set availability using checkbox controls in the admin panel.
+		- Admin panel needs a dedicated Set Releases area listing each set with availability checkboxes.
+		- Fellowship (set 1) is permanently available and hardcoded as non-disableable in both UI and API guardrails.
+	- **Economy and store scope**:
+		- Tolkien is the primary currency for store operations and should be surfaced clearly in all store actions.
+		- Tolkien economy is in-game only for now (no real-money checkout flow in current scope), but pricing/data models should remain monetization-ready for future activation.
+		- Store price points (current baseline): starter deck = 5 Tolkien, booster pack = 1 Tolkien, booster box = 25 Tolkien.
+		- Store supports product types: booster packs, booster boxes, and starter decks. Promo cards are prize-only for now (random rewards or event prizes), not direct store purchases.
+		- Gifts and entitlement claims are handled in the same store surface so claim/spend happens in one place.
+		- New account reward bundle: 1 starter deck (from set 1) + 5 booster packs (from set 1).
+		- On each set unlock, grant each eligible user the same release bundle for that set: 1 starter deck + 5 booster packs from that set.
+		- Card outcomes for gift unlock/opening are server generated: starter decks fixed per set; boosters generated by rarity policy.
+		- Booster baseline policy (set-overridable later): 11 cards, composed as 1 Rare, 3 Uncommon, 7 Common.
+		- Foil tracking baseline: foil and non-foil must be uniquely marked/tracked in ownership data; no visual distinction required yet.
+		- Foil odds baseline (set-overridable later): Common foil 1/13 packs, Uncommon foil 1/18 packs, Rare foil 1/26 packs, with at most one foil insertion event per pack.
+		- Weekly active-user random foil reward: active week = user logged in at least once during that week. Weekly windows are anchored to persisted user registration timestamp. Eligible users have a low-probability random reward roll; reward is non-stacking and capped at 1 foil reward per user per week; foil rarity can be Common, Uncommon, or Rare.
+		- Add sell-back pathway as preferred alternative to player trading for now: players can sell excess cards back to the store for Tolkien at a fixed 50% value policy relative to purchase-equivalent card valuation.
+	- **Card creation and catalog management touchpoint**:
+		- Include card-creation/admin catalog hooks in the consolidated plan so new cards and promo variants can be introduced safely into release/store/deck flows.
+		- *(Open — add card-authoring workflow details here: review gates, publish states, rarity/economy constraints, and release linking.)*
+	- **Deck builder layout and interaction requirements**:
+		- Primary card browser uses a binder metaphor: 9x9 grid per page, two-page spread (9x9 x 2), with page-flip navigation.
+		- Deck-building workspace is split-screen:
+			- Left side: deck summary by unique card entry (show count per card, do not render duplicate tiles for multiples).
+			- Left side deck grid layout: 4 columns by N rows (auto-expand rows as needed).
+			- Top tabs on deck pane: Deck Cards, Sites, Starting Fellowship.
+			- Each tab filters to only that card category; totals still count per game rules.
+			- Right side: card browser binder plus a collapsible control panel.
+		- Deck count limit: maximum 25 saved decks per user.
+		- Card copy limits are enforced by game rules profiles (LOT-014/LOT-032), not hardcoded in LOT-025.
+	- **Deck builder control panel (right side, collapsible sections)**:
+		- Filters section:
+			- Include grouped filters for culture, companion, ally, burdens, signet, event, condition, weapon, possession, and other card facets.
+			- Numeric/range-capable filters (example: burdens min/max fields).
+		- Sets section:
+			- Checkmark list for set inclusion (short code plus number, example: FOTR (1)).
+		- Rules section:
+			- Checkbox controls for compliance targets.
+			- Tournament/block rulesets are mutually exclusive: when tournament mode is enabled, only one tournament ruleset can be selected and cannot be combined with others.
+	- **Implementation details**:
+		- Integrate release availability from LOT-017 into both admin controls and player storefront visibility.
+		- Route all purchase/redeem/sell-back/prize flows through LOT-020 transaction pipeline.
+		- Bind entitlement and gift-state behavior from LOT-018 and LOT-019 into store actions.
+		- Use LOT-021 metrics to monitor economy impact of release toggles, pricing, and sell-back.
+		- Use LOT-022 event plumbing for promo-card prize awarding scenarios.
+		- Ensure release-bundle grants are idempotent and set-scoped (no duplicate grants per user per set unlock event).
+		- Registration timestamp requirement for weekly rewards: write timestamp on registration; if missing for legacy users, backfill it on successful login before weekly reward eligibility is computed.
+		- Keep terminology normalized to "starter deck" for the granted fixed deck product.
+		- Keep deck legality diagnostics delegated to LOT-032 + LOT-014 service, but wire builder controls so users can target desired compliance modes.
+	- **Acceptance criteria**:
+		- Admin can manually control monthly set availability via checkbox list; Fellowship remains always-on and cannot be disabled.
+		- Store only exposes active-set products and supports purchase, entitlement/gift claim, promo prize delivery, and sell-back for Tolkien with auditable transactions.
+		- Store pricing baseline is implemented as starter deck 5T, booster pack 1T, booster box 25T.
+		- Sell-back always resolves to 50% of purchase-equivalent card value, with deterministic rounding behavior documented and applied consistently.
+		- Account bootstrap and per-set unlock rewards are granted exactly once per user per scope (bootstrap or set), with server-side card generation and full audit records.
+		- Booster and foil outcomes follow configured policy and are ownership-traceable per user.
+		- Weekly active random foil reward is non-stacking and never exceeds 1 reward per user per week.
+		- Weekly reward windows are consistently computed from persisted registration timestamp; missing legacy timestamps are auto-backfilled on login before reward checks.
+		- Deck builder ships with required binder + split-screen layout, tabbed deck categories, and collapsible filter/set/rules controls.
+		- Deck creation enforces maximum 25 decks per user.
+		- Ruleset selection behavior enforces mutually exclusive tournament-mode selection.
+		- Decks can be built, saved, loaded, and passed to legality checks (LOT-032) with user-visible compliance targeting.
+	- **Related issues (consolidated under LOT-025 execution)**:
+		- Supporting dependencies to be worked as part of this LOT: LOT-017, LOT-018, LOT-019, LOT-020, LOT-021, LOT-022.
+		- Legality diagnostics split: LOT-032 (depends on LOT-014).
+		- Deck legality service foundation: LOT-014.
+
+- **LOT-026** — Godot gameplay scene architecture and interaction model.
+	- **Type**: feature/godot-client
+	- **Priority**: 2
+	- **Problem statement**:
+		- Game client scene model must support full authoritative gameplay loop.
+	- **Implementation details**:
+		- Build board zones, intent dispatch, and phase-aware UX cues.
+		- Add deterministic animation queue that does not own state.
+		- Implement snapshot reconciliation on reconnect.
+	- **Acceptance criteria**:
+		- Full turn loop is playable in Godot against authoritative backend.
+		- UI remains synchronized after reconnect and state replay.
+
+- **LOT-027** — AI opponent baseline using shared legality engine.
+	- **Type**: feature/ai-gameplay
+	- **Priority**: 2
+	- **Problem statement**:
+		- AI must use the same legal move surface as human players.
+	- **Implementation details**:
+		- Build legal move generator adapters and baseline heuristics by phase.
+		- Add selectable difficulty policy constraints.
+		- Integrate with authoritative command protocol.
+	- **Acceptance criteria**:
+		- AI can complete games without illegal actions.
+		- Difficulty settings produce measurable behavior differences.
+
+- **LOT-028** — Match history and replay viewer.
+	- **Type**: feature/observability-gameplay
+	- **Priority**: 2
+	- **Problem statement**:
+		- QA and users need deterministic replay and post-match inspection.
+	- **Implementation details**:
+		- Persist event logs with periodic checkpoints.
+		- Build replay viewer with phase/action stepping and state diffs.
+		- Add export format for regression bug reports.
+	- **Acceptance criteria**:
+		- Completed matches replay deterministically.
+		- Replays can be exported and attached to issue workflows.
+
+- **LOT-029** — Ranked matchmaking and ratings.
+	- **Type**: feature/matchmaking
+	- **Priority**: 3
+	- **Problem statement**:
+		- Ranked play needs fair queueing and auditable rating changes.
+	- **Implementation details**:
+		- Add format-aware queues and rating lifecycle.
+		- Add abandon/dodge policy and anti-smurf heuristics.
+		- Add season reset and placement logic.
+	- **Acceptance criteria**:
+		- Match quality and rating updates meet configured fairness thresholds.
+
+- **LOT-030** — Accessibility and input-system hardening.
+	- **Type**: feature/ux-accessibility
+	- **Priority**: 3
+	- **Problem statement**:
+		- Core flows must be accessible beyond mouse-only interaction.
+	- **Implementation details**:
+		- Add scalable text, contrast presets, and colorblind-safe palettes.
+		- Add keyboard/controller navigation maps.
+		- Add confirmation UX for high-impact actions.
+	- **Acceptance criteria**:
+		- Core features are operable with keyboard/controller only.
+		- Accessibility QA passes defined baseline checks.
+
+- **LOT-031** — Performance budget and profiling harness.
+	- **Type**: feature/performance
+	- **Priority**: 3
+	- **Problem statement**:
+		- Performance regressions must be caught before release.
+	- **Implementation details**:
+		- Define frame/load/memory budgets for target platforms.
+		- Add automated profiling scenarios for key flows.
+		- Add regression alarms for spikes and leaks.
+	- **Acceptance criteria**:
+		- Client meets baseline budgets on agreed test hardware.
+		- Performance regressions fail CI checks.
+
+- **LOT-032** — Godot deck-builder legality diagnostics.
+	- **Type**: feature/godot-deckbuilder-legality
+	- **Priority**: 2
+	- **Note**:
+		- Split out of the original LOT-025 ("Godot deck builder UX and legality guidance") so live-legality UI work can proceed independently of the Store/Deck Building consolidation happening in LOT-025.
+	- **Problem statement**:
+		- Deck-building UX must surface legality and collection constraints in real time as a deck is edited, not just pass/fail at save time.
+	- **Implementation details**:
+		- Integrate live legality diagnostics from the deck validation service (LOT-014) into the deck builder UI, re-checked incrementally as cards are added or removed.
+		- Surface violations inline with which rule failed, on which card, and why — not just a generic invalid-deck message.
+		- Debounce/re-check on every edit without blocking the UI thread.
+	- **Acceptance criteria**:
+		- Violations show precise fix guidance in real time as the deck is edited.
+		- Legality state shown in the builder always matches what the server independently validates on save.
+	- **Related issues**:
+		- Split from: LOT-025.
+		- Depends on: LOT-014 (deck legality and format enforcement service).
+
+- **Removed As Overlap (Not Started)**
+	- **OLD-LOT-022 (pre-renumber)** — merged into LOT-018 and LOT-019.
+	- **OLD-LOT-023 (pre-renumber)** — merged into LOT-020 and LOT-021.
+	- **OLD-LOT-026 (pre-renumber)** — merged into LOT-017 and LOT-022.
+	- **OLD-LOT-028 (pre-renumber)** — superseded by LOT-022 now; tournament operations to be reintroduced after event foundation.
+	- **OLD-LOT-037 (pre-renumber)** — consumed by this consolidation update.
 
 ### Active:
 

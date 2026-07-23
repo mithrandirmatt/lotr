@@ -17,6 +17,24 @@ export interface UserResponse {
   tolkien_balance: number
   created_at: string
   updated_at: string
+  is_2fa_enabled: boolean
+}
+
+// ── Two-Factor Authentication (LOT-007) ──────────────────────────────────────
+
+export interface TwoFactorChallenge {
+  requires_2fa: true
+  mfa_token: string
+}
+
+export interface TwoFactorSetupResponse {
+  secret: string
+  otpauth_uri: string
+  qr_code_png_base64: string
+}
+
+export interface TwoFactorEnableResponse {
+  recovery_codes: string[]
 }
 
 export interface AdminUserSummary {

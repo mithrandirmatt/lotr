@@ -203,7 +203,8 @@ export default function RegisterPage() {
       await register({
         email: formData.email.trim(),
         uniqueName: formData.uniqueName.trim(),
-        password: formData.password
+        password: formData.password,
+        confirmPassword: formData.confirmPassword
       })
 
       setSuccessMessage('Registration successful! Redirecting to login...')

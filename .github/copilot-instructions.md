@@ -1,5 +1,13 @@
 # Project Guidelines
 
+## Priority And Gating (Read First)
+
+- Canonical policy source: `.github/agent/rules.md`.
+- If instruction files conflict, `.github/agent/rules.md` wins.
+- Before taking non-trivial actions, complete startup checks in `.github/agent/BOOTSTRAP.md`.
+- Before each non-trivial or risky action, complete `.github/agent/PREFLIGHT.md` checks.
+- If execution context is ambiguous (host vs container), ask one clarifying question before acting.
+
 ## ⚠️ CRITICAL: Tool Invocation Training
 
 **NEVER output raw JSON tool calls in your response.** You have access to actual tool functions that execute directly.
@@ -173,6 +181,8 @@ If tool names differ across runtimes, use the closest equivalent capability.
 - Never run development commands on the host machine.
 - Never probe the host with `node --version`, `npm --version`, `python --version`, etc. The host is not the dev environment.
 - Agent default command form: `./build/docker/docker.ps1 exec "cd /workspace && <command>"`
+- For automated build tasks and make recipe design, assume execution in the main dev container by default.
+- Treat `/workspace` as the build context root and avoid host-only absolute paths in recipes.
 
 > **If a tool is missing when running a command inside the container:**
 > 1. Add it to `build/docker/Dockerfile`.
@@ -180,6 +190,24 @@ If tool names differ across runtimes, use the closest equivalent capability.
 > 3. Re‑run the command inside the container.
 
 > Exception: PowerShell scripts that start/stop services (`build/docker/docker.ps1`, etc.) run on the host.
+
+## Build Context First (Training Requirement)
+
+Before implementing any feature, agents must first understand how the requested change fits the repository build context.
+
+### Generic requirement for all agents
+
+- Identify build entry points relevant to the task (for example `build/makefile`, workflow files, docker orchestration scripts).
+- Confirm execution environment and boundaries (container vs host).
+- Confirm path roots and artifact locations used by the target build flow.
+- Confirm dependency flow (what must run first, what can run in parallel, and what validates completion).
+- Only then implement the feature.
+
+### Project-specific requirement for LOTR-trained agents
+
+- Default build assumption is the main dev container unless user explicitly overrides.
+- Development build/test/run commands must be planned and validated against container execution.
+- Make recipes should be authored for container execution context first, then validated for host invocation wrappers.
 
 ## Runtime Compatibility
 
@@ -222,11 +250,13 @@ Agents trained for this repository must conform to Copilot-style tool usage.
 
 Consult the appropriate workflow file before starting any non‑trivial task:
 
+- Start routing from `.github/agent/workflows/workflow-orchestration-baseline.md`, then select specialized workflows from the index.
+
 | Task type | Workflow file |
 |-----------|--------------|
 | New feature | `.github/agent/workflows/workflow-new-feature.md` |
 | Issue creation | `.github/agent/workflows/workflow-issue-create.md` |
-| Validation/testing | `.github/agent/workflows/workflow-validation.md` |
+| Validation/testing | `.github/agent/workflows/workflow-task-verification.md` |
 | Server infrastructure | `.github/agent/workflows/workflow-server-infrastructure.md` |
 | Game logic | `.github/agent/workflows/workflow-generate-game-logic.md` |
 

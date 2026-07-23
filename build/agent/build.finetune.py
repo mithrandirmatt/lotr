@@ -25,8 +25,39 @@ from transformers import (
     BitsAndBytesConfig,
     DataCollatorForLanguageModeling,
     Trainer,
+    TrainerCallback,
     TrainingArguments,
 )
+
+
+class MetricsExportCallback(TrainerCallback):
+    """Callback to export training metrics (loss, learning rate) to JSON."""
+
+    def __init__(self, output_path: Path):
+        self.output_path = Path(output_path)
+        self.metrics_history = []
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs and ("loss" in logs or "learning_rate" in logs):
+            entry = {
+                "step": state.global_step,
+                "epoch": state.epoch,
+            }
+            if "loss" in logs:
+                entry["loss"] = logs["loss"]
+            if "learning_rate" in logs:
+                entry["learning_rate"] = logs["learning_rate"]
+            self.metrics_history.append(entry)
+
+    def on_train_end(self, args, state, control, **kwargs):
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+        output = {
+            "training_steps": state.global_step,
+            "training_epochs": state.epoch,
+            "metrics": self.metrics_history,
+        }
+        self.output_path.write_text(json.dumps(output, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
+        print(f"\n[INFO] Training metrics exported to: {self.output_path}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -100,6 +131,64 @@ def _parse_bool(value: Any, default: bool = False) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in {"1", "true", "yes", "on"}
     return bool(value)
+
+
+def _estimate_training_memory(
+    base_model: str,
+    load_in_4bit: bool,
+    load_in_8bit: bool,
+    batch_size: int,
+    grad_accum: int,
+) -> tuple[float, str]:
+    """Estimate GPU memory needed for training.
+
+    Returns (estimated_gb, warning_string).
+
+    Rough estimation:
+    - Model size: base_model weights (varies by size)
+    - Quantized weights: 4-bit ≈ 25% of FP32, 8-bit ≈ 50%
+    - Activations + gradients: ~2x model size per effective batch
+    - Optimizer states: ~2x model size for AdamW
+    """
+
+    # Rough model sizes (FP32)
+    model_sizes_gb = {
+        "7b": 14,
+        "8b": 16,
+        "13b": 26,
+        "14b": 28,
+        "30b": 60,
+    }
+
+    # Try to extract model size from name
+    model_size_gb = 16  # default fallback
+    for size_str, size_gb in model_sizes_gb.items():
+        if size_str in base_model.lower():
+            model_size_gb = size_gb
+            break
+
+    # Apply quantization
+    if load_in_4bit:
+        model_size_gb *= 0.25
+    elif load_in_8bit:
+        model_size_gb *= 0.5
+
+    # Activation + gradient overhead (2x per effective batch)
+    effective_batch = batch_size * grad_accum
+    activation_overhead = model_size_gb * 2 * (effective_batch / 32)  # normalized to batch_size=32
+
+    # Optimizer states (AdamW: 2x for momentum + variance)
+    optimizer_overhead = model_size_gb * 2
+
+    total_estimate_gb = model_size_gb + activation_overhead + optimizer_overhead
+
+    warning = ""
+    if total_estimate_gb > 20:
+        warning = f"⚠️  Estimated {total_estimate_gb:.1f}GB memory needed (24GB GPU margin thin; may OOM)"
+    elif total_estimate_gb > 18:
+        warning = f"⚠️  Estimated {total_estimate_gb:.1f}GB memory (leaving only {24 - total_estimate_gb:.1f}GB margin)"
+
+    return total_estimate_gb, warning
 
 
 def _disable_rocm_allocator_warmup_for_quantized_load() -> None:
@@ -283,6 +372,19 @@ def main() -> None:
 
     collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
+    # Estimate memory before training
+    est_gb, mem_warning = _estimate_training_memory(
+        base_model, _parse_bool(load_in_4bit, False), _parse_bool(load_in_8bit, False), batch_size, grad_accum
+    )
+    print(f"\n[INFO] Training Configuration:")
+    print(f"  Base model: {base_model}")
+    print(f"  Epochs: {epochs}, Batch size: {batch_size}, Grad accum: {grad_accum}")
+    print(f"  Learning rate: {learning_rate}, Warmup: {warmup_ratio}")
+    print(f"  Est. GPU memory: {est_gb:.1f} GB")
+    if mem_warning:
+        print(f"  {mem_warning}")
+    print()
+
     if training_device == "cuda" and is_rocm:
         # Force HIP context + allocator initialization before Trainer creates its
         # first device tensor to avoid intermittent HIPCachingAllocator asserts.
@@ -295,6 +397,7 @@ def main() -> None:
         args=training_args,
         train_dataset=tokenized,
         data_collator=collator,
+        callbacks=[MetricsExportCallback(output_dir / "training-metrics.json")],
     )
 
     trainer.train()

@@ -1,11 +1,19 @@
 from pydantic import ValidationError
 
-from server.server.models.schemas import (
-    AdminTolkienAdjustRequest,
-    AdminUserDeleteRequest,
-    StoreProduct,
-    StorePurchaseRequest,
-)
+try:
+    from server.server.models.schemas import (
+        AdminTolkienAdjustRequest,
+        AdminUserDeleteRequest,
+        StoreProduct,
+        StorePurchaseRequest,
+    )
+except ModuleNotFoundError:
+    from server.models.schemas import (
+        AdminTolkienAdjustRequest,
+        AdminUserDeleteRequest,
+        StoreProduct,
+        StorePurchaseRequest,
+    )
 
 
 def test_admin_tolkien_adjust_rejects_zero():

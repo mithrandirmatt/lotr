@@ -11,10 +11,18 @@ server_build_wheel:
 	python -m build
 	$(call log_ok,Finished $@.)
 
-INSTALL_STAMP := $(REPO_ROOT)/server/.install-stamp
+# NOTE: INSTALL_STAMP intentionally lives outside REPO_ROOT (which is a host
+# bind mount that persists across container recreations). The dev container
+# itself is ephemeral (--rm), so installed site-packages do NOT persist, but a
+# stamp file under $(REPO_ROOT) would -- causing `server_install_dev` to be
+# skipped as "already done" in a fresh container that has no pytest/deps
+# installed at all (surfaces as "pytest: not found" in server_test). Keeping
+# the stamp in /root/.cache ties its lifetime to the container instead.
+INSTALL_STAMP := /root/.cache/lotr-server-install-stamp
 
 $(INSTALL_STAMP): $(REPO_ROOT)/server/pyproject.toml
 	$(call log_build,server_install_dev...)
+	@mkdir -p $(dir $(INSTALL_STAMP))
 	@cd $(REPO_ROOT)/server && python3 -m pip install --break-system-packages --root-user-action=ignore -q -e .[tests]
 	@touch $(INSTALL_STAMP)
 	$(call log_ok,Finished server_install_dev.)

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Parse all downloaded LotR TCG card HTML files and write a JSON database."""
+"""
+Build the card database JSON from the Cargo API dump written by
+lotr_download_site.py (build/do/assets/wiki/cargo_cards.json), joining in
+downloaded card images.
+"""
 
 import html
 import json
@@ -11,7 +15,7 @@ SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT   = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
 PYUTILS_DIR = os.path.join(REPO_ROOT, 'pyutils')
 CARDS_DIR   = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'cards')
-START_HTML  = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'wiki', 'start.html')
+CARGO_DUMP  = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'wiki', 'cargo_cards.json')
 OUTPUT_PATH = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'card_database.json')
 XLIST_DB    = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'xlist_database.json')
 ERRATA_DB   = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'errata_database.json')
@@ -61,93 +65,31 @@ def strip_tags(text):
 
 
 def parse_numeric(value):
-    """Return int for plain integer strings, else keep as string (e.g. '+1')."""
-    if re.match(r'^\d+$', value):
+    """Return int for plain (possibly negative) integer strings/numbers, else keep as-is."""
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return int(value)
+    if re.match(r'^-?\d+$', str(value)):
         return int(value)
     return value
 
 
-def parse_title_tag(content):
-    """Extract name and collector_info from the <title> tag."""
-    m = re.search(r'<title>LotR TCG Wiki: (.+?)</title>', content)
-    if not m:
-        return None, None
-    raw = html.unescape(m.group(1))
-    # Last parenthesized token is collector_info, e.g. "(1R89)"
-    m2 = re.match(r'^(.+?)\s+(\([^)]+\))\s*$', raw)
-    if m2:
-        return m2.group(1).strip(), m2.group(2).strip('()')
-    return raw, None
-
-
-def parse_inline_table(content):
+def derive_card_id(set_num, card_num):
     """
-    Extract col0/col1 pairs from the card data <table class="inline">.
-    Returns a dict mapping stripped label text -> stripped value text.
+    Same derivation as lotr_download_site.py's derive_card_id() -- kept in
+    sync so ids match the directories images were downloaded into. Prefer
+    the 'derived_id' already stamped onto each cargo_cards.json row; this is
+    only a fallback if that's missing.
     """
-    m = re.search(r'<table class="inline">(.*?)</table>', content, re.DOTALL)
-    if not m:
-        return {}
-    table_html = m.group(1)
-    rows = {}
-    for row_m in re.finditer(
-        r'<td class="col0">(.*?)</td>\s*<td class="col1">(.*?)</td>',
-        table_html, re.DOTALL
-    ):
-        label = strip_tags(row_m.group(1)).rstrip(':').strip()
-        value = strip_tags(row_m.group(2)).strip()
-        rows[label] = value
-    return rows
-
-
-def parse_card_type(raw):
-    """
-    Split card type on bullet U+2022, return (card_type, subtypes, home_site).
-    E.g. 'Companion • Man' -> ('Companion', ['Man'], None)
-    E.g. 'Ally • Home 3 • Elf' -> ('Ally', ['Elf'], 3)
-    """
-    parts = [p.strip() for p in raw.split('\u2022')]
-    card_type = parts[0] if parts else raw
-    home_site = None
-    subtypes = []
-    for sub in parts[1:]:
-        home_m = re.match(r'^Home\s+(\d+)$', sub, re.IGNORECASE)
-        if home_m:
-            home_site = int(home_m.group(1))
-        else:
-            subtypes.append(sub)
-    return card_type, subtypes, home_site
-
-
-def parse_set_names(start_html_path):
-    """
-    Parse start.html to build a set_num -> set_name mapping.
-    Looks for wrap_setthumbs divs containing href="/wiki/setN" anchors.
-    Returns dict[int, str].
-    """
-    with open(start_html_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    set_names = {}
-    for block in re.finditer(
-        r'class="wrap_setthumbs[^"]*"[^>]*>(.*?)</div>', content, re.DOTALL
-    ):
-        block_html = block.group(1)
-        num_m = re.search(r'href="/wiki/set(\d+)"', block_html)
-        if not num_m:
-            continue
-        set_num = int(num_m.group(1))
-        name_m = re.search(r'<br\s*/>\s*\n?\s*([^\n<]+)', block_html)
-        if name_m:
-            set_names[set_num] = html.unescape(name_m.group(1).strip())
-    return set_names
-
-
-def parse_subtitle(name):
-    """Return the subtitle portion of 'Title, Subtitle', or None."""
-    if not name:
-        return None
-    idx = name.find(', ')
-    return name[idx + 2:] if idx != -1 else None
+    try:
+        card_num_int = int(card_num)
+    except (TypeError, ValueError):
+        card_num_int = 0
+    if set_num is not None and re.match(r'^\d+$', str(set_num)):
+        return f"lotr{int(set_num):02d}{card_num_int:03d}"
+    slug = re.sub(r'[^A-Za-z0-9]', '', str(set_num or 'x')).lower()
+    return f"lotr{slug}{card_num_int:03d}"
 
 
 def parse_keywords(game_text):
@@ -184,23 +126,32 @@ def normalize_title(name):
     return s
 
 
-def infer_unique_by_heuristics(name, card_type, game_text, fields):
+def parse_notes(notes):
     """
-    Heuristic determination of whether a card is unique.
-    Current heuristic: name starts with 'The ' OR contains a comma.
+    Split a Cargo Notes field into (cleaned_notes, list_tags).
+    Notes look like 'Lists: ERL, MXL. When the fellowship moves...' or just
+    'Oversized. Lists: EXL' -- the 'Lists: TAG, TAG2' fragment can appear
+    anywhere in the string, not only at the start.
     """
-    if not name:
-        return False
-    if name.startswith('The ') or ',' in name:
-        return True
-    return False
+    if not notes:
+        return None, []
+    m = re.search(r'Lists:\s*([A-Z]+(?:\s*,\s*[A-Z]+)*)\.?', notes)
+    if not m:
+        cleaned = strip_tags(html.unescape(notes)).strip() or None
+        return cleaned, []
+    tags = [t.strip() for t in m.group(1).split(',')]
+    cleaned = notes[:m.start()] + notes[m.end():]
+    cleaned = strip_tags(html.unescape(cleaned)).strip(' .')
+    return (cleaned or None), tags
 
 
 def find_image_path(card_dir):
     """Return the first .jpg in card_dir as a repo-root-relative forward-slash path."""
+    if not card_dir:
+        return None
     try:
         for fname in os.listdir(card_dir):
-            if fname.lower().endswith('.jpg'):
+            if fname.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
                 rel = os.path.relpath(os.path.join(card_dir, fname), REPO_ROOT)
                 return rel.replace('\\', '/')
     except OSError:
@@ -226,35 +177,40 @@ def load_errata_index(path):
     return set(db.keys())
 
 
-def parse_card(html_path, card_id, set_names):
-    """Parse a single card HTML file and return the card dict."""
-    with open(html_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+def build_card(row, card_sets):
+    """Build a single card dict from one joined Cargo row."""
+    set_num_raw = row.get('SetNum')
+    card_id = row.get('derived_id') or derive_card_id(set_num_raw, row.get('CardNum'))
 
-    name, collector_info = parse_title_tag(content)
+    is_numeric_set = bool(set_num_raw is not None and re.match(r'^\d+$', str(set_num_raw)))
+    set_num = int(set_num_raw) if is_numeric_set else set_num_raw
+    set_name = card_sets.get(str(set_num_raw)) if set_num_raw is not None else None
 
-    # Set number from card_id filename: lotrSSNNN -> digits 4-5
-    set_num = int(card_id[4:6])
-    set_name = set_names.get(set_num)
+    title = row.get('Title')
+    subtitle = row.get('Subtitle') or None
+    name = f"{title}, {subtitle}" if subtitle else title
 
-    fields = parse_inline_table(content)
+    subtypes_raw = row.get('Subtypes')
+    subtypes = [s.strip() for s in subtypes_raw.split(',') if s.strip()] if subtypes_raw else []
 
-    card_type_raw = fields.get('Card Type', '')
-    card_type, subtypes, home_site = parse_card_type(card_type_raw)
+    game_text = strip_tags(html.unescape(row['GameText'])) if row.get('GameText') else None
+    lore = strip_tags(html.unescape(row['Lore'])) if row.get('Lore') else None
 
-    def get_numeric(key):
-        val = fields.get(key)
-        return parse_numeric(val) if val is not None else None
+    notes_cleaned, list_tags = parse_notes(row.get('Notes'))
+    on_xlist = []
+    if 'SXL' in list_tags:
+        on_xlist.append('Standard')
+    if 'EXL' in list_tags:
+        on_xlist.append('Expanded')
+    has_errata = 'ERL' in list_tags
 
-    def get_str(key):
-        val = fields.get(key)
-        return val if val else None
+    kind = row.get('Side')
+    kind = None if kind in (None, 'None') else kind
 
-    game_text = get_str('Game Text')
-    card_dir  = os.path.dirname(html_path)
+    signet = row.get('Signet')
+    signet = None if signet in (None, 'None') else signet
 
-    # Determine uniqueness (heuristics), allow overrides via UNIQUE_OVERRIDES_DATA.
-    unique = infer_unique_by_heuristics(name, card_type, game_text, fields)
+    unique = str(row.get('IsUnique')) == '1'
     try:
         if UNIQUE_OVERRIDES_DATA:
             if card_id in UNIQUE_OVERRIDES_DATA:
@@ -266,45 +222,46 @@ def parse_card(html_path, card_id, set_names):
     except Exception:
         pass
 
-    # Derive the expected processed PNG path (produced by process_card_images.py).
-    # This is a forward-slash repo-root-relative path; the file may not exist yet.
-    clean_png = f'build/do/assets/cards/processed/set{set_num:02d}/{card_id}.png'
+    set_dir_name = f"set{set_num_raw}" if set_num_raw is not None else None
+    card_dir = os.path.join(CARDS_DIR, set_dir_name, card_id) if set_dir_name else None
+
+    clean_set_seg = f"set{set_num:02d}" if is_numeric_set else f"set{set_num_raw}"
+    clean_png = f'build/do/assets/cards/processed/{clean_set_seg}/{card_id}.png'
+
+    formats = SET_FORMATS.get(set_num, ['Open']) if is_numeric_set else ['Open']
 
     return {
-        'id':             card_id,
-        'name':           name,
-        'subtitle':       parse_subtitle(name),
-        'collector_info': collector_info,
-        'set_num':        set_num,
-        'set_name':       set_name,
-        'formats':        SET_FORMATS.get(set_num, ['Open']),
-        'kind':           get_str('Kind'),
-        'culture':        get_str('Culture'),
-        'twilight':       get_numeric('Twilight'),
-        'card_type':      card_type,
-        'subtypes':       subtypes,
-        'home_site':      home_site,
-        'strength':       get_numeric('Strength'),
-        'vitality':       get_numeric('Vitality'),
-        'resistance':     get_numeric('Resistance'),
-        'signet':         get_str('Signet'),
-        'site_number':    get_numeric('Site'),
-        'game_text':      game_text,
-        'lore':           get_str('Lore'),
-        'rarity':         get_str('Rarity'),
-        'keywords':        parse_keywords(game_text),
-        'image_path':      find_image_path(card_dir),
-        'image_path_clean': clean_png,
-        'on_xlist':        None,   # populated in main() post-processing
-        'has_errata':      False,  # populated in main() post-processing
-        'unique':          unique,
+        'id':                card_id,
+        'name':              name,
+        'subtitle':          subtitle,
+        'collector_info':    row.get('CollInfo'),
+        'set_num':           set_num,
+        'set_name':          set_name,
+        'formats':           formats,
+        'kind':              kind,
+        'culture':           row.get('Culture') or None,
+        'twilight':          parse_numeric(row.get('TwilightCost')),
+        'card_type':         row.get('CardType'),
+        'subtypes':          subtypes,
+        'home_site':         None,
+        'strength':          parse_numeric(row.get('Strength')),
+        'vitality':          parse_numeric(row.get('Vitality')),
+        'resistance':        parse_numeric(row.get('Resistance')),
+        'signet':            signet,
+        'site_number':       parse_numeric(row.get('SiteNum')),
+        'game_text':         game_text,
+        'lore':              lore,
+        'rarity':            row.get('Rarity'),
+        'keywords':          parse_keywords(game_text),
+        'image_path':        find_image_path(card_dir),
+        'image_path_clean':  clean_png,
+        'on_xlist':          on_xlist or None,
+        'has_errata':        has_errata,
+        'unique':            unique,
     }
 
 
 def main():
-    set_names = parse_set_names(START_HTML)
-
-    # Load unique overrides if present (maps card_id or normalized title -> bool)
     global UNIQUE_OVERRIDES_DATA
     UNIQUE_OVERRIDES_DATA = {}
     if os.path.exists(UNIQUE_OVERRIDES_PATH):
@@ -314,56 +271,80 @@ def main():
         except Exception as e:
             print(f'Warning: failed to load unique overrides from {UNIQUE_OVERRIDES_PATH}: {e}')
 
+    if not os.path.exists(CARGO_DUMP):
+        print(f'Cargo dump not found: {CARGO_DUMP} -- run lotr_download_site.py first.')
+        sys.exit(1)
+
+    with open(CARGO_DUMP, 'r', encoding='utf-8') as f:
+        dump = json.load(f)
+    card_sets = dump.get('card_sets', {})
+    rows = dump.get('cards', [])
+
     cards = {}
     errors = []
+    missing = []  # cards skipped because their derived id collides with an already-kept card
 
-    for set_dir in sorted(os.listdir(CARDS_DIR)):
-        set_path = os.path.join(CARDS_DIR, set_dir)
-        if not os.path.isdir(set_path):
+    bar = ProgressBar(label='cards', min=0, max=len(rows), units='cards')
+    for i, row in enumerate(rows, 1):
+        try:
+            card = build_card(row, card_sets)
+        except Exception as e:
+            errors.append(f"{row.get('ID', '?')}: {e}")
+            bar.update(i, task=row.get('Title', '') or '')
             continue
 
-        set_num = int(re.sub(r'\D', '', set_dir)) if re.search(r'\d', set_dir) else 0
-        set_name = set_names.get(set_num, set_dir)
+        if card['id'] in cards:
+            existing = cards[card['id']]
+            missing.append({
+                'id':                    card['id'],
+                'cargo_id':              row.get('ID'),
+                'title':                 card['name'],
+                'collector_info':        card['collector_info'],
+                'kept_cargo_id':         existing.get('_cargo_id'),
+                'kept_collector_info':   existing['collector_info'],
+            })
+        else:
+            card['_cargo_id'] = row.get('ID')
+            cards[card['id']] = card
+        bar.update(i, task=row.get('Title', '') or '')
+    bar.done(task='cards')
 
-        card_ids = [
-            card_id for card_id in sorted(os.listdir(set_path))
-            if os.path.isdir(os.path.join(set_path, card_id))
-            and os.path.exists(os.path.join(set_path, card_id, card_id + '.html'))
-        ]
-
-        bar = ProgressBar(label=f'{set_dir:<8}', min=0, max=len(card_ids), units='cards')
-        set_count = 0
-        set_errors = 0
-
-        for card_id in card_ids:
-            html_file = os.path.join(set_path, card_id, card_id + '.html')
-            try:
-                cards[card_id] = parse_card(html_file, card_id, set_names)
-                set_count += 1
-            except Exception as e:
-                errors.append(f'{card_id}: {e}')
-                set_errors += 1
-            bar.update(set_count + set_errors, task=card_id)
-
-        error_note = f'  {set_errors} error(s)' if set_errors else ''
-        bar.done(task=set_name + error_note)
+    # Drop the internal bookkeeping field before annotation/output.
+    for card in cards.values():
+        card.pop('_cargo_id', None)
 
     # Annotate cards with X-List and PC Errata status from already-built databases.
-    # These are optional: if the database files don't exist yet, fields stay at defaults.
+    # These are optional and additive: the primary source is each card's own
+    # Cargo Notes 'Lists: ...' tag (handled in build_card above); these files
+    # only fill in cards that source didn't already flag.
     xlist_index  = load_xlist_index(XLIST_DB)
     errata_index = load_errata_index(ERRATA_DB)
     for card in cards.values():
-        xlist_formats = xlist_index.get(card['id'])
-        card['on_xlist']   = xlist_formats or None
-        card['has_errata'] = bool(
-            card.get('collector_info') and card['collector_info'] in errata_index
-        )
+        if not card['on_xlist']:
+            xlist_formats = xlist_index.get(card['id'])
+            card['on_xlist'] = xlist_formats or None
+        if not card['has_errata']:
+            card['has_errata'] = bool(
+                card.get('collector_info') and card['collector_info'] in errata_index
+            )
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
         json.dump(cards, f, ensure_ascii=False, indent=2)
 
     print(f'Wrote {len(cards)} cards to {OUTPUT_PATH}')
+
+    if missing:
+        missing_path = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'missing_cards.json')
+        with open(missing_path, 'w', encoding='utf-8') as f:
+            json.dump(missing, f, ensure_ascii=False, indent=2)
+        print(f'\n{len(missing)} card(s) skipped due to duplicate id (missing from database):')
+        for m in missing[:20]:
+            print(f"  MISSING: {m['id']} ({m['cargo_id']}) '{m['title']}' [{m['collector_info']}]"
+                  f" -- id already used by {m['kept_cargo_id']} [{m['kept_collector_info']}]")
+        if len(missing) > 20:
+            print(f'  ... and {len(missing) - 20} more')
+        print(f'Wrote {len(missing)} missing card entries to {missing_path}')
 
     if errors:
         print(f'\n{len(errors)} error(s):')

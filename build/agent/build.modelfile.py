@@ -84,7 +84,18 @@ def format_agent_reference_doc(path: Path, repo_root: Path) -> str:
     return f"## Source: {relative_path}\n\n{content}"
 
 
+def sanitize_for_modelfile_system(prompt: str) -> str:
+    """Sanitize prompt text for Ollama SYSTEM triple-quoted blocks.
+
+    Any embedded triple-double-quote sequence would terminate the SYSTEM block
+    early and make subsequent lines parse as Modelfile commands.
+    """
+    # Preserve semantics while preventing accidental SYSTEM block termination.
+    return prompt.replace('"""', "'''")
+
+
 def build_modelfile(base_model: str, system_prompt: str, runtime: dict, adapter_path: str | None = None) -> str:
+    system_prompt = sanitize_for_modelfile_system(system_prompt)
     lines = [
         f"FROM {base_model}",
         "",

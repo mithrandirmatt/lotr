@@ -1,0 +1,857 @@
+{
+  "count": 68,
+  "items": [
+    {
+      "card_id": "lotr00023",
+      "card_name": "Eomer, Forthwith Banished",
+      "action_id": "lotr00023-a-53",
+      "raw_text": "Exert Eomer to play a mount on him from your draw deck",
+      "filter": {
+        "name_text": "mount on him",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr00068",
+      "card_name": "The One Ring, The Binding Ring",
+      "action_id": "lotr00068-a-162",
+      "raw_text": "Add 2 burdens to play a ring from your draw deck",
+      "filter": {
+        "name_text": "ring",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": [
+        "lotr01273",
+        "lotr03083",
+        "lotr10097"
+      ]
+    },
+    {
+      "card_id": "lotr00080",
+      "card_name": "Eomer, Eored Leader",
+      "action_id": "lotr00080-a-189",
+      "raw_text": "If you can spot more minions than companions, exert Eomer to play a [ROHAN] companion from your draw deck",
+      "filter": {
+        "name_text": "[ROHAN] companion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr00100",
+      "card_name": "The Mouth of Sauron, Messenger of Mordor",
+      "action_id": "lotr00100-a-226",
+      "raw_text": "Exert The Mouth of Sauron to play a [MEN] condition or [MEN] possession from your draw deck",
+      "filter": {
+        "name_text": "[MEN] condition or [MEN] possession",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr01035",
+      "card_name": "The Council of Elrond",
+      "action_id": "lotr01035-a-360",
+      "raw_text": "Spot an Elf to play a tale from your draw deck",
+      "filter": {
+        "name_text": "tale",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": [
+        "lotr01066",
+        "lotr10116"
+      ]
+    },
+    {
+      "card_id": "lotr01087",
+      "card_name": "A Wizard Is Never Late",
+      "action_id": "lotr01087-a-468",
+      "raw_text": "Play a [GANDALF] character from your draw deck",
+      "filter": {
+        "name_text": "[GANDALF] character",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr01319",
+      "card_name": "Bag End",
+      "action_id": "lotr01319-a-936",
+      "raw_text": "Exert a Hobbit to play The Gaffer from your draw deck",
+      "filter": {
+        "name_text": "Gaffer",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": [
+        "lotr01291",
+        "lotr13151"
+      ]
+    },
+    {
+      "card_id": "lotr01348",
+      "card_name": "Pass of Caradhras",
+      "action_id": "lotr01348-a-985",
+      "raw_text": "Spot a [ISENGARD] minion to play a weather card from your draw deck (limit one per turn)",
+      "filter": {
+        "name_text": "weather card",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr01349",
+      "card_name": "The Bridge of Khazad-dum",
+      "action_id": "lotr01349-a-987",
+      "raw_text": "Play The Balrog from your draw deck or hand; The Balrog's twilight cost is -6",
+      "filter": {
+        "name_text": "Balrog",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": [
+        "lotr00030",
+        "lotr02051",
+        "lotr02052",
+        "lotr06076",
+        "lotr12008",
+        "lotr12079",
+        "lotr19018",
+        "lotrv2038"
+      ]
+    },
+    {
+      "card_id": "lotr02058",
+      "card_name": "Foul Tentacle",
+      "action_id": "lotr02058-a-1163",
+      "raw_text": "When you play this minion, you may play a tentacle from your draw deck",
+      "filter": {
+        "name_text": "tentacle",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr02111",
+      "card_name": "Practically Everyone Was Invited",
+      "action_id": "lotr02111-a-1266",
+      "raw_text": "Exert Bilbo to play a Hobbit from your draw deck",
+      "filter": {
+        "name_text": "Hobbit",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr04289",
+      "card_name": "Simbelmyne",
+      "action_id": "lotr04289-a-2172",
+      "raw_text": "Spot 2 [ROHAN] Men (or 1 valiant [ROHAN] Man) to play a [ROHAN] character or [ROHAN] possession from your draw deck",
+      "filter": {
+        "name_text": "[ROHAN] character or [ROHAN] possession",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr04339",
+      "card_name": "Stables",
+      "action_id": "lotr04339-a-2269",
+      "raw_text": "Exert a [ROHAN] Man to play a [ROHAN] mount from your draw deck (limit once per turn)",
+      "filter": {
+        "name_text": "[ROHAN] mount",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr06116",
+      "card_name": "Westfold",
+      "action_id": "lotr06116-a-2864",
+      "raw_text": "Exert Aragorn twice to play a companion with the Aragorn signet from your draw deck",
+      "filter": {
+        "name_text": "companion with the Aragorn signet",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr07329",
+      "card_name": "Dunharrow Plateau",
+      "action_id": "lotr07329-a-3569",
+      "raw_text": "Spot a Dwarf to play a [DWARVEN] condition from your draw deck (limit once per turn)",
+      "filter": {
+        "name_text": "[DWARVEN] condition",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr08025",
+      "card_name": "Shelob, Eater of Light",
+      "action_id": "lotr08025-a-3674",
+      "raw_text": "When you play Shelob, you may play a [GOLLUM] possession from your draw deck",
+      "filter": {
+        "name_text": "[GOLLUM] possession",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr08117",
+      "card_name": "The Dimholt",
+      "action_id": "lotr08117-a-3896",
+      "raw_text": "Add 3 threats to play an enduring companion from your draw deck",
+      "filter": {
+        "name_text": "enduring companion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr08118",
+      "card_name": "City of the Dead",
+      "action_id": "lotr08118-a-3898",
+      "raw_text": "Remove 2 burdens to play an enduring minion from your draw deck or discard pile",
+      "filter": {
+        "name_text": "enduring minion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr09001",
+      "card_name": "The One Ring, The Binding Ring",
+      "action_id": "lotr09001-a-3906",
+      "raw_text": "Add 2 burdens to play a ring from your draw deck",
+      "filter": {
+        "name_text": "ring",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": [
+        "lotr01273",
+        "lotr03083",
+        "lotr10097"
+      ]
+    },
+    {
+      "card_id": "lotr10037",
+      "card_name": "Corsair Boatswain",
+      "action_id": "lotr10037-a-4133",
+      "raw_text": "Exert this minion to play a [RAIDER] support area possession from your draw deck",
+      "filter": {
+        "name_text": "[RAIDER] support area possession",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr10117",
+      "card_name": "Base of Mindolluin",
+      "action_id": "lotr10117-a-4291",
+      "raw_text": "If you cannot spot 2 threats, add a threat to play a fortification from your draw deck",
+      "filter": {
+        "name_text": "fortification",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr11012",
+      "card_name": "Gamling, Defender of the Hornburg",
+      "action_id": "lotr11012-a-4328",
+      "raw_text": "At the start of the fellowship phase, you may add (1) to play a possession on Gamling from your draw deck",
+      "filter": {
+        "name_text": "possession on Gamling",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr11147",
+      "card_name": "Gamling, Defender of the Hornburg",
+      "action_id": "lotr11147-a-4566",
+      "raw_text": "At the start of the fellowship phase, you may add (1) to play a possession on Gamling from your draw deck",
+      "filter": {
+        "name_text": "possession on Gamling",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr11229",
+      "card_name": "Barazinbar",
+      "action_id": "lotr11229-a-4733",
+      "raw_text": "At the start of your fellowship phase, you may exert a Dwarf to play a [DWARF] possession from your draw deck",
+      "filter": {
+        "name_text": "[DWARF] possession",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr11235",
+      "card_name": "Dammed Gate-stream",
+      "action_id": "lotr11235-a-4745",
+      "raw_text": "At the start of your fellowship phase, you may play a [GOLLUM] Free Peoples card from your draw deck",
+      "filter": {
+        "name_text": "[GOLLUM] Free Peoples card",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr11242",
+      "card_name": "Green Dragon Inn",
+      "action_id": "lotr11242-a-4759",
+      "raw_text": "At the start of your fellowship phase, you may exert 2 Hobbits to play a Hobbit from your draw deck",
+      "filter": {
+        "name_text": "Hobbit",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr11256",
+      "card_name": "The Prancing Pony",
+      "action_id": "lotr11256-a-4787",
+      "raw_text": "At the start of your fellowship phase, you may add a burden to play a ranger from your draw deck",
+      "filter": {
+        "name_text": "ranger",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": [
+        "lotr04003",
+        "lotr30032"
+      ]
+    },
+    {
+      "card_id": "lotr11259",
+      "card_name": "Stables",
+      "action_id": "lotr11259-a-4792",
+      "raw_text": "At the start of your fellowship phase, you may exert a [ROHAN] Man to play a [ROHAN] mount from your draw deck",
+      "filter": {
+        "name_text": "[ROHAN] mount",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr12073",
+      "card_name": "The Mouth of Sauron, Messenger of Mordor",
+      "action_id": "lotr12073-a-4966",
+      "raw_text": "Exert The Mouth of Sauron to play a [MEN] condition or [MEN] possession from your draw deck",
+      "filter": {
+        "name_text": "[MEN] condition or [MEN] possession",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr12112",
+      "card_name": "Eomer, Eored Leader",
+      "action_id": "lotr12112-a-5034",
+      "raw_text": "If you can spot more minions than companions, exert Eomer to play a [ROHAN] companion from your draw deck",
+      "filter": {
+        "name_text": "[ROHAN] companion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr12117",
+      "card_name": "Leofric, Defender of the Mark",
+      "action_id": "lotr12117-a-5041",
+      "raw_text": "If Leofric is in a skirmish, exert him to play a [ROHAN] skirmish event from your draw deck",
+      "filter": {
+        "name_text": "[ROHAN] skirmish event",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr12164",
+      "card_name": "Echo of Hooves",
+      "action_id": "lotr12164-a-5133",
+      "raw_text": "(For each [WRAITH] character you exert when playing this, its twilight cost is -2) Spot your Nazgul at a battleground or forest site to play a mount on him from your draw deck",
+      "filter": {
+        "name_text": "mount on him",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr13006",
+      "card_name": "Deagol, Fateful Finder",
+      "action_id": "lotr13006-a-5213",
+      "raw_text": "If bearer is not assigned to a skirmish, discard this from play to play an artifact or possession from your draw deck on bearer",
+      "filter": {
+        "name_text": "artifact or possession",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr13046",
+      "card_name": "Deagol, Fateful Finder",
+      "action_id": "lotr13046-a-5304",
+      "raw_text": "If bearer is not assigned to a skirmish, discard this from play to play an artifact or possession from your draw deck on bearer",
+      "filter": {
+        "name_text": "artifact or possession",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr13181",
+      "card_name": "They Came From Mordor",
+      "action_id": "lotr13181-a-5599",
+      "raw_text": "Discard this from play or remove 2 tokens from here to play a [WRAITH] mount from your draw deck on your [WRAITH] minion",
+      "filter": {
+        "name_text": "[WRAITH] mount",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr15050",
+      "card_name": "Something Slimy",
+      "action_id": "lotr15050-a-5782",
+      "raw_text": "Spot Smeagol to play a Free Peoples condition from your draw deck",
+      "filter": {
+        "name_text": "Free Peoples condition",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr15051",
+      "card_name": "Sudden Strike",
+      "action_id": "lotr15051-a-5786",
+      "raw_text": "If that minion is a [GOLLUM] minion, you may also play a Shadow possession or Shadow condition from your draw deck",
+      "filter": {
+        "name_text": "Shadow possession or Shadow condition",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr15143",
+      "card_name": "Community Living",
+      "action_id": "lotr15143-a-5998",
+      "raw_text": "Spot a Hobbit to play a [SHIRE] follower from your draw deck",
+      "filter": {
+        "name_text": "[SHIRE] follower",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr15190",
+      "card_name": "East Wall of Rohan",
+      "action_id": "lotr15190-a-6104",
+      "raw_text": "At the start of the Fellowship phase, you may exert two hunter companions to play a hunter companion from your draw deck",
+      "filter": {
+        "name_text": "hunter companion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr16006",
+      "card_name": "Undead of Angmar",
+      "action_id": "lotr16006-a-6130",
+      "raw_text": "Exert Undead of Angmar twice to play a [WRAITH] Wraith from your draw deck, then reshuffle",
+      "filter": {
+        "name_text": "[WRAITH] Wraith",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr17071",
+      "card_name": "Grishnakh, Treacherous Captain",
+      "action_id": "lotr17071-a-6295",
+      "raw_text": "Exert Grishnakh twice to play an [URUK-HAI] hunter minion from your draw deck",
+      "filter": {
+        "name_text": "[URUK-HAI] hunter minion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr17091",
+      "card_name": "Threatening Warg",
+      "action_id": "lotr17091-a-6329",
+      "raw_text": "When you play this, you may spot 2 [ORC] Orcs that are not bearing mounts to play an [ORC] mount from your draw deck",
+      "filter": {
+        "name_text": "[ORC] mount",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr17110",
+      "card_name": "Southfarthing Leaf",
+      "action_id": "lotr17110-a-6373",
+      "raw_text": "Discard this pipeweed from play to play a pipeweed from your draw deck",
+      "filter": {
+        "name_text": "pipeweed",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr18011",
+      "card_name": "Erkenbrand's Horn",
+      "action_id": "lotr18011-a-6487",
+      "raw_text": "Exert bearer to play a follower from your draw deck",
+      "filter": {
+        "name_text": "follower",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr18040",
+      "card_name": "Boromir, Proud and Noble Man",
+      "action_id": "lotr18040-a-6549",
+      "raw_text": "When you play Boromir (except in your starting fellowship), you may play a possession with a twilight cost of 1 or less on him from your draw deck",
+      "filter": {
+        "name_text": "possession with a twilight cost of 1 or less on him",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr18096",
+      "card_name": "Erkenbrand's Horn",
+      "action_id": "lotr18096-a-6669",
+      "raw_text": "Exert bearer to play a follower from your draw deck",
+      "filter": {
+        "name_text": "follower",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr30025",
+      "card_name": "Gandalf, Leader of Dwarves",
+      "action_id": "lotr30025-a-6924",
+      "raw_text": "Play a [Gandalf] skirmish event and add a doubt to play a Dwarf from your draw deck",
+      "filter": {
+        "name_text": "[Gandalf] skirmish event and add a doubt to play a Dwarf",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr30027",
+      "card_name": "Gandalf, The Grey",
+      "action_id": "lotr30027-a-6932",
+      "raw_text": "Add 2 doubts to play an artifact or a Dwarf companion from your draw deck or discard pile",
+      "filter": {
+        "name_text": "artifact or a Dwarf companion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr30028",
+      "card_name": "Gandalf, Leader of the Company",
+      "action_id": "lotr30028-a-6935",
+      "raw_text": "At the start of each of your turns, you may add a doubt to play a Dwarf companion from your draw deck",
+      "filter": {
+        "name_text": "Dwarf companion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr30033",
+      "card_name": "Fimbul, Orkish Assassin",
+      "action_id": "lotr30033-a-6944",
+      "raw_text": "Discard Fimbul from play to play a minion from your draw deck",
+      "filter": {
+        "name_text": "minion",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr30050",
+      "card_name": "The Troll Hoard",
+      "action_id": "lotr30050-a-6982",
+      "raw_text": "At the start of your fellowship phase, you may play a hand weapon from your draw deck",
+      "filter": {
+        "name_text": "hand weapon",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr30058",
+      "card_name": "Bilbo's Kitchen",
+      "action_id": "lotr30058-a-7001",
+      "raw_text": "At the start of your fellowship phase, you may exert a companion to play a [Dwarven] follower from your draw deck",
+      "filter": {
+        "name_text": "[Dwarven] follower",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr30060",
+      "card_name": "Rhudaur",
+      "action_id": "lotr30060-a-7006",
+      "raw_text": "Exert your fierce minion to play a condition from your draw deck (limit once per turn)",
+      "filter": {
+        "name_text": "condition",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr31014",
+      "card_name": "The Eagles Are Coming",
+      "action_id": "lotr31014-a-7057",
+      "raw_text": "Exert Gandalf to play a [Gandalf] follower from your draw deck or discard pile",
+      "filter": {
+        "name_text": "[Gandalf] follower",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr31034",
+      "card_name": "Goblin Town",
+      "action_id": "lotr31034-a-7105",
+      "raw_text": "Play the One Ring from your draw deck",
+      "filter": {
+        "name_text": "One Ring",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": [
+        "lotr00068",
+        "lotr04001",
+        "lotr07001",
+        "lotr07002",
+        "lotr09001",
+        "lotr11001",
+        "lotr15001",
+        "lotr19001",
+        "lotr30048"
+      ]
+    },
+    {
+      "card_id": "lotr31054",
+      "card_name": "Spider Nest",
+      "action_id": "lotr31054-a-7152",
+      "raw_text": "Discard an Orc from play to play a Spider from your draw deck or discard pile",
+      "filter": {
+        "name_text": "Spider",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr31055",
+      "card_name": "Underground Lake",
+      "action_id": "lotr31055-a-7156",
+      "raw_text": "ManeuverÂ : Play a Shadow condition or the One Ring from your draw deck (limit once per player)",
+      "filter": {
+        "name_text": "Shadow condition or the One Ring",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr32006",
+      "card_name": "King Under the Mountain",
+      "action_id": "lotr32006-a-7183",
+      "raw_text": "Add a doubt to play a [Dwarven] follower from your draw deck",
+      "filter": {
+        "name_text": "[Dwarven] follower",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr32008",
+      "card_name": "Roac, Son of Carc",
+      "action_id": "lotr32008-a-7188",
+      "raw_text": "If RoÃ¤c is attached, discard him to either play a [Dwarven] ally from your draw deck, or to allow a [Dwarven] ally to participate in skirimishes until the regroup phase",
+      "filter": {
+        "name_text": "[Dwarven] ally",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr32009",
+      "card_name": "Thrain, Father of Thorin",
+      "action_id": "lotr32009-a-7190",
+      "raw_text": "Each time bearer wins a skirmish, you may play a [Dwarven] possession or [Dwarven] artifact from your draw deck on bearer",
+      "filter": {
+        "name_text": "[Dwarven] possession or [Dwarven] artifact",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr32017",
+      "card_name": "Esgaroth",
+      "action_id": "lotr32017-a-7212",
+      "raw_text": "At the start of the regroup phase, you play a [Esgaroth] or [Dwarven] ally from your draw deck",
+      "filter": {
+        "name_text": "[Esgaroth] or [Dwarven] ally",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr32025",
+      "card_name": "Alfrid, Lickspittle",
+      "action_id": "lotr32025-a-7232",
+      "raw_text": "Exert Alfrid twice to play a Shadow condition from your draw deck",
+      "filter": {
+        "name_text": "Shadow condition",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr32034",
+      "card_name": "The Wolves Army",
+      "action_id": "lotr32034-a-7250",
+      "raw_text": "When you play this minion, you may play a [Moria] card from your draw deck or discard pile",
+      "filter": {
+        "name_text": "[Moria] card",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr32046",
+      "card_name": "Dol Guldur Blade",
+      "action_id": "lotr32046-a-7285",
+      "raw_text": "Discard an Orc from play to play a [Wraith] card from your draw deck or discard pile",
+      "filter": {
+        "name_text": "[Wraith] card",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotr32054",
+      "card_name": "Twisted Gold of Dragon",
+      "action_id": "lotr32054-a-7301",
+      "raw_text": "Each time you play Smaug, you may play a Shadow condition from your draw deck",
+      "filter": {
+        "name_text": "Shadow condition",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotrv1037",
+      "card_name": "Fell Voices Call",
+      "action_id": "lotrv1037-a-7408",
+      "raw_text": "Play a [ringwraith] item from your draw deck or discard pile",
+      "filter": {
+        "name_text": "[ringwraith] item",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotrv1057",
+      "card_name": "Bag End Study",
+      "action_id": "lotrv1057-a-7435",
+      "raw_text": "When the fellowship moves from here, you may exert a [shire] companion to play a [shire] condition from your draw deck",
+      "filter": {
+        "name_text": "[shire] condition",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    },
+    {
+      "card_id": "lotrv3121",
+      "card_name": "Gates of Isengard",
+      "action_id": "lotrv3121-a-7870",
+      "raw_text": "Exert an unbound Hobbit to play a pipe and pipeweed from your draw deck (limit once per phase)",
+      "filter": {
+        "name_text": "pipe and pipeweed",
+        "card_ids": null,
+        "traits": []
+      },
+      "candidate_ids": []
+    }
+  ]
+}

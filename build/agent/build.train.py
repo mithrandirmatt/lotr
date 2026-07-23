@@ -109,6 +109,46 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
             handle.write(json.dumps(row, ensure_ascii=True) + "\n")
 
 
+def _analyze_corpus(rows: list[dict]) -> dict:
+    """Analyze corpus for quality and size statistics."""
+    if not rows:
+        return {
+            "total_samples": 0,
+            "total_bytes": 0,
+            "avg_bytes_per_sample": 0,
+            "min_bytes": 0,
+            "max_bytes": 0,
+            "estimated_tokens": 0,
+        }
+
+    byte_counts = []
+    total_bytes = 0
+    for row in rows:
+        text = row.get("text", "")
+        byte_count = len(text.encode("utf-8"))
+        byte_counts.append(byte_count)
+        total_bytes += byte_count
+
+    # Rough token estimation: ~1 token per 4 characters
+    estimated_tokens = total_bytes // 4
+
+    stats = {
+        "total_samples": len(rows),
+        "total_bytes": total_bytes,
+        "avg_bytes_per_sample": total_bytes // len(rows) if rows else 0,
+        "min_bytes": min(byte_counts) if byte_counts else 0,
+        "max_bytes": max(byte_counts) if byte_counts else 0,
+        "estimated_tokens": estimated_tokens,
+    }
+
+    # Warn about problematic samples
+    outliers = [i for i, bc in enumerate(byte_counts) if bc < 100 or bc > 100000]
+    if outliers:
+        stats["warnings"] = f"Found {len(outliers)} samples with extreme sizes (< 100 bytes or > 100KB)"
+
+    return stats
+
+
 def main() -> None:
     args = _parse_args()
     repo_root = Path(args.data_dir).resolve()
@@ -126,6 +166,7 @@ def main() -> None:
     print(f"Selected {len(files)} files from profile include/exclude rules")
 
     corpus_rows: list[dict] = []
+    extreme_samples = []
     for idx, file_path in enumerate(files, start=1):
         try:
             content = file_path.read_text(encoding="utf-8").strip()
@@ -133,10 +174,24 @@ def main() -> None:
             continue
         if not content:
             continue
+        content_bytes = len(content.encode("utf-8"))
+
+        # Track extreme samples for review (truncate very large files to prevent tokenization OOM)
+        if content_bytes > 100000:
+            rel_path = file_path.relative_to(repo_root).as_posix()
+            extreme_samples.append({
+                "path": rel_path,
+                "size_bytes": content_bytes,
+                "reason": "too large (> 100KB)",
+                "action": "truncated to 80KB"
+            })
+            # Truncate to 80KB max for large data files
+            content = content[:80000]
+
         corpus_rows.append(_format_sample(repo_root, file_path, content))
         sys.stdout.write(f"\r[Progress: {idx}/{len(files)}] Building corpus...")
         sys.stdout.flush()
-    print("\nCorpus build complete.")
+    print(f"\nCorpus build complete (processed {len(files)} files).")
 
     if args.reasoning_dataset:
         reasoning_path = Path(args.reasoning_dataset)
@@ -162,6 +217,23 @@ def main() -> None:
     corpus_path = training_dir / f"{args.profile}-corpus.jsonl"
     _write_jsonl(corpus_path, corpus_rows)
 
+    # Analyze corpus
+    corpus_stats = _analyze_corpus(corpus_rows)
+    print(f"\n[INFO] Corpus Analysis:")
+    print(f"  Samples: {corpus_stats['total_samples']}")
+    print(f"  Total size: {corpus_stats['total_bytes'] / (1024*1024):.1f} MB")
+    print(f"  Avg per sample: {corpus_stats['avg_bytes_per_sample']:.0f} bytes")
+    print(f"  Size range: {corpus_stats['min_bytes']}-{corpus_stats['max_bytes']} bytes")
+    print(f"  Est. tokens: {corpus_stats['estimated_tokens']:,} (@ 4 chars/token)")
+    if "warnings" in corpus_stats:
+        print(f"  ⚠️  {corpus_stats['warnings']}")
+
+    # Report extreme samples (truncated, not skipped)
+    if extreme_samples:
+        print(f"\n[INFO] Extreme Samples (truncated to fit in training):")
+        for sample in extreme_samples:
+            print(f"  • {sample['path']} ({sample['size_bytes']:,} bytes, {sample['reason']})")
+
     metadata = {
         "model": args.model,
         "quantization": args.quantization,
@@ -172,9 +244,27 @@ def main() -> None:
         "samples": len(corpus_rows),
         "gpu": profile.get("gpu", {}),
         "runtime": profile.get("runtime", {}),
+        "corpus_stats": corpus_stats,
+        "extreme_samples": extreme_samples,
+        "extreme_samples_note": "Very large files (> 100KB) truncated to 80KB to prevent tokenization OOM. Most extreme samples should be prevented by profile exclude_globs.",
     }
     metadata_path = training_dir / f"{args.profile}-metadata.json"
     metadata_path.write_text(json.dumps(metadata, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
+
+    # Write extreme samples report for manual review
+    if extreme_samples:
+        report_path = training_dir / f"{args.profile}-extreme-samples.txt"
+        with report_path.open("w", encoding="utf-8") as f:
+            f.write(f"Extreme Samples Report for {args.profile}\n")
+            f.write(f"Generated at corpus build time\n")
+            f.write(f"Total extreme: {len(extreme_samples)}\n\n")
+            f.write("Files truncated to 80KB max for training:\n\n")
+            for sample in extreme_samples:
+                f.write(f"{sample['path']}\n")
+                f.write(f"  Size: {sample['size_bytes']:,} bytes\n")
+                f.write(f"  Reason: {sample['reason']}\n")
+                f.write(f"  Action: Truncated to 80KB\n\n")
+        print(f"\nExtreme samples report written to: {report_path}")
 
     # Keep downstream targets unblocked until full finetune integration lands.
     model_path = repo_root / "do" / "agent" / "models" / f"lotr-{args.model}-{args.quantization}.gguf"

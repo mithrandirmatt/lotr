@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse x-list.html and PC_Errata.html and write two JSON databases."""
+"""Build the X-List database from Cargo data, and parse PC_Errata.html."""
 
 import html
 import json
@@ -11,7 +11,7 @@ SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT    = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
 WIKI_DIR     = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'wiki')
 DB_DIR       = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database')
-XLIST_HTML   = os.path.join(WIKI_DIR, 'x-list.html')
+CARGO_DUMP   = os.path.join(WIKI_DIR, 'cargo_cards.json')
 ERRATA_HTML  = os.path.join(WIKI_DIR, 'PC_Errata.html')
 XLIST_OUT    = os.path.join(DB_DIR, 'xlist_database.json')
 ERRATA_OUT   = os.path.join(DB_DIR, 'errata_database.json')
@@ -34,129 +34,80 @@ def read_file(path):
 
 
 # ---------------------------------------------------------------------------
-# X-List parser (DokuWiki source)
+# X-List builder (from Cargo data)
 # ---------------------------------------------------------------------------
+# The old DokuWiki x-list.html page (with its own <table class="inline">
+# markup) no longer exists -- the wiki migrated to wiki.lotrtcgpc.net
+# (MediaWiki + Cargo). Exclusion-list membership is exposed per-card via a
+# 'Lists: SXL, EXL, ...' tag embedded in each card's Cargo Notes field
+# (SXL = Standard Exclusion List, EXL = Expanded Exclusion List), which
+# lotr_download_site.py already captures in cargo_cards.json. Exact
+# date_added/date_removed values aren't exposed via Cargo, so those fields
+# are left None; any residual note text is preserved.
 
-# Map h3 anchor names to format labels
-_XLIST_SECTIONS = {
-    'cards_on_the_standard_format_exclusion_list':  'Standard',
-    'cards_on_the_expanded_format_exclusion_list':  'Expanded',
-}
+_LISTS_TAG_RE = re.compile(r'Lists:\s*([A-Z]+(?:\s*,\s*[A-Z]+)*)\.?')
 
 
-def _parse_xlist_table_rows(table_html, format_label):
+def _parse_notes_lists(notes):
+    """Return (cleaned_notes, list_tags) from a Cargo Notes field."""
+    if not notes:
+        return None, []
+    m = _LISTS_TAG_RE.search(notes)
+    if not m:
+        return strip_tags(notes) or None, []
+    tags = [t.strip() for t in m.group(1).split(',')]
+    cleaned = notes[:m.start()] + notes[m.end():]
+    return strip_tags(cleaned).strip(' .') or None, tags
+
+
+def derive_card_id(set_num, card_num):
+    """Same derivation as lotr_download_site.py's derive_card_id()."""
+    try:
+        card_num_int = int(card_num)
+    except (TypeError, ValueError):
+        card_num_int = 0
+    if set_num is not None and re.match(r'^\d+$', str(set_num)):
+        return f"lotr{int(set_num):02d}{card_num_int:03d}"
+    slug = re.sub(r'[^A-Za-z0-9]', '', str(set_num or 'x')).lower()
+    return f"lotr{slug}{card_num_int:03d}"
+
+
+def build_xlist_from_cargo(cargo_path):
     """
-    Parse rows from a DokuWiki <table class="inline">.
-    Returns list of (wiki_id, card_name, date_added, date_removed, notes).
-    Skips the header row (contains <strong> tags).
+    Build the xlist_database.json structure from cargo_cards.json.
+    Returns (dict keyed by card id, errors).
     """
-    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', table_html, re.DOTALL)
-    entries = []
-    for row in rows:
-        if '<strong>' in row:   # header row
-            continue
+    if not os.path.exists(cargo_path):
+        return {}, [f'{cargo_path} not found']
 
-        cells = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
-        if not cells:
-            continue
-
-        # col0: card name + wikilink
-        cell0 = cells[0]
-        link_m = re.search(r'href="/wiki/(lotr\w+)"', cell0)
-        if not link_m:
-            continue
-        wiki_id   = link_m.group(1)
-        card_name = strip_tags(cell0)
-
-        # col1: date_added (present for both Standard and Expanded)
-        date_added = strip_tags(cells[1]) if len(cells) > 1 else None
-        date_added = date_added or None
-
-        # col2: date_removed (Standard only; Expanded uses colspan on col1)
-        # Expanded rows have col1 with colspan="2" so len(cells)==2
-        if len(cells) >= 3:
-            date_removed = strip_tags(cells[2]) or None
-        else:
-            date_removed = None
-
-        # col3: notes (Standard only; may also be empty)
-        if len(cells) >= 4:
-            notes = strip_tags(cells[3]) or None
-        else:
-            notes = None
-
-        entries.append({
-            'wiki_id':      wiki_id,
-            'card_name':    card_name,
-            'format':       format_label,
-            'date_added':   date_added,
-            'date_removed': date_removed,
-            'notes':        notes,
-        })
-    return entries
-
-
-def _find_table_after_h3(content, anchor_name):
-    """
-    Locate the first <table class="inline"> that follows the h3 with
-    the given anchor name. Returns the raw table HTML or None.
-    """
-    # Find the h3 position
-    h3_m = re.search(
-        r'<h3>[^<]*<a\s+name="' + re.escape(anchor_name) + r'"',
-        content
-    )
-    if not h3_m:
-        return None
-    after = content[h3_m.end():]
-    # Find next table.inline
-    table_m = re.search(r'<table class="inline">(.*?)</table>', after, re.DOTALL)
-    if not table_m:
-        return None
-    return table_m.group(0)
-
-
-def parse_xlist_html(html_path):
-    """
-    Parse x-list.html.
-    Returns dict keyed by wiki_id:
-      { card_name, formats: [{format, date_added, date_removed, notes}] }
-    """
-    content = read_file(html_path)
-
-    # Scope to the main page div
-    page_m = re.search(r'<div class="page">(.*)', content, re.DOTALL)
-    page = page_m.group(1) if page_m else content
+    with open(cargo_path, 'r', encoding='utf-8') as f:
+        dump = json.load(f)
 
     result = {}
-    errors = []
-
-    for anchor, format_label in _XLIST_SECTIONS.items():
-        table_html = _find_table_after_h3(page, anchor)
-        if not table_html:
-            errors.append(f'Section not found: {anchor}')
+    for row in dump.get('cards', []):
+        cleaned_notes, tags = _parse_notes_lists(row.get('Notes'))
+        formats = []
+        if 'SXL' in tags:
+            formats.append('Standard')
+        if 'EXL' in tags:
+            formats.append('Expanded')
+        if not formats:
             continue
 
-        try:
-            rows = _parse_xlist_table_rows(table_html, format_label)
-        except Exception as e:
-            errors.append(f'Error parsing {format_label} table: {e}')
-            continue
+        wiki_id = row.get('derived_id') or derive_card_id(row.get('SetNum'), row.get('CardNum'))
+        title = row.get('Title')
+        subtitle = row.get('Subtitle')
+        card_name = f"{title}, {subtitle}" if subtitle else title
 
-        for row in rows:
-            wiki_id   = row['wiki_id']
-            card_name = row['card_name']
-            fmt_entry = {
-                'format':       row['format'],
-                'date_added':   row['date_added'],
-                'date_removed': row['date_removed'],
-                'notes':        row['notes'],
-            }
-            if wiki_id not in result:
-                result[wiki_id] = {'card_name': card_name, 'formats': []}
-            result[wiki_id]['formats'].append(fmt_entry)
+        result[wiki_id] = {
+            'card_name': card_name,
+            'formats': [
+                {'format': fmt, 'date_added': None, 'date_removed': None, 'notes': cleaned_notes}
+                for fmt in formats
+            ],
+        }
+    return result, []
 
-    return result, errors
 
 
 # ---------------------------------------------------------------------------
@@ -253,12 +204,8 @@ def main():
     all_errors = []
 
     # --- X-List ---
-    if not os.path.exists(XLIST_HTML):
-        print(f'ERROR: {XLIST_HTML} not found. Run wiki_gather_sites first.')
-        sys.exit(1)
-
-    print('Parsing x-list.html...')
-    xlist_db, xlist_errors = parse_xlist_html(XLIST_HTML)
+    print('Building X-List database from Cargo data...')
+    xlist_db, xlist_errors = build_xlist_from_cargo(CARGO_DUMP)
     all_errors.extend(f'[xlist] {e}' for e in xlist_errors)
 
     os.makedirs(DB_DIR, exist_ok=True)

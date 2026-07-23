@@ -1,0 +1,95 @@
+name: Agent Policy Gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/agent/**"
+      - ".github/copilot-instructions.md"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/scripts/audit_session_precedence.py"
+      - ".github/scripts/validate_policy.py"
+      - ".github/workflows/agent-policy-gate.yml"
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/agent/**"
+      - ".github/copilot-instructions.md"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/scripts/audit_session_precedence.py"
+      - ".github/scripts/validate_policy.py"
+      - ".github/workflows/agent-policy-gate.yml"
+  schedule:
+    - cron: "0 8 1 * *"
+
+jobs:
+  validate-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install validator dependency
+        run: python -m pip install pyyaml
+
+      - name: Run policy validation
+        run: python .github/scripts/validate_policy.py --mode full --report .github/reports/policy-validation-report.json
+
+      - name: Upload policy validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: policy-validation-report
+          path: .github/reports/policy-validation-report.json
+
+  validate-regression-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install validator dependency
+        run: python -m pip install pyyaml
+
+      - name: Validate precedence regression manifest
+        run: python .github/scripts/validate_policy.py --mode regression --report .github/reports/regression-manifest-report.json
+
+      - name: Upload regression manifest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-manifest-report
+          path: .github/reports/regression-manifest-report.json
+
+  audit-session-precedence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install validator dependency
+        run: python -m pip install pyyaml
+
+      - name: Audit session precedence logs
+        run: python .github/scripts/audit_session_precedence.py --allow-missing-log-dir --report .github/reports/session-precedence-audit-report.json
+
+      - name: Upload session precedence audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: session-precedence-audit-report
+          path: .github/reports/session-precedence-audit-report.json

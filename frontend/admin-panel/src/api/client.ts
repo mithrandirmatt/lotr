@@ -12,6 +12,9 @@ import type {
   CardStats,
   StorePricingResponse,
   AdminAnalyticsData,
+  TwoFactorChallenge,
+  TwoFactorSetupResponse,
+  TwoFactorEnableResponse,
 } from './types'
 
 const http: AxiosInstance = axios.create({
@@ -30,20 +33,62 @@ http.interceptors.request.use((config) => {
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
-export async function login(email: string, password: string): Promise<Token> {
+export async function login(email: string, password: string): Promise<Token | TwoFactorChallenge> {
   // OAuth2PasswordRequestForm expects application/x-www-form-urlencoded
   const params = new URLSearchParams()
   params.append('username', email)
   params.append('password', password)
-  const { data } = await http.post<Token>('/auth/login', params, {
+  const { data } = await http.post<Token | TwoFactorChallenge>('/auth/login', params, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
   return data
 }
 
-export async function register(data: { email: string; uniqueName: string; password: string }): Promise<{ message: string }> {
-  const { data: response } = await http.post<{ message: string }>('/auth/register', data)
+export function isTwoFactorChallenge(result: Token | TwoFactorChallenge): result is TwoFactorChallenge {
+  return (result as TwoFactorChallenge).requires_2fa === true
+}
+
+export async function register(data: {
+  email: string
+  uniqueName: string
+  password: string
+  confirmPassword: string
+}): Promise<{ message: string }> {
+  const { data: response } = await http.post<{ message: string }>('/auth/register', {
+    email: data.email,
+    unique_name: data.uniqueName,
+    password: data.password,
+    confirm_password: data.confirmPassword,
+  })
   return response
+}
+
+export async function setup2fa(): Promise<TwoFactorSetupResponse> {
+  const { data } = await http.post<TwoFactorSetupResponse>('/auth/2fa/setup')
+  return data
+}
+
+export async function enable2fa(code: string): Promise<TwoFactorEnableResponse> {
+  const { data } = await http.post<TwoFactorEnableResponse>('/auth/2fa/enable', { code })
+  return data
+}
+
+export async function disable2fa(password: string, code: string): Promise<{ message: string }> {
+  const { data } = await http.post<{ message: string }>('/auth/2fa/disable', { password, code })
+  return data
+}
+
+export async function verify2faLogin(mfaToken: string, code: string): Promise<Token> {
+  const { data } = await http.post<Token>('/auth/2fa/verify-login', { mfa_token: mfaToken, code })
+  return data
+}
+
+export async function recover2fa(mfaToken: string, recoveryCode: string): Promise<Token> {
+  const { data } = await http.post<Token>('/auth/2fa/recover', {
+    mfa_token: mfaToken,
+    recovery_code: recoveryCode,
+  })
+  return data
 }
 
 export async function getMe(): Promise<UserResponse> {

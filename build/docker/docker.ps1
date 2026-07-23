@@ -52,7 +52,11 @@ param(
     [string]$GpuVariant  = '',
     [switch]$Fresh,
     [switch]$NoPause,
+    # Docker socket is mounted into the dev container by default because
+    # server_docker_build (part of `make speed`) needs it to run `docker build`
+    # from inside the container. Pass -NoMountDockerSocket to opt out.
     [switch]$MountDockerSocket,
+    [switch]$NoMountDockerSocket,
     [switch]$StartAiOnly,
     # Pass -EnableAi to start the AI/Ollama container and related host Ollama management.
     # By default AI is disabled; use this flag when you want the container-side Ollama.
@@ -986,8 +990,11 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
     #        .gitconfig -> /root/.gitconfig:ro
     # -w:   set working directory inside container
     # --network lotr-net: shared network so dev container can reach mcp at http://lotr-mcp:3100/sse
+    # Default ON: server_docker_build (used by `make speed`) requires the host
+    # docker socket to build images from inside the ephemeral dev container.
+    # Use -NoMountDockerSocket to opt out (e.g. untrusted/throwaway sessions).
     $dockerSocketFlags = @()
-    if ($MountDockerSocket) {
+    if (-not $NoMountDockerSocket) {
         $dockerSocketFlags += '--volume'
         $dockerSocketFlags += '/var/run/docker.sock:/var/run/docker.sock'
     }

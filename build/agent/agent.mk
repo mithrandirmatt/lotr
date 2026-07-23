@@ -3,6 +3,7 @@ BASE_MODEL ?= llama3-8b
 QUANTIZATION ?= 4bit
 AGENT_PROFILE ?= rx7900xtx-agentic
 AGENT_MODEL_CONFIG ?= qwen25-coder-7b
+AGENT_CORPUS_MODEL ?= $(AGENT_MODEL_CONFIG)
 AGENT_BASE_MODEL ?=
 AGENT_HF_BASE_MODEL ?=
 MODEL_DIR ?= $(REPO_ROOT)/do/agent/models
@@ -77,7 +78,7 @@ validate-model:
 prepare-corpus:
 	@echo "Preparing corpus/training artifacts for profile $(AGENT_PROFILE)..."
 	@python3 -m venv $(REPO_ROOT)/build/agent/lotr_agent/venv
-	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/bin/python build.train.py --model "$(BASE_MODEL)" --quantization "$(QUANTIZATION)" --profile "$(AGENT_PROFILE)" --model_config "$(AGENT_MODEL_CONFIG)" --data_dir "$(REPO_ROOT)"
+	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/bin/python build.train.py --model "$(AGENT_CORPUS_MODEL)" --quantization "$(QUANTIZATION)" --profile "$(AGENT_PROFILE)" --model_config "$(AGENT_MODEL_CONFIG)" --data_dir "$(REPO_ROOT)"
 
 .PHONY: train-$(BASE_MODEL)
 train-$(BASE_MODEL): prepare-corpus
@@ -377,7 +378,8 @@ lora-export-gguf:
 		echo "Installing GGUF export dependencies..."; \
 		$(call AGENT_RUN_WITH_HEARTBEAT,$(AGENT_PIP_CMD) install $(AGENT_PIP_INSTALL_PROGRESS_FLAGS) transformers peft accelerate sentencepiece protobuf gguf $(AGENT_PIP_BREAK_SYSTEM)); \
 	fi
-	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/bin/python build.lora_export_gguf.py --repo_root "$(REPO_ROOT)" --profile "$(AGENT_PROFILE)" --model_config "$(AGENT_MODEL_CONFIG)" $(if $(strip $(AGENT_HF_BASE_MODEL)),--base_model "$(AGENT_HF_BASE_MODEL)",) --adapter_dir "$(LORA_OUTPUT_DIR)" --merged_dir "$(LORA_MERGED_DIR)" --output_gguf "$(LORA_GGUF)" --outtype "$(LORA_GGUF_OUTTYPE)" --llama_cpp_dir "$(LLAMA_CPP_DIR)"
+	@mkdir -p "$(LORA_CACHE_DIR)"
+	@cd $(REPO_ROOT)/build/agent && $(REPO_ROOT)/build/agent/lotr_agent/venv/bin/python build.lora_export_gguf.py --repo_root "$(REPO_ROOT)" --profile "$(AGENT_PROFILE)" --model_config "$(AGENT_MODEL_CONFIG)" $(if $(strip $(AGENT_HF_BASE_MODEL)),--base_model "$(AGENT_HF_BASE_MODEL)",) --adapter_dir "$(LORA_OUTPUT_DIR)" --merged_dir "$(LORA_MERGED_DIR)" --output_gguf "$(LORA_GGUF)" --outtype "$(LORA_GGUF_OUTTYPE)" --llama_cpp_dir "$(LLAMA_CPP_DIR)" --cache_dir "$(LORA_CACHE_DIR)"
 
 .PHONY: ollama-install-$(BASE_MODEL)
 ollama-install-$(BASE_MODEL):

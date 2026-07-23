@@ -11,10 +11,16 @@ SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT    = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
 PYUTILS_DIR  = os.path.join(REPO_ROOT, 'pyutils')
 STARTERS_DIR = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'wiki', 'starters')
+STARTER_IMAGES_DIR = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'starters')
 OUTPUT_PATH  = os.path.join(REPO_ROOT, 'build', 'do', 'assets', 'database', 'starter_database.json')
 
 sys.path.insert(0, PYUTILS_DIR)
 from utils.progress import ProgressBar
+
+# Cover art (e.g. "Starter-01-Aragorn.jpg") is linked from each deck's block
+# page as a File: link right after its heading, e.g.
+# href="/wiki/File:Starter-01-Aragorn.jpg"
+_COVER_IMAGE_RE = re.compile(r'href="/wiki/File:([^"]+?\.(?:jpg|jpeg|png))"', re.IGNORECASE)
 
 # Maps h3 heading text fragments to output field names
 _SECTION_MAP = {
@@ -35,6 +41,18 @@ def parse_block_name(filename):
 def parse_deck_id(name):
     """'FOTR Aragorn Starter Deck' -> 'fotr_aragorn_starter_deck'"""
     return re.sub(r'\s+', '_', name.strip().lower())
+
+
+def find_cover_image_path(filename):
+    """Return the repo-root-relative forward-slash path to a downloaded cover
+    image, or None if it hasn't been downloaded (see lotr_download_site.py's
+    download_starter_images())."""
+    if not filename:
+        return None
+    full_path = os.path.join(STARTER_IMAGES_DIR, filename)
+    if not os.path.exists(full_path):
+        return None
+    return os.path.relpath(full_path, REPO_ROOT).replace('\\', '/')
 
 
 def parse_section_key(h3_text):
@@ -114,11 +132,16 @@ def parse_block_file(html_path, block_name):
         chunk_end = h2_matches[i + 1].start() if i + 1 < len(h2_matches) else len(page_content)
         chunk     = page_content[h2m.end():chunk_end]
 
+        cover_m = _COVER_IMAGE_RE.search(chunk)
+        image_filename = cover_m.group(1) if cover_m else None
+
         deck = {
             'id':              deck_id,
             'name':            raw_name,
             'block':           block_name,
             'source_file':     os.path.basename(html_path),
+            'image_filename':  image_filename,
+            'image_path':      find_cover_image_path(image_filename),
             'ring_bearer':     [],
             'adventure_deck':  [],
             'free_peoples':    [],
