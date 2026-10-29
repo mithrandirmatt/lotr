@@ -4,8 +4,30 @@ Handles environment variables, secrets, and application settings.
 """
 
 import os
+import secrets
+from pathlib import Path
 from typing import Optional
 from functools import lru_cache
+
+
+def _load_or_create_secret_key() -> str:
+    """Return SECRET_KEY from the environment, or a persisted local fallback.
+
+    LOT-6.5: previously routes generated `secrets.token_urlsafe(32)` fresh on
+    every process start, invalidating all issued JWTs on every restart. If no
+    SECRET_KEY env var is set (dev/local use), generate one once and persist
+    it next to this file so it survives restarts. Production deployments
+    should set the SECRET_KEY env var explicitly.
+    """
+    env_value = os.getenv("SECRET_KEY")
+    if env_value:
+        return env_value
+    secret_path = Path(__file__).resolve().parent / ".jwt_secret_key"
+    if secret_path.exists():
+        return secret_path.read_text(encoding="utf-8").strip()
+    generated = secrets.token_urlsafe(32)
+    secret_path.write_text(generated, encoding="utf-8")
+    return generated
 
 
 class Settings:
@@ -25,13 +47,11 @@ class Settings:
     DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "10"))
 
     # Security Configuration
-    SECRET_KEY: str = os.getenv(
-        "SECRET_KEY",
-        "your-secret-key-change-in-production"
-    )
+    SECRET_KEY: str = _load_or_create_secret_key()
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+
 
     # API Configuration
     API_V1_PREFIX: str = "/api/v1"
@@ -80,8 +100,3 @@ class Settings:
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
-
-
-def get_settings() -> Settings:
-    """Get application settings."""
-    return get_settings()

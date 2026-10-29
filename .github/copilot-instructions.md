@@ -271,11 +271,16 @@ The project uses **local markdown files** – not GitHub Issues or GitKraken MCP
 | `assets/reference/agent/issues-current.md` | Active + queued issues |
 | `assets/reference/agent/issues-completed.md` | Completed issues archive |
 | `assets/reference/agent/issues-tracker.md` | Full issue tracking data |
+| `assets/reference/agent/issues-todo.md` | In-progress working notes/checkpoint for the issue actively being implemented |
 
 - Always use these files as the source of truth.
 - Follow `workflow‑issue-create.md` when creating a new issue.
 - Follow `workflow-new-feature.md` when implementing a feature issue.
 - GitKraken MCP tools are secondary – only use when explicitly requested.
+- **Keep `issues-todo.md` continuously up to date while actively working** on an issue: record the
+  issue ID, concrete next step, files touched so far, and key decisions, so work can be picked back
+  up cleanly after any interruption. Reset/clear its content once the issue is completed and moved
+  to `issues-completed.md`.
 
 ## Memory Usage
 

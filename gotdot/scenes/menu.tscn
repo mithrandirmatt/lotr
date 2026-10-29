@@ -4,8 +4,10 @@
 
 ; ── Main menu scene ───────────────────────────────────────────────────────────
 ; Placeholder menu.  Buttons are disabled until their target phases are built.
-;   New Game     -> Phase 3 (game engine)
-;   Deck Builder -> Phase 2 (deck builder UI)
+;   New Game     -> available now (res://scenes/new_game.tscn -- claim starter
+;                    deck/booster entitlements; actual match gameplay is
+;                    still Phase 3/the game engine, not built yet)
+;   Deck Builder -> available now (res://scenes/deck_builder.tscn)
 ;   Settings     -> Phase 8 (polish/settings)
 ;   Quit         -> available now
 
@@ -50,13 +52,11 @@ theme_override_constants/separation = 12
 layout_mode = 2
 custom_minimum_size = Vector2(300, 55)
 text = "New Game"
-disabled = true
 
 [node name="DeckBuilderBtn" type="Button" parent="CanvasLayer/MenuBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(300, 55)
 text = "Deck Builder"
-disabled = true
 
 [node name="SettingsBtn" type="Button" parent="CanvasLayer/MenuBox"]
 layout_mode = 2

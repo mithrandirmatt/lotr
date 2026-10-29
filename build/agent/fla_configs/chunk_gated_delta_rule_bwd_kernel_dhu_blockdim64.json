@@ -1,0 +1,11 @@
+{
+  "kernel_name": "chunk_gated_delta_rule_bwd_kernel_dhu_blockdim64",
+  "triton_version": "3.7.1",
+  "_comment": "Pinned for AMD RDNA3 (RX 7900 XTX / gfx1100): autotune config (num_warps=2) took 5125s (85min) during AMDGCN codegen vs (num_warps=4) at 53.4s. num_stages/BV are already forced to 1/32 on non-NVIDIA hardware by fla's own check_shared_mem() guards in fla/ops/common/chunk_delta_h.py.",
+  "default_config": {
+    "kwargs": { "BV": 32 },
+    "num_warps": 4,
+    "num_stages": 1,
+    "num_ctas": 1
+  }
+}

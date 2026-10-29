@@ -139,6 +139,18 @@ This repo now includes a practical LoRA stage for local specialization:
 - Train adapter: `build/agent/build.finetune.py`
 - Generate adapter Modelfile: `build/agent/build.modelfile.py --adapter_path ...`
 - Install LoRA model in Ollama: `make -f makefile ollama-install-lora`
+- Install LoRA model in LM Studio (if present): `make -f makefile lmstudio-install-lora`
+
+`lora_build` and `agent_build` both run the Ollama install and the LM Studio
+install back-to-back, so the same exported GGUF ends up available in
+whichever of the two tools you have installed. Detection is folder-existence
+based (see `build/docker/install-lmstudio-model.ps1`): if LM Studio's models
+directory isn't found on the host, that step is skipped without failing the
+build. Because LM Studio only runs on the Windows host (never inside
+WSL2/Docker), `lmstudio-install-lora` shells out to `powershell.exe` the same
+way `agent_setup` does for `setup-llama-server.ps1` -- if `powershell.exe`
+isn't reachable (e.g. running via `docker.ps1 exec`), the step prints the
+equivalent host command to run manually and exits without failing the build.
 
 Run full LoRA pipeline:
 

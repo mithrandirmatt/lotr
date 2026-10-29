@@ -48,9 +48,9 @@
   },
   "model_preferences": {
     "balanced": [
-      "qwen2.5-coder:7b",
-      "qwen2.5-coder:14b",
-      "deepseek-coder-v2:16b"
+      "lotr-agentic-rx7900xtx-agentic-qwen35-262k",
+      "gpt-oss:20b",
+      "qwen2.5-coder:7b"
     ],
     "reasoning_heavy": [
       "hf.co/mradermacher/ERNIE-21B-A3B-Claude-4.5-High-OPUS-Thinking-i1-GGUF:Q5_K_M",

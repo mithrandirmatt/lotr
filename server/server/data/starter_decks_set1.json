@@ -1,0 +1,803 @@
+{
+  "fotr_aragorn_starter_deck": {
+    "name": "FOTR Aragorn Starter Deck",
+    "block": "Fellowship Block",
+    "set_number": 1,
+    "cards": [
+      {
+        "card_id": "0bba7d71-d791-40e1-9191-00360d344cdd",
+        "name": "Frodo, Son of Drogo",
+        "quantity": 1,
+        "section": "ring_bearer"
+      },
+      {
+        "card_id": "36273b27-a6ae-4ddf-98bf-447d20ed8d1b",
+        "name": "The Lord of the Rings, Trading Card Game",
+        "quantity": 1,
+        "section": "ring_bearer"
+      },
+      {
+        "card_id": "f1b19f03-d80a-4d10-8048-3a8a20ea060e",
+        "name": "East Road",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "cb40c013-bdc8-472d-8d9c-da66e5b02f62",
+        "name": "Bree Gate",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "923562b1-ccf3-4124-b00a-4ab391145e31",
+        "name": "Rivendell Terrace",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "b17652d0-4370-446d-bef3-0b7a5983c975",
+        "name": "Moria Lake",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "0bdb49a5-95a8-4297-a663-bbfee3d749ad",
+        "name": "The Bridge of Khazad-dum",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "effa0f91-3ade-4255-a773-54e71a04b51a",
+        "name": "Galadriel's Glade",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "98053e41-ac37-4499-991c-4fc24bbee480",
+        "name": "Silverlode Banks",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "b3310e7e-4642-4efe-9d76-42bffa7c383b",
+        "name": "Pillars of the Kings",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "9139336c-be22-4867-89e3-922ee3a725c1",
+        "name": "Slopes of Amon Hen",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "90020287-0f3e-4115-acd7-4e083d345b0b",
+        "name": "Aragorn, King in Exile",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "d3b8d5d9-74da-43de-a01b-cf935726aaa5",
+        "name": "Boromir, Son of Denethor",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "74764a4f-0c4f-4d0a-9980-a03f13962e36",
+        "name": "Legolas, Prince of Mirkwood",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "31f85b62-6af0-4899-8a00-6d6adba5ce6d",
+        "name": "Sam, Son of Hamfast",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "6adc5bb4-3ee8-480d-9e20-73f4774b496e",
+        "name": "Athelas",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "607636fa-5a43-4d7e-997c-1bc81a2b30ce",
+        "name": "Coat of Mail",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "29245641-cef4-4667-8f28-f0c37c980694",
+        "name": "Great Shield",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "c7a3793e-704e-456e-8a7d-9a1aeba5862f",
+        "name": "Hobbit Sword",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "c68d9308-e30d-4031-aaeb-4986218c6bae",
+        "name": "Eregion's Trails",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "d373f8b0-9185-4cb4-8293-0fce66de3f65",
+        "name": "No Stranger to the Shadows",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "a6c15aff-28b3-4e0b-bb93-c11483f458fe",
+        "name": "Pathfinder",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "e049f810-98f3-48a6-a268-ea709d51ca15",
+        "name": "Swordarm of the White Tower",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "c755a973-5222-4fee-ba9d-11f8f5bbb73e",
+        "name": "Swordsman of the Northern Kingdom",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "ac9bcedd-b6ef-451a-ad6a-7eac02f8198a",
+        "name": "Uruk Rager",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "83695ad9-9fc7-4e54-b168-581300934436",
+        "name": "Uruk Savage",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "fc3e5a6b-0324-42bc-b0d0-db78d54420a3",
+        "name": "Uruk Shaman",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "ec0b6070-3378-40ab-bff6-550ae73ffb4b",
+        "name": "Uruk Slayer",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "20cfb36a-5496-4c1b-918b-ea4ad26b902e",
+        "name": "Uruk Soldier",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "a11d0d32-6fdb-4968-bd41-dd83288b69ee",
+        "name": "Uruk-hai Raiding Party",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "1b9d9fae-743c-494e-8c5e-03c75a104a47",
+        "name": "Uruk-hai Armory",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "3cda0cf9-15b0-4cc3-98d2-d3ed6ba9f616",
+        "name": "Bred for Battle",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "2abfb544-33e4-4905-a4b4-3bedd43a10d0",
+        "name": "Saruman's Ambition",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "60433bc0-c72e-4c8c-95b9-96e6181421c8",
+        "name": "Their Arrows Enrage",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "26b542dc-fc8e-417d-8b84-381b8a8b6111",
+        "name": "Armor",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "673cbc1f-fb82-44ce-a3b4-f2d88188d995",
+        "name": "Gondor's Vengeance",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "689e1914-2400-48ba-a8fe-f424827ff9fc",
+        "name": "Hobbit Intuition",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "535fd214-40a0-41be-abf2-4aa2677b8288",
+        "name": "Rosie Cotton, Hobbiton Lass",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "6b61e36c-ac56-42e2-bfda-0dec59d21e0c",
+        "name": "Uruk Brood",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "ac9bcedd-b6ef-451a-ad6a-7eac02f8198a",
+        "name": "Uruk Rager",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "83695ad9-9fc7-4e54-b168-581300934436",
+        "name": "Uruk Savage",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "fc3e5a6b-0324-42bc-b0d0-db78d54420a3",
+        "name": "Uruk Shaman",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "ec0b6070-3378-40ab-bff6-550ae73ffb4b",
+        "name": "Uruk Slayer",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "20cfb36a-5496-4c1b-918b-ea4ad26b902e",
+        "name": "Uruk Soldier",
+        "quantity": 1,
+        "section": "lotro_additions"
+      }
+    ]
+  },
+  "fotr_gandalf_starter_deck": {
+    "name": "FOTR Gandalf Starter Deck",
+    "block": "Fellowship Block",
+    "set_number": 1,
+    "cards": [
+      {
+        "card_id": "0bba7d71-d791-40e1-9191-00360d344cdd",
+        "name": "Frodo, Son of Drogo",
+        "quantity": 1,
+        "section": "ring_bearer"
+      },
+      {
+        "card_id": "36273b27-a6ae-4ddf-98bf-447d20ed8d1b",
+        "name": "The Lord of the Rings, Trading Card Game",
+        "quantity": 1,
+        "section": "ring_bearer"
+      },
+      {
+        "card_id": "824ceec5-b5c2-420d-8e8c-715be23545f8",
+        "name": "Westfarthing",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "5ed7c92a-8faf-4dc3-9894-07291edfb5e7",
+        "name": "Ettenmoors",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "d6d22716-2871-46e5-becc-c31246c76f3c",
+        "name": "Council Courtyard",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "cbf2f833-8474-41a1-8ca9-13de956ca45a",
+        "name": "Mithril Mine",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "0bdb49a5-95a8-4297-a663-bbfee3d749ad",
+        "name": "The Bridge of Khazad-dum",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "5beb57da-3164-493f-8a69-a0f3e8df5092",
+        "name": "Dimrill Dale",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "dfd55b24-3c0c-4852-b090-e07d89422567",
+        "name": "Anduin Confluence",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "87b90439-ac0f-4d9a-98a6-c1f5f036827e",
+        "name": "Shores of Nen Hithoel",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "4bae72e3-4e10-4988-9198-c4423d5ad2a1",
+        "name": "Emyn Muil",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "49ee52d1-cee9-4ca3-8fe6-5c34dc414990",
+        "name": "Gandalf, The Grey Wizard",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "d3b8d5d9-74da-43de-a01b-cf935726aaa5",
+        "name": "Boromir, Son of Denethor",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "90362284-4d0b-40a8-a5e5-682b2c77e12a",
+        "name": "Gimli, Dwarf of Erebor",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "74764a4f-0c4f-4d0a-9980-a03f13962e36",
+        "name": "Legolas, Prince of Mirkwood",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "bc26f396-e0ef-428a-ae1d-0804b48b7f6f",
+        "name": "Barliman Butterbur, Prancing Pony Proprietor",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "2f36ffd4-a9f1-4f26-932d-ec2eead14d17",
+        "name": "Bounder",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "c7a3793e-704e-456e-8a7d-9a1aeba5862f",
+        "name": "Hobbit Sword",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "d34135fa-25c0-46d8-a63e-d42e31022e3a",
+        "name": "Defiance",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "761461a0-58f6-4c1d-a67c-8e723c0cdf4e",
+        "name": "Intimidate",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "39733f5f-ac93-4561-bf4a-c296107bcfe4",
+        "name": "Mysterious Wizard",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "6c192d75-aaa4-4efa-81f4-ed834bf3e0d4",
+        "name": "Noble Intentions",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "0520f290-29b6-469b-98bd-4d89df720892",
+        "name": "Their Halls of Stone",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "3fb1df3d-a5a5-42ff-8993-c77933594b43",
+        "name": "Treachery Deeper Than You Know",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "b1906974-44eb-43fb-a703-216d72d5626c",
+        "name": "Goblin Marksman",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "05fb0194-70a9-4c5e-a0fa-3ad99e921aab",
+        "name": "Goblin Runner",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "5578ade4-ad93-4e07-bd6d-911b78d0f265",
+        "name": "Goblin Scavengers",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "dc934e40-4913-428a-8dc2-de23164ba517",
+        "name": "Goblin Sneak",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "bdf2c6c5-98c4-492a-8e54-b5dfe7716341",
+        "name": "Moria Scout",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "a0afd562-c980-4028-922f-d57acf556aa4",
+        "name": "Goblin Scimitar",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "3c024e3f-01b3-41bb-89c3-9ba5ab3f40dd",
+        "name": "Drums in the Deep",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "e1895a69-c470-4b23-9fc1-062daf76266e",
+        "name": "Host of Thousands",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "173e42db-5882-4871-8f0c-349add0e1570",
+        "name": "They Are Coming",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "39733f5f-ac93-4561-bf4a-c296107bcfe4",
+        "name": "Mysterious Wizard",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "63ce15e5-70d5-46e5-b9a1-72bfbe3af985",
+        "name": "Sleep, Caradhras",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "689e1914-2400-48ba-a8fe-f424827ff9fc",
+        "name": "Hobbit Intuition",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "6c192d75-aaa4-4efa-81f4-ed834bf3e0d4",
+        "name": "Noble Intentions",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "0d49365f-5014-4c31-bc48-b609c257601d",
+        "name": "Sorry About Everything",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "b1906974-44eb-43fb-a703-216d72d5626c",
+        "name": "Goblin Marksman",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "8310e1c0-73c9-4006-b632-e513bcd9548a",
+        "name": "Goblin Patrol Troop",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "05fb0194-70a9-4c5e-a0fa-3ad99e921aab",
+        "name": "Goblin Runner",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "a0afd562-c980-4028-922f-d57acf556aa4",
+        "name": "Goblin Scimitar",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "e1895a69-c470-4b23-9fc1-062daf76266e",
+        "name": "Host of Thousands",
+        "quantity": 1,
+        "section": "lotro_additions"
+      }
+    ]
+  },
+  "fotr_deluxe_starter_set": {
+    "name": "FOTR Deluxe Starter Set",
+    "block": "Fellowship Block",
+    "set_number": 1,
+    "cards": [
+      {
+        "card_id": "0bba7d71-d791-40e1-9191-00360d344cdd",
+        "name": "Frodo, Son of Drogo",
+        "quantity": 1,
+        "section": "ring_bearer"
+      },
+      {
+        "card_id": "36273b27-a6ae-4ddf-98bf-447d20ed8d1b",
+        "name": "The Lord of the Rings, Trading Card Game",
+        "quantity": 1,
+        "section": "ring_bearer"
+      },
+      {
+        "card_id": "f1b19f03-d80a-4d10-8048-3a8a20ea060e",
+        "name": "East Road",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "7a1ebcd0-9968-48ae-84ad-2a3e781876ec",
+        "name": "Bree Streets",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "df43aefa-c287-4b3f-b3da-a28e73a292d9",
+        "name": "Ford of Bruinen",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "4e5367dd-ccb7-434b-8bbf-220ac15863c2",
+        "name": "Moria Stairway",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "0bdb49a5-95a8-4297-a663-bbfee3d749ad",
+        "name": "The Bridge of Khazad-dum",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "cf0c6ec5-0517-40d0-b5fe-195963d5d6be",
+        "name": "Lothlorien Woods",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "04edcccc-4ae5-4ba1-9130-e7201ab738ca",
+        "name": "Anduin Wilderland",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "f4bab67c-6131-470b-b890-c3c8fb360d89",
+        "name": "Anduin Banks",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "4bae72e3-4e10-4988-9198-c4423d5ad2a1",
+        "name": "Emyn Muil",
+        "quantity": 1,
+        "section": "adventure_deck"
+      },
+      {
+        "card_id": "c4faccce-5904-4792-aa09-3fd8515dc012",
+        "name": "Merry, From O'er the Brandywine",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "fc68728e-42e8-4ff3-a93a-d072cae86360",
+        "name": "Pippin, Friend to Frodo",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "31f85b62-6af0-4899-8a00-6d6adba5ce6d",
+        "name": "Sam, Son of Hamfast",
+        "quantity": 1,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "d3b8d5d9-74da-43de-a01b-cf935726aaa5",
+        "name": "Boromir, Son of Denethor",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "2f36ffd4-a9f1-4f26-932d-ec2eead14d17",
+        "name": "Bounder",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "59fb5849-2452-487b-b824-b72eb88beba2",
+        "name": "Hobbit Party Guest",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "c7a3793e-704e-456e-8a7d-9a1aeba5862f",
+        "name": "Hobbit Sword",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "97cf0de7-b0dc-4e9d-8ff8-d6eff0c831b8",
+        "name": "Halfling Deftness",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "4bacbc95-3f69-43f1-91fc-cf04eb8d6fa3",
+        "name": "Hobbit Appetite",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "689e1914-2400-48ba-a8fe-f424827ff9fc",
+        "name": "Hobbit Intuition",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "ccc0e47f-c158-472e-b911-3857e1ca0b4e",
+        "name": "Hobbit Stealth",
+        "quantity": 3,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "7a8e0f6f-39ed-4619-b461-4554422a8680",
+        "name": "Stout and Sturdy",
+        "quantity": 2,
+        "section": "free_peoples"
+      },
+      {
+        "card_id": "493702c2-bad3-4548-9f7b-09c32b123ff0",
+        "name": "Morgul Skulker",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "3a874f73-3bb7-4c2f-bfe1-8779193b1b51",
+        "name": "Orc Chieftain",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "6c3b9acd-7bdc-4b77-8ab0-61747cc0787c",
+        "name": "Orc Scimitar",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "0c7be710-0146-4cb1-bd78-9a26a87eb78f",
+        "name": "Orc Soldier",
+        "quantity": 3,
+        "section": "shadow"
+      },
+      {
+        "card_id": "ccbdc64f-fdc0-4532-bfae-e60a42dc0faf",
+        "name": "Ulaire Lemenya, Lieutenant of Morgul",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "ead4e5d9-ec82-44db-bfc1-429abcd42a6b",
+        "name": "Ulaire Nertea, Messenger of Dol Guldur",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "cca1dd33-44c9-4016-9520-5fbdec68a88d",
+        "name": "Sword of Minas Morgul",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "34252c57-5cf8-4411-ba85-75074f170a9c",
+        "name": "Black Breath",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "63c19166-a144-4527-ad28-9e178ba8d060",
+        "name": "Blade Tip",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "aeea994b-4c62-44d3-a4f2-6b68f870255d",
+        "name": "Forces of Mordor",
+        "quantity": 2,
+        "section": "shadow"
+      },
+      {
+        "card_id": "4bacbc95-3f69-43f1-91fc-cf04eb8d6fa3",
+        "name": "Hobbit Appetite",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "c7a3793e-704e-456e-8a7d-9a1aeba5862f",
+        "name": "Hobbit Sword",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "7a8e0f6f-39ed-4619-b461-4554422a8680",
+        "name": "Stout and Sturdy",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "eb8cbd8c-b2da-4029-b024-1ddc012c90b4",
+        "name": "There and Back Again",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "493702c2-bad3-4548-9f7b-09c32b123ff0",
+        "name": "Morgul Skulker",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "6c3b9acd-7bdc-4b77-8ab0-61747cc0787c",
+        "name": "Orc Scimitar",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "991cdb7c-a811-4059-8b1c-1adf147873c1",
+        "name": "Shadow's Reach",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "ccbdc64f-fdc0-4532-bfae-e60a42dc0faf",
+        "name": "Ulaire Lemenya, Lieutenant of Morgul",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "fe505f24-3caa-4bdd-880b-b930fa6f9752",
+        "name": "Ulaire Nelya, Lieutenant of Morgul",
+        "quantity": 1,
+        "section": "lotro_additions"
+      },
+      {
+        "card_id": "1ade0833-11ca-4e87-984c-5ec7cbdad19a",
+        "name": "Ulaire Otsea, Lieutenant of Morgul",
+        "quantity": 1,
+        "section": "lotro_additions"
+      }
+    ]
+  }
+}

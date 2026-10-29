@@ -15,6 +15,8 @@ import type {
   TwoFactorChallenge,
   TwoFactorSetupResponse,
   TwoFactorEnableResponse,
+  SetReleaseSummary,
+  SetReleaseListResponse,
 } from './types'
 
 const http: AxiosInstance = axios.create({
@@ -137,6 +139,34 @@ export async function adminDeleteUser(
     `/admin/users/${userId}`,
     { data: payload },
   )
+  return data
+}
+
+export async function adminResetUser(
+  userId: string,
+  payload: AdminUserDeleteRequest,
+): Promise<AdminUserSummary> {
+  const { data } = await http.post<AdminUserSummary>(
+    `/admin/users/${userId}/reset`,
+    payload,
+  )
+  return data
+}
+
+// ── Admin: Set Releases ──────────────────────────────────────────────────────
+
+export async function adminListSetReleases(): Promise<SetReleaseListResponse> {
+  const { data } = await http.get<SetReleaseListResponse>('/admin/set-releases')
+  return data
+}
+
+export async function adminActivateSetRelease(setNumber: number): Promise<SetReleaseSummary> {
+  const { data } = await http.post<SetReleaseSummary>(`/admin/set-releases/${setNumber}/activate`)
+  return data
+}
+
+export async function adminDeactivateSetRelease(setNumber: number): Promise<SetReleaseSummary> {
+  const { data } = await http.post<SetReleaseSummary>(`/admin/set-releases/${setNumber}/deactivate`)
   return data
 }
 

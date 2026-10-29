@@ -72,7 +72,7 @@ Key generated artifacts under do/agent/models:
 - lotr-<base>-<quant>.gguf
 - Modelfile.<profile>
 - lora/<profile>/ (adapter_model.safetensors, adapter_config.json, tokenizer files, lora-metadata.json)
-- lotr-lora-<profile>-f16.gguf
+- <model-config>_lotr_lora-f16.gguf
 - cache/<profile>/lora-train.sha256
 
 ## 4) Configuration Resolution and Precedence
@@ -107,12 +107,12 @@ Important variables and defaults:
 - LORA_OUTPUT_DIR=$(MODEL_DIR)/lora/$(AGENT_PROFILE)
 - LORA_MERGED_DIR=$(MODEL_DIR)/lora-merged/$(AGENT_PROFILE)
 - LORA_GGUF_OUTTYPE=q4_k_m (default)
-- LORA_GGUF=$(MODEL_DIR)/lotr-lora-$(AGENT_PROFILE)-$(LORA_GGUF_OUTTYPE).gguf
+- LORA_GGUF=$(MODEL_DIR)/$(AGENT_MODEL_CONFIG)_lotr_lora-$(LORA_GGUF_OUTTYPE).gguf
 
 Ollama naming:
 - lotr-<base>-<quant>
 - lotr-agentic-<profile>
-- lotr-lora-<profile>
+- <model-config>_lotr_lora
 
 ## 6) Stage-by-Stage Build Process
 

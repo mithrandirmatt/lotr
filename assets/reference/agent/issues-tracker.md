@@ -8,7 +8,30 @@ Note, update this file with issues that are active, pending, complete, or new.
 
 ### New:
 
-- **LOT-008** — Recapture LOT-003 admin login failure in admin panel.
+- **LOT-6.5** — Fix issues found in comprehensive review of LOT-001 through LOT-006 (2026-07-23).
+  - Review verdicts: LOT-005 and LOT-006 accurately completed; LOT-001, LOT-003, LOT-004 partially complete; LOT-002 falsely marked complete.
+  - **Critical (fix first)**:
+    - `SECRET_KEY = secrets.token_urlsafe(32)` in `server/server/routes/api.py` is regenerated on every server restart, invalidating all issued JWTs. Must load from env var/config instead.
+    - Anti-cheat is non-functional (LOT-002 goal not met): `validate_deck()` in `server/server/engine/validator.py` has no real logic (always valid); `apply_action()` in `server/server/engine/core.py` is a placeholder that only increments the turn counter; `join_match()` never verifies the joining player's deck cards are owned by them; match audit "integrity score" is fabricated, not derived from real analysis.
+  - **Data accuracy**:
+    - `gotdot/assets/data/game_logic_database.json` contains only ~200 parsed cards, not the claimed 3,216 (LOT-001). Either re-run `scripts/generate_game_logic.py` against the full card database or correct the tracked count.
+  - **Missing functionality**:
+    - No endpoint exists to grant/revoke `is_admin` status (LOT-003) — only `is_moderator` toggle exists via `PUT /admin/users/{id}/moderator`.
+  - **Security hardening**:
+    - Default local-admin shortcut password `"yourmommalooksfunny"` is hardcoded as a source fallback in `api.py`; `ENABLE_LOCAL_ADMIN_SHORTCUT` defaults to enabled (`"1"`). Should require explicit opt-in with no source-code default.
+    - No password complexity rules beyond 8-char minimum; 24h access token lifetime is long; `is_verified=True` is set on register with no real email verification flow.
+  - Full findings saved in repo memory: `/memories/repo/issues-lot001-006-review.md`.
+
+- **LOT-008** - Add AI play.
+  - This will allow users to play against an AI opponent locally.
+  - The AI should follow the same rules user selects.
+  - We should make the AI difficulty adjustable, so users can choose to play against an easier or harder opponent.
+    - Decks should be built for each difficulty level, and the AI should use the appropriate deck based on the selected difficulty.
+    - Need to classify cards in the database by difficulty level, so we can build appropriate decks for the AI.
+  - The AI should be able to make legal moves and should be able to win or lose based on the game state.
+  - AI should use the same game logic as the online play, so we can ensure consistency between local and online play.
+
+- **LOT-008.5** — Recapture LOT-003 admin login failure in admin panel.
 	- **Type**: bug/auth-integration
 	- **Priority**: 1
 	- **Problem statement**:
@@ -95,12 +118,60 @@ Note, update this file with issues that are active, pending, complete, or new.
 	- **Problem statement**:
 		- Decks must be validated consistently across client and server.
 	- **Implementation details**:
-		- Enforce deck size, FP/Shadow split, site rules, uniqueness/copy limits.
-		- Enforce format + X-list/R-list/errata constraints.
-		- Return structured violations suitable for UI display.
+		- ~~Enforce deck size, FP/Shadow split, site rules, uniqueness/copy limits.~~ —
+		  **DONE**: `server/server/services/deck_legality.py`'s
+		  `evaluate_deck_legality()` (draw-deck size >=60, equal FP/Shadow split,
+		  9-site adventure deck) and `check_copy_limit()` (max 4 copies per card
+		  title ignoring subtitle, max 1 copy per site), wired into
+		  `GET /decks/{deck_id}/legality` and `POST /decks/{deck_id}/cards`
+		  respectively. Unit tested in `server/tests/test_deck_legality.py`;
+		  verified live end-to-end this session (build a 60-card deck
+		  incrementally via the real add-card route, confirm legality
+		  transitions correctly, confirm 5th-copy and 2nd-site-copy requests are
+		  rejected with precise messages).
+		- Enforce format + X-list/R-list/errata constraints. —
+		  **PARTIALLY DONE**: format + X-List enforcement is implemented using the
+		  real scraped tournament data already imported into `Card.attributes`
+		  (`formats`, `on_xlist`, `has_errata` -- see
+		  `build/py/wiki/create_card_database.py`/`create_xlist_databases.py` and
+		  `server/scripts/migrate_import_card_catalog.py`). `Deck.format`/`DeckFormat`
+		  now use the real tournament format names (`Fellowship Block`, `Tower Block`,
+		  `King Block`, `Expanded`, `Standard`, `Open`) instead of the old fictional
+		  placeholders (`standard`/`modern`/`open`). `deck_legality.is_format_legal()`/
+		  `check_format_legality()` reject cards not legal in (or X-listed for) a
+		  deck's format, wired into `POST /decks/{deck_id}/cards` and
+		  `GET /decks/legal-cards` (which previously validated the format string but
+		  never actually filtered -- now fixed). Errata is surfaced as
+		  informational-only `errata_notes` on `GET /decks/{deck_id}/legality` (never
+		  blocks legality, since there's no card-text engine (LOT-013) to apply
+		  corrected text). R-List remains **NOT implemented** -- genuine, permanent
+		  documented gap: no R-List data has been scraped anywhere in this repo (see
+		  `build/py/wiki/create_xlist_databases.py`, which only builds X-List +
+		  errata databases); fabricating one would mean inventing which cards are
+		  restricted, which was intentionally avoided. Also fixed a pre-existing
+		  FastAPI route-ordering bug where `/decks/{deck_id}` (registered first)
+		  swallowed `/decks/legal-cards` requests as `deck_id="legal-cards"`, always
+		  404ing; `/decks/legal-cards` is now registered first. A one-off migration
+		  (`server/scripts/migrate_update_deck_format_values.py`) updated existing
+		  `decks.format` values from `'open'`→`'Open'` (32 rows). Unit tested
+		  (`test_deck_legality.py`: `is_format_legal`/`check_format_legality`/format+
+		  errata integration in `evaluate_deck_legality`) and verified live
+		  end-to-end (register user, seed ownership of real cards with known
+		  format/X-list data, confirm format-illegal and X-listed cards are rejected
+		  with precise messages, confirm `GET /decks/legal-cards` filters correctly
+		  per format, confirm `errata_notes` surfaces without affecting `is_legal`).
+		  Godot client (`gotdot/scripts/deck_builder.gd`/`api_client.gd`) updated to
+		  send the new capitalized `"Open"` default instead of the old `"open"`.
+		- Return structured violations suitable for UI display. — **DONE** via
+		  `DeckLegalityResponse` (`is_legal`, `issues: List[str]`, counts).
 	- **Acceptance criteria**:
-		- Illegal decks fail with precise per-rule diagnostics.
-		- Legal deck validation is deterministic and shared across consumers.
+		- Illegal decks fail with precise per-rule diagnostics. — met for the
+		  implemented rules (size/split/site-count/copy-limit/format/X-List); R-List
+		  remains not applicable since no R-List data exists anywhere to enforce.
+		- Legal deck validation is deterministic and shared across consumers —
+		  **DONE**: both the `GET /decks/{id}/legality` diagnostics endpoint and
+		  the `POST /decks/{id}/cards` add-card route call the same
+		  `deck_legality` service functions.
 
 - **LOT-015** — Server-authoritative match protocol and replay audit trail.
 	- **Type**: feature/server-infrastructure
@@ -167,6 +238,7 @@ Note, update this file with issues that are active, pending, complete, or new.
 		- Every new account receives the exact set-1 bundle once: 1 starter deck + 5 booster packs.
 		- On each set activation, each eligible user receives exactly one release bundle for that set: 1 starter deck + 5 booster packs.
 		- Entitlement consumption is tracked and idempotent.
+		- ~~Bugfix (live report)~~ — **DONE**: deactivating a set now revokes any still-unclaimed ("active") entitlements for that set (`POST /admin/set-releases/{set_number}/deactivate` in `server/server/routes/api.py`), so a player who was granted a release bundle for a set that's later deactivated (before they claimed it) isn't left in a stuck state: the "choose your starter deck" screen was showing a blank options list (no curated decks exist for an unreleased set) and booster-pack claims were 400-rejecting (set not active) with the failure silently masked by `new_game.gd`'s unconditional "Opened N pack(s)!" success message. Also fixed client-side: `new_game.gd`'s `_on_open_boosters_pressed()` now reports actual failures instead of overwriting them, and `_load_deck_options()` shows a clear "no options available for Set N yet" status instead of a blank list. A new idempotent migration (`server/scripts/migrate_revoke_dangling_entitlements.py`) retroactively revoked 156 pre-existing dangling entitlements (mostly LOT-025 release-bundle test data, including the real reporting account's stuck Set-2 grant from earlier manual admin-panel testing). Revoking (not deleting) preserves `_grant_release_bundle_to_all_users`'s idempotency guard, so a later reactivation still won't double-grant (verified live).
 
 - **LOT-019** — Gift ledger and redemption lifecycle tracking.
 	- **Type**: feature/gifting
@@ -441,6 +513,201 @@ Note, update this file with issues that are active, pending, complete, or new.
 	- **Related issues**:
 		- Split from: LOT-025.
 		- Depends on: LOT-014 (deck legality and format enforcement service).
+	- **Status: DONE (found already implemented, verified this session)**:
+		- `gotdot/scripts/deck_editor.gd`'s `_refresh_legality()` calls
+		  `Api.get_deck_legality()` (→ `GET /decks/{deck_id}/legality`) from
+		  inside `_load_deck()`, which both `_add_card()` and `_remove_card()`
+		  await via `_load_all()` — every add/remove, whether triggered by
+		  double-click or drag-drop, re-runs the full live legality check.
+		- The `LegalityLabel` UI node shows aggregate counts (draw deck size,
+		  Free Peoples/Shadow counts, site count) plus the per-rule issue
+		  strings, colored green when legal and orange when not.
+		- Copy-limit violations (LOT-014's `check_copy_limit`) are blocked
+		  proactively at add-time: the add-card route returns 400 with a
+		  specific message (e.g. "...maximum is 4", "...only one copy..."),
+		  which `_add_card()` surfaces via `_set_notice(...)`.
+		- Verified end-to-end via a live HTTP smoke test exercising the same
+		  routes the Godot client calls: empty deck is illegal -> incremental
+		  adds converge on a legal 60/30/30/9 deck -> 5th-copy and 2nd-site-copy
+		  requests are rejected with the expected messages -> removing a site
+		  drops the deck back out of legality.
+		- Remaining minor gaps vs. the acceptance criteria (not blocking, not
+		  acted on): the aggregate-level rules (size/split/site-count) don't
+		  name a specific offending card (they are inherently deck-wide, not
+		  per-card); there's no explicit debounce, though none is needed since
+		  each edit is a single discrete action rather than rapid-fire input.
+		  Format/X-list/R-list/errata diagnostics are out of scope here pending
+		  LOT-014 implementing those rules server-side.
+
+- **LOT-100** — LOT-025 follow-up backlog (deferred slice scope).
+	- **Type**: backlog/tracking
+	- **Priority**: 2
+	- **Note**:
+		- LOT-025 is delivered as a series of incremental slices rather than one
+		  monolithic change. Each slice is scoped deliberately narrow so it can be
+		  built, tested, and verified end-to-end before moving on. This issue is
+		  the catch-all for scope explicitly deferred out of a completed/
+		  in-progress LOT-025 (or supporting LOT-017/018/019/020/021/022) slice,
+		  so nothing gets silently dropped. Items move OUT of this list and into
+		  `issues-current.md`/`issues-todo.md` when picked up as their own slice.
+	- **Problem statement**:
+		- Without a running backlog record, incremental slice-based delivery of
+		  a large consolidation issue risks losing track of deliberately-deferred
+		  scope.
+	- **Backlog items (as of Slice 2 — booster generation/sell-back)**:
+		- ~~`starter_deck`/`booster_box` server-side card generation~~ — **DONE**
+		  (booster_box: Slice 3, `BOOSTER_BOX_PACK_COUNT`; starter_deck: found
+		  already implemented in an earlier session, see below). Superseded by
+		  the more detailed bullets further down this list.
+		- ~~Real card catalog import~~ — **DONE.** `migrate_import_card_catalog.py`
+		  imports the real catalog from
+		  `build/do/assets/database/card_database.json`; live DB confirmed at
+		  3,411 active cards (common=1014/uncommon=883/rare=1113/legendary=186/
+		  mythic=215) across sets 0-19 and 30-32. The 12 placeholder Set-1 rows
+		  were deactivated (`is_active=0`), not deleted.
+		- ~~LOT-018 entitlement bundles~~ — **DONE**: new-account bootstrap grant
+		  (1 starter deck + 5 packs from set 1, `_grant_new_user_entitlements`,
+		  triggered on `POST /auth/register`) and per-set-unlock release bundles
+		  (`_grant_release_bundle_to_all_users`, triggered on
+		  `POST /admin/set-releases/{n}/activate`, idempotent per-user/per-set —
+		  verified live: a deactivate/reactivate cycle does not double-grant).
+		  Registration timestamp is `User.created_at` (always set at insert
+		  time; no legacy-backfill gap found in the live schema).
+		- ~~`starter_deck` card generation~~ — **DONE** (found already
+		  implemented, undocumented, in an earlier session): curated set-1
+		  decklist at `server/data/starter_decks_set1.json`, granted via
+		  `_grant_starter_deck_cards()` from both `/store/purchase` and
+		  entitlement-claim. Other sets have no curated decklist yet (real
+		  game-design content, not something to invent here).
+		- LOT-019 gift ledger and redemption lifecycle: the core states/API
+		  (created/granted/redeemed/consumed/expired/revoked enum, admin
+		  create/revoke, user list/redeem, concurrency-safe atomic state
+		  transitions, lazy expiry) is DONE (slice 5) for `pack`/`booster_box`
+		  products. Still open: `starter_deck`/`promo_card` gift redemption
+		  (blocked on the same missing curated-content gap as store purchases
+		  of those products). ~~Store-surface gift/entitlement claim UX~~ —
+		  **DONE**: `card_reveal.gd`/`.tscn` overlay wired into `new_game.gd` for
+		  both starter-deck and booster-pack claim flows.
+		- ~~Weekly active-user random foil reward job~~ — **DONE**: rolled
+		  lazily at login (`_maybe_roll_weekly_foil_reward`, hooked into
+		  `_issue_tokens_for_user`), 5% chance, weighted common/uncommon/rare,
+		  windows anchored to `User.created_at`, non-stacking via a unique
+		  `(user_id, week_index)` index on the new `weekly_reward_rolls` table
+		  (`migrate_add_weekly_rewards.py`) — verified live for win/loss/
+		  idempotency paths.
+		- ~~LOT-021 telemetry beyond the baseline~~ — **DONE**: new
+		  `EconomySnapshot` model/table (`migrate_add_economy_snapshots.py`)
+		  captures point-in-time totals (cards in circulation, foil issued,
+		  Tolkien net flow, sell-back totals, weekly reward stats) plus the
+		  full raw `EconomySummaryResponse` for drill-down. No background
+		  scheduler exists in this repo, so capture is lazy: `GET
+		  /admin/economy/summary` captures at most one snapshot per calendar
+		  day, the first time it's called that day. New
+		  `GET /admin/economy/trends` route returns snapshots oldest-first with
+		  simple threshold/drift alerts (`ECONOMY_SNAPSHOT_DRIFT_ALERT_THRESHOLD_PCT`,
+		  currently 25%) computed between consecutive snapshots per metric.
+		  ~~Weekly-active-user reward telemetry~~ — **DONE**:
+		  `GET /admin/economy/summary` now also returns `weekly_reward_stats`
+		  (total rolls, wins/losses, win rate, distinct users rolled — a proxy
+		  for weekly-active users since a roll row is only ever created via a
+		  successful login — and wins by rarity), aggregated from the
+		  `weekly_reward_rolls` table. The current-totals baseline
+		  (`GET /admin/economy/summary` — circulation, foil issuance, Tolkien
+		  flow by source, sell-back totals) is DONE (slice 4).
+		- ~~LOT-022 release events/participation schema~~ — **DONE**: new
+		  `ReleaseEvent`/`EventParticipation` models
+		  (`migrate_add_release_events.py`), admin CRUD
+		  (`POST /admin/events`, `GET /admin/events`,
+		  `POST /admin/events/{id}/activate|close`,
+		  `GET /admin/events/{id}/participants`), public
+		  `GET /events` + `POST /events/{id}/join` (idempotent per user/event
+		  via a unique index), scheduled/live/closed status model, and
+		  `reward_policy` left as a pluggable free-form JSON field for future
+		  promo-card prize awarding. Set activation now auto-links (creates or
+		  reactivates, never duplicates) a `live` event for that set_number
+		  via `_ensure_live_release_event` — verified live across a
+		  deactivate/reactivate cycle.
+		- ~~Card-authoring/admin catalog workflow~~ — **DONE**: `Card` gained
+		  `publish_status` (`draft`/`in_review`/`published`, DB default stays
+		  `'published'` for the existing bulk-imported catalog, ORM Python-side
+		  default is `'draft'` for newly authored cards) and `review_notes`
+		  columns (`migrate_add_card_review_gate.py`). Public catalog routes
+		  (`GET /cards`, `GET /cards/{id}`) now only return `published` cards.
+		  New admin routes: `GET /admin/cards` (any status, filterable),
+		  `POST /admin/cards/{id}/submit-review` (draft->in_review),
+		  `POST /admin/cards/{id}/publish` (in_review->published),
+		  `POST /admin/cards/{id}/reject` (in_review->draft, records
+		  `review_notes`) — each enforces the expected prior state (400
+		  otherwise). Release linking: `CardBase`/`CardCreate`/`CardUpdate`
+		  gained `set_number`, validated against `SetRelease` on create/update
+		  (400 if the set doesn't exist) — this also fixed a pre-existing schema
+		  gap where the card schemas had no `set_number` field at all. Also
+		  fixed two pre-existing bugs surfaced while building this: (1)
+		  `CardCreate`/`CardUpdate` expose a `stats` field with no matching
+		  `Card` column (`Card` has `attributes`) — `create_card`/`update_card`
+		  now explicitly remap `stats`->`attributes`; (2) `CardResponse`
+		  serialization of raw ORM `Card` objects always returned `stats: null`
+		  regardless of actual data, because `CardBase` had no
+		  `from_attributes` config and there's no ORM attribute literally named
+		  `stats` — fixed by adding `model_config = ConfigDict(from_attributes=True)`
+		  to `CardBase` plus a `Card.stats` Python `@property` alias for
+		  `attributes`. Verified live end-to-end (create as draft ->
+		  hidden from public catalog -> submit-review -> reject with notes ->
+		  resubmit -> publish -> now visible in public catalog, plus the
+		  release-linking 400 and admin-queue filter).
+
+		- Deck builder UX — **partially done**: a functional interim editor
+		  exists (`deck_builder.gd/tscn` deck-selection screen +
+		  `deck_editor.gd/tscn` two-pool selected/available editor, card
+		  preview, drag-drop/double-click add-remove, backed by
+		  `GET /users/me/cards/available`).
+		  ~~Grouped culture/card-type filters~~ — **DONE**: the filter panel
+		  now has three checkbox groups (Rarity, Card Type, Culture) instead
+		  of rarity-only, reading `card.stats.card_type`/`card.stats.culture`
+		  (already serialized by the server, no API change needed) and wrapped
+		  in a `ScrollContainer` since there are ~41 checkboxes total. The
+		  spec's wishlist terms "burdens"/"signet"/"weapon" aren't distinct
+		  `card_type` values in the real imported catalog (signet is a
+		  per-card field, Weapon is a `subtypes` entry) — intentionally not
+		  modeled as separate filters; see `/memories/repo/godot-dev-gotchas.md`
+		  for the full real-data taxonomy. Verified via two Godot headless
+		  checks (full project boot with zero errors; a temp `-s` script that
+		  loads+instantiates `deck_editor.tscn` to confirm the new
+		  `FiltersScroll/FiltersBox` node path resolves and the script
+		  compiles) — no visual/screenshot verification was possible in this
+		  environment (disclosed, not claimed).
+		  **Still open**: the exact
+		  binder-metaphor card browser (9x9, two-page spread), split-screen
+		  deck-summary grid (4 cols x N rows, no duplicate tiles) with Deck
+		  Cards/Sites/Starting Fellowship tabs, mutually-exclusive
+		  tournament-ruleset selection.
+		  ~~Sets checklist~~ — **DONE**: a dynamic "Set" filter section is
+		  appended to the filter panel, built from whichever `set_number`
+		  values actually appear across the deck's + available pool's cards
+		  (not a fixed list, since the catalog only has Set 1 today), labeled
+		  via `GET /releases/active-sets` (falls back to "Set N" for cards
+		  from a since-deactivated set). New `Api.get_active_sets()` client
+		  method added (public route, no auth). Verified the same way as the
+		  card-type/culture filters (Godot headless full-boot + a temp
+		  SceneTree script instantiating `deck_editor.tscn`) — no live
+		  multi-set data exists yet to exercise more than one checkbox, but
+		  the code path is identical to the already-working rarity filter.
+		  ~~25-decks-per-user cap~~ — **DONE**: enforced in `POST /decks`
+		  (`MAX_DECKS_PER_USER = 25`), verified live (26th deck creation
+		  correctly rejected with 400).
+		- ~~Wiring live legality diagnostics (LOT-032/LOT-014) into the deck
+		  builder once it exists.~~ — **DONE (found already implemented,
+		  verified this session)**: see the LOT-032 entry's "Status" note
+		  above for full details. No code changes were needed; this slice was
+		  a verification-and-documentation pass (the tracker had gone stale —
+		  the feature was already built).
+	- **Acceptance criteria**:
+		- Every bullet above is either completed (moved into
+		  `issues-completed.md` as its own slice/issue with its own
+		  verification) or explicitly cut with a documented reason before this
+		  issue itself is closed.
+		- This list stays current: new deferrals discovered mid-slice are added
+		  here rather than left undocumented in code comments alone.
 
 - **Removed As Overlap (Not Started)**
 	- **OLD-LOT-022 (pre-renumber)** — merged into LOT-018 and LOT-019.

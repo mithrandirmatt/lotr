@@ -2,5 +2,52 @@ accelerate>=0.34.0
 bitsandbytes>=0.43.0
 datasets>=2.21.0
 peft>=0.12.0
-transformers>=4.44.0,<5.0.0
+# No released PyPI transformers version recognizes the qwen3_5 model_type /
+# Qwen3_5ForConditionalGeneration architecture yet (confirmed: grepping the
+# installed 4.57.6 package tree for "qwen3_5" returns zero hits). Qwen's own
+# model card for Qwen/Qwen3.5-9B states the git `main` branch of transformers
+# is required: pip install "transformers[serving] @ git+https://github.com/huggingface/transformers.git@main"
+# Pinned to a known-good commit (not @main): tracking a moving branch forces a
+# full re-clone + rebuild + reinstall on every single run (main always looks
+# "changed" once it advances upstream), and each reinstall deletes/recreates
+# thousands of small files, which is slow -- this was a major, confirmed
+# contributor to multi-hour dependency-install times on this stack (2026-08-18
+# smoke test). Bump the commit deliberately (test it first) once a newer
+# commit or a tagged release is needed; revert to a normal PyPI floor once
+# qwen3_5 ships in a tagged release (needed for build.sft_train.py's
+# Qwen/Qwen3.5-9B reasoning-distillation SFT, and for
+# build.finetune.py/build.lora_export_gguf.py).
+transformers @ git+https://github.com/huggingface/transformers.git@116224175191c9e77411a71849262595cb80f936
 trl>=0.10.1
+# Qwen3.5's hybrid architecture uses Gated DeltaNet (linear-attention) blocks
+# for 28/32 layers. Without this, transformers falls back to a pure-PyTorch
+# implementation of the DeltaNet recurrence during training, which is
+# drastically slower (observed: training never completed even a single step).
+# flash-linear-attention has official ROCm support (Triton-based kernels);
+# the main pip install command already targets the rocm7.2 wheel index, which
+# satisfies this package's torch/triton requirement without reinstalling the
+# pinned torch build. If the "fast path is not available" warning persists
+# after this, also try `causal-conv1d` (CUDA/HIP source build, ROCm-patched
+# but not added here yet since it requires compiling from source).
+flash-linear-attention[rocm]
+# Qwen/Qwen3.5-9B is a vision-language checkpoint; qwen35-9b.json's
+# lora_overrides.keep_vision=true trains through the official
+# AutoModelForMultimodalLM/AutoProcessor path (matches Qwen's own model-card
+# example) instead of the text-only AutoModelForCausalLM shortcut, so the
+# vision tower's weights are kept intact rather than discarded on load.
+# Confirmed working on this ROCm 7.2 stack (2026-07-31): torchvision-0.28.0+
+# rocm7.2 installs from the same --index-url used for torch above, imports
+# cleanly, and AutoProcessor.from_pretrained resolves correctly. Text-only
+# model configs are unaffected: build.sft_train.py's own bootstrap
+# uninstalls torchvision/torchaudio again right after this file installs,
+# same as before.
+torchvision
+pillow
+# Liger Kernel's fused linear cross-entropy avoids materializing the full
+# [seq_len, vocab_size] logits tensor during loss computation -- fixes a real
+# forward-pass GPU OOM on Qwen3.5-9B (large vocab at max_seq_length=4096).
+# Triton-based (like flash-linear-attention above), works against the same
+# pinned rocm7.2 torch/triton build; has a dedicated apply_liger_kernel_to_qwen3_5
+# patch function (confirmed via source inspection 2026-08-18) covering both
+# Qwen3_5ForCausalLM and the vision-language Qwen3_5ForConditionalGeneration.
+liger-kernel

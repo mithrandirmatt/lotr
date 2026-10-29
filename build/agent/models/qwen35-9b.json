@@ -1,0 +1,41 @@
+{
+  "id": "qwen35-9b",
+  "type": "dense",
+  "ollama_base_model": "qwen3.5:9b",
+  "hf_base_model": "Qwen/Qwen3.5-9B",
+  "chat_response_template": "<|im_start|>assistant\n",
+  "runtime_overrides": {
+    "num_ctx": 262144,
+    "temperature": 0.2
+  },
+  "lora_overrides": {
+    "max_seq_length": 4096,
+    "batch_size": 1,
+    "grad_accum": 8,
+    "learning_rate": 0.0001,
+    "warmup_ratio": 0.03,
+    "gradient_checkpointing": true,
+    "load_in_4bit": true,
+    "load_in_8bit": false,
+    "bnb_4bit_quant_type": "nf4",
+    "bnb_4bit_use_double_quant": true,
+    "device_map": "cuda",
+    "torch_dtype": "float16",
+    "optim": "adamw_torch",
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "target_modules": "all-linear",
+    "keep_vision": true
+  },
+  "capability_tags": [
+    "coding",
+    "agentic",
+    "dense",
+    "reasoning-distillation-target"
+  ],
+  "constraints": {
+    "vram_target_gb": 24,
+    "note": "Official Qwen/Qwen3.5-9B base (Apache-2.0). Hybrid architecture: 32 layers grouped as 8x(3x Gated DeltaNet+FFN, 1x Gated Attention+FFN) = 24/32 linear_attention (Gated DeltaNet), 8/32 full_attention. target_modules is set to 'all-linear' (PEFT QLoRA-style auto-discovery) instead of a hardcoded q_proj/k_proj/v_proj/o_proj list, since the DeltaNet blocks use different internal linear layer names that a dense-Qwen-style list would silently miss. Requires transformers>=4.57 (qwen3_5 model_type support) -- verify the installed version recognizes 'Qwen3_5ForConditionalGeneration' before training. This is a vision-language checkpoint (image-text-to-text). keep_vision=true trains via AutoModelForMultimodalLM/AutoProcessor (Qwen3_5ForConditionalGeneration), matching the model card's own official usage example, instead of the AutoModelForCausalLM shortcut (which resolves to Qwen3_5ForCausalLM and silently discards the vision tower via _keys_to_ignore_on_load_unexpected -- confirmed by reading the installed transformers source directly). Requires torchvision+pillow in the training venv (confirmed working on this ROCm 7.2 stack 2026-07-31: torchvision-0.28.0+rocm7.2 installs cleanly from the same wheel index as torch, no source build needed). Because the training corpus is text-only, 'all-linear' will also attach LoRA adapters to the vision tower's linear layers (Qwen3_5VisionMLP/VisionAttention/VisionPatchMerger) -- these receive no gradient (vision forward path is never exercised without pixel_values) and add only negligible memory overhead, not a correctness concern. device_map is pinned to single-GPU ('cuda') rather than 'auto': the quantized model's own memory estimate (~15.8GB) fits comfortably on a single 24GB GPU, and CPU+GPU offload via accelerate's device_map='auto' was confirmed live to make Gated DeltaNet layers pathologically slow (Triton/flash-linear-attention kernels only accelerate GPU-resident tensors; any DeltaNet layer offloaded to CPU falls back to a slow single-threaded pure-Python recurrence over the full max_seq_length)."
+  }
+}

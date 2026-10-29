@@ -1,0 +1,110 @@
+[gd_scene load_steps=2 format=3 uid="uid://lotr_new_game"]
+
+[ext_resource type="Script" path="res://scripts/new_game.gd" id="1_new_game"]
+
+[node name="NewGame" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_new_game")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.07, 0.15, 1)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="BackBtn" type="Button" parent="CanvasLayer"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 120.0
+offset_bottom = 56.0
+text = "< Back"
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer"]
+offset_left = 0.0
+offset_top = 20.0
+offset_right = 1280.0
+offset_bottom = 80.0
+text = "New Game"
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+
+[node name="TolkienLabel" type="Label" parent="CanvasLayer"]
+offset_left = 0.0
+offset_top = 84.0
+offset_right = 1280.0
+offset_bottom = 114.0
+text = "Tolkiens: 0"
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+horizontal_alignment = 1
+
+[node name="Notification" type="Label" parent="CanvasLayer"]
+offset_left = 0.0
+offset_top = 116.0
+offset_right = 1280.0
+offset_bottom = 146.0
+horizontal_alignment = 1
+
+[node name="ContentBox" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 340.0
+offset_top = 170.0
+offset_right = 940.0
+offset_bottom = 690.0
+theme_override_constants/separation = 24
+
+[node name="StarterSection" type="VBoxContainer" parent="CanvasLayer/ContentBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StarterHeaderLabel" type="Label" parent="CanvasLayer/ContentBox/StarterSection"]
+layout_mode = 2
+text = "Starter Deck"
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="StarterStatusLabel" type="Label" parent="CanvasLayer/ContentBox/StarterSection"]
+layout_mode = 2
+text = "Loading..."
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="DeckOptionsBox" type="VBoxContainer" parent="CanvasLayer/ContentBox/StarterSection"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Separator" type="HSeparator" parent="CanvasLayer/ContentBox"]
+layout_mode = 2
+
+[node name="BoosterSection" type="VBoxContainer" parent="CanvasLayer/ContentBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BoosterHeaderLabel" type="Label" parent="CanvasLayer/ContentBox/BoosterSection"]
+layout_mode = 2
+text = "Booster Packs"
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="BoosterStatusLabel" type="Label" parent="CanvasLayer/ContentBox/BoosterSection"]
+layout_mode = 2
+text = "Loading..."
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="OpenBoostersBtn" type="Button" parent="CanvasLayer/ContentBox/BoosterSection"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 48)
+text = "Open All Packs"
+disabled = true
+
+[connection signal="pressed" from="CanvasLayer/BackBtn" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="CanvasLayer/ContentBox/BoosterSection/OpenBoostersBtn" to="." method="_on_open_boosters_pressed"]

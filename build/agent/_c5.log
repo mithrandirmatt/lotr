@@ -1,0 +1,23 @@
+echo "Generating Modelfile for profile rx7900xtx-agentic using model config qwen35-9b..."
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+cd /workspace/build/../build/agent && /workspace/build/../build/agent/lotr_agent/venv/bin/python build.modelfile.py --repo_root "/workspace/build/.." --profile "rx7900xtx-agentic" --model_config "qwen35-9b"  --output "/workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic"
+echo "Installing agentic profile rx7900xtx-agentic into Ollama as lotr-agentic-rx7900xtx-agentic..."
+echo "Preferred Ollama host: http://172.28.240.1:11434"
+if [ ! -f /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic ]; then \
+	echo "Error: profile Modelfile missing at /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic"; exit 1; \
+fi
+ACTIVE_OLLAMA_HOST="http://172.28.240.1:11434"; \
+if [ "0" = "1" ]; then \
+	echo "Starting local Ollama daemon in container (forced)..."; \
+	OLLAMA_HOST="127.0.0.1:11434" ollama serve > /dev/null 2>&1 & \
+	sleep 2; \
+	ACTIVE_OLLAMA_HOST="http://127.0.0.1:11434"; \
+elif ! OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama list > /dev/null 2>&1; then \
+	echo "Preferred host $ACTIVE_OLLAMA_HOST is not reachable; starting local Ollama daemon in container..."; \
+	OLLAMA_HOST="127.0.0.1:11434" ollama serve > /dev/null 2>&1 & \
+	sleep 2; \
+	ACTIVE_OLLAMA_HOST="http://127.0.0.1:11434"; \
+fi; \
+echo "Using active Ollama host: $ACTIVE_OLLAMA_HOST"; \
+OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama create lotr-agentic-rx7900xtx-agentic -f /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic
+echo "Agentic profile model installation completed."

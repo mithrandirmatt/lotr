@@ -10,7 +10,6 @@ Commands:
             lotr-server (FastAPI, port 8000) and lotr-admin (Vite, port 3001)
             as background containers, auto-open the admin panel in the browser,
             then open an interactive shell in the lotr-dev container
-  exec  -- run a command in a container
 
 The Docker daemon must already be running inside lotr-docker-service before using
 this script. Start it with:
@@ -26,19 +25,13 @@ Usage:
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run -ServerPort 8080 -AdminPort 3002
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -GpuVariant rocm
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableAi
-    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableOllamaProxy
-    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableHeadroom
-    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -EnableHeadroom -EnableOllamaProxy
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 build -Tag my-image:v2 -McpTag my-mcp:v2
     PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run   -Tag my-image:v2 -McpTag my-mcp:v2
-    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run -CommandArg "command"
-    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 run --exec "command"
-    PowerShell -ExecutionPolicy Bypass -File build/docker/docker.ps1 exec "command"
 #>
 
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('build', 'run', 'exec')]
+    [ValidateSet('build', 'run')]
     [string]$Command,
 
     [string]$DistroName  = 'lotr-docker-service',
@@ -52,21 +45,11 @@ param(
     [string]$GpuVariant  = '',
     [switch]$Fresh,
     [switch]$NoPause,
-    # Docker socket is mounted into the dev container by default because
-    # server_docker_build (part of `make speed`) needs it to run `docker build`
-    # from inside the container. Pass -NoMountDockerSocket to opt out.
     [switch]$MountDockerSocket,
-    [switch]$NoMountDockerSocket,
     [switch]$StartAiOnly,
     # Pass -EnableAi to start the AI/Ollama container and related host Ollama management.
     # By default AI is disabled; use this flag when you want the container-side Ollama.
     [switch]$EnableAi,
-    # Pass -EnableOllamaProxy to start scripts/ollama_proxy.py on port 11436.
-    # Default is disabled; when disabled, any existing proxy process is stopped.
-    [switch]$EnableOllamaProxy,
-    # Pass -EnableHeadroom to start lotr-headroom on port 8787.
-    # Default is disabled for direct Copilot -> host Ollama communication.
-    [switch]$EnableHeadroom,
     # Dev services: lotr-server (FastAPI) and lotr-admin (React/Vite) are started automatically.
     # Pass -NoDevServices to skip them (AI-only or minimal runs).
     [switch]$NoDevServices,
@@ -78,9 +61,7 @@ param(
     [switch]$NoOpenBrowser,
 
     [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$ExtraArgs = @(),
-
-    [string]$CommandArg = $null
+    [string[]]$ExtraArgs = @()
 )
 
 Set-StrictMode -Version Latest
@@ -88,7 +69,7 @@ Set-StrictMode -Version Latest
 # ---------------------------------------------------------------------------
 # Feature flags -- edit this line to enable optional features
 # ---------------------------------------------------------------------------
-$EnableRocm = $true   # Enable ROCm passthrough/integration when GpuVariant resolves to rocm.
+$EnableRocm = $false   # Set to $true to enable ROCm GPU passthrough and Ollama integration
 
 # Default to starting MCP when running 'run' without explicit -EnableAi
 if ($Command -eq 'run' -and -not $EnableAi) {
@@ -228,14 +209,15 @@ function Stop-HostOllamaIfPresent {
     try {
         $conn = Get-NetTCPConnection -LocalPort $HostOllamaPort -State Listen -ErrorAction SilentlyContinue
         if ($conn) {
-            $proc = Get-Process -Id $($conn.OwningProcess) -ErrorAction SilentlyContinue
+            $pid = $conn.OwningProcess
+            $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
             if ($proc) {
-                Write-Log ("Detected host process {0} (PID {1}) listening on {2}; attempting to stop..." -f $proc.ProcessName, $conn.OwningProcess, $HostOllamaPort)
+                Write-Log ("Detected host process {0} (PID {1}) listening on {2}; attempting to stop..." -f $proc.ProcessName, $pid, $HostOllamaPort)
                 try {
-                    Stop-Process -Id $($conn.OwningProcess) -Force -ErrorAction Stop
-                    Write-Log ("Stopped process PID {0} listening on {1}." -f $conn.OwningProcess, $HostOllamaPort)
+                    Stop-Process -Id $pid -Force -ErrorAction Stop
+                    Write-Log ("Stopped process PID {0} listening on {1}." -f $pid, $HostOllamaPort)
                 } catch {
-                    Write-Log ("Failed to stop process PID {0} listening on {1}: {2}" -f $conn.OwningProcess, $HostOllamaPort, $_)
+                    Write-Log ("Failed to stop process PID {0} listening on {1}: {2}" -f $pid, $HostOllamaPort, $_)
                 }
             }
         }
@@ -248,8 +230,7 @@ function Start-OllamaProxy {
     param(
         [int]$ProxyPort = 11436,
         [string]$UpstreamUrl = 'http://localhost:11434',
-        [int]$MaxTokens = 4096,
-        [int]$ForceNumCtx = 262144
+        [int]$MaxTokens = 4096
     )
     # Script lives at <repo-root>/scripts/ollama_proxy.py
     $repoRoot    = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -262,8 +243,9 @@ function Start-OllamaProxy {
     try {
         $conn = Get-NetTCPConnection -LocalPort $ProxyPort -State Listen -ErrorAction SilentlyContinue
         if ($conn) {
-            Write-Log ("Stopping existing process PID {0} on port {1}..." -f $conn.OwningProcess, $ProxyPort)
-            Stop-Process -Id $($conn.OwningProcess) -Force -ErrorAction SilentlyContinue
+            $pid = $conn.OwningProcess
+            Write-Log ("Stopping existing process PID {0} on port {1}..." -f $pid, $ProxyPort)
+            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
             Start-Sleep -Milliseconds 500
         }
     } catch {
@@ -273,42 +255,11 @@ function Start-OllamaProxy {
     $pyExe = if (Get-Command 'pythonw' -ErrorAction SilentlyContinue) { 'pythonw' } else { 'python' }
     try {
         Start-Process -FilePath $pyExe `
-            -ArgumentList "`"$proxyScript`" --port $ProxyPort --upstream $UpstreamUrl --max-tokens $MaxTokens --force-think-false --force-num-ctx $ForceNumCtx" `
+            -ArgumentList "`"$proxyScript`" --port $ProxyPort --upstream $UpstreamUrl --max-tokens $MaxTokens" `
             -WindowStyle Hidden
         Write-Log ("Ollama proxy launched via {0} (port {1})." -f $pyExe, $ProxyPort)
     } catch {
         Write-Log ("Failed to launch Ollama proxy: {0}" -f $_)
-    }
-}
-
-function Stop-OllamaProxyIfPresent {
-    param([int]$ProxyPort = 11436)
-
-    Write-Log ("Ensuring Ollama proxy is not running on port {0}..." -f $ProxyPort)
-
-    # Stop any listener bound to the proxy port.
-    try {
-        $conn = Get-NetTCPConnection -LocalPort $ProxyPort -State Listen -ErrorAction SilentlyContinue
-        if ($conn) {
-            Write-Log ("Stopping process PID {0} listening on proxy port {1}..." -f $conn.OwningProcess, $ProxyPort)
-            Stop-Process -Id $($conn.OwningProcess) -Force -ErrorAction SilentlyContinue
-            Start-Sleep -Milliseconds 500
-        }
-    } catch {
-        Write-Log ("Proxy port check failed: {0}" -f $_)
-    }
-
-    # Also stop stray python/pythonw processes launched with ollama_proxy.py.
-    try {
-        $pyProcs = Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue |
-            Where-Object { $_.CommandLine -and $_.CommandLine -match 'ollama_proxy\.py' }
-
-        foreach ($p in $pyProcs) {
-            Write-Log ("Stopping Ollama proxy process PID {0} ({1})..." -f $p.ProcessId, $p.Name)
-            Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue
-        }
-    } catch {
-        Write-Log ("Proxy process scan failed: {0}" -f $_)
     }
 }
 
@@ -396,26 +347,6 @@ if ($ExtraArgs -contains '--fresh') {
 
 Write-Log ("docker.ps1  command={0}  distro={1}  tag={2}  fresh={3}" -f $Command, $DistroName, $Tag, $IsFresh)
 
-if (-not $CommandArg -and $ExtraArgs) {
-    $execIndex = [Array]::IndexOf($ExtraArgs, '--exec')
-    if ($execIndex -ge 0 -and ($execIndex + 1) -lt $ExtraArgs.Count) {
-        $CommandArg = ($ExtraArgs[($execIndex + 1)..($ExtraArgs.Count - 1)] -join ' ').Trim()
-    } elseif ($Command -eq 'exec') {
-        $CommandArg = ($ExtraArgs -join ' ').Trim()
-    }
-}
-
-if ($Command -eq 'exec') {
-    $Command = 'run'
-    $NoDevServices = $true
-    $NoOpenBrowser = $true
-    if (-not $CommandArg) {
-        Write-Log 'The exec command requires a command string. Example: ./build/docker/docker.ps1 exec "pwd"'
-        exit 1
-    }
-    Write-Log 'Normalizing exec to run -NoDevServices -NoOpenBrowser with CommandArg.'
-}
-
 try {
     $installed = @(wsl -l -q 2>$null)
 }
@@ -487,13 +418,6 @@ $wslModelsPath    = $null
 $modelVolumeFlags = @()
 $modelEnvFlags    = @()
 $gpuDeviceFlags   = @()
-# ROCm-specific env vars kept separately so they survive WSL splatting
-$rocmEnvLdPreload      = ''
-$rocmEnvLdLibraryPath  = ''
-$rocmEnvHsaDxg         = ''
-$rocmEnvHsaGfx         = ''
-$rocmEnvWslInterop     = ''
-$rocmEnvRocprofDisable = ''
 
 # ---------------------------------------------------------------------------
 # build
@@ -512,10 +436,9 @@ if ($Command -eq 'build') {
         exit 3
     }
 
-    wsl -d $DistroName -u root -- env DOCKER_BUILDKIT=1 docker build `
+    wsl -d $DistroName -u root -- docker build `
         --file "$dockerfileWslPath" `
         --tag  $Tag `
-        --build-arg "GPU_VARIANT=$GpuVariant" `
         $noCacheFlag `
         $wslRepoRoot
 
@@ -538,13 +461,13 @@ if ($Command -eq 'build') {
         exit 3
     }
 
-    wsl -d $DistroName -u root -- env DOCKER_BUILDKIT=1 docker build `
+    wsl -d $DistroName -u root -- docker build `
         --tag  $McpTag `
         --build-arg "GPU_VARIANT=$GpuVariant" `
         --network host `
         $noCacheFlag `
         --file "$mcpDockerfileWslPath" `
-        $wslRepoRoot
+        "$wslRepoRoot"
 
     if ($LASTEXITCODE -ne 0) {
         Write-Log ("AI build FAILED (exit {0})." -f $LASTEXITCODE)
@@ -562,19 +485,10 @@ if ($Command -eq 'run') {
     Write-Log ("Running interactive shell in image '{0}' ..." -f $Tag)
     Write-Log ("Mounting {0} -> /workspace" -f $wslRepoRoot)
 
-    if ($EnableOllamaProxy) {
-        # Start (or restart) the Ollama think:false proxy on port 11436.
-        # Default upstream is host Ollama (11434). If headroom is enabled, route via 8787.
-        $proxyUpstream = if ($EnableHeadroom) { 'http://localhost:8787' } else { 'http://localhost:11434' }
-        # MaxTokens 16384: cap exists only as a hard backstop.
-        # ForceNumCtx 262144: request-side override so Copilot BYOM sessions keep
-        # larger effective history before compaction.
-        Start-OllamaProxy -ProxyPort 11436 -UpstreamUrl $proxyUpstream -MaxTokens 16384 -ForceNumCtx 262144
-        Write-Log ("Ollama proxy enabled on port 11436 with upstream {0}." -f $proxyUpstream)
-    } else {
-        Stop-OllamaProxyIfPresent -ProxyPort 11436
-        Write-Log 'Ollama proxy disabled (pass -EnableOllamaProxy to start it).'
-    }
+    # Start (or restart) the Ollama think:false proxy on port 11436.
+    # Upstream is headroom (8787) so the full chain is:
+    #   Copilot -> proxy:11436 (strips thinking) -> headroom:8787 (compresses) -> Ollama:11434
+    Start-OllamaProxy -ProxyPort 11436 -UpstreamUrl 'http://localhost:8787' -MaxTokens 4096
 
 # Resolve Windows SSH key folder as a WSL path for the volume mount
 $sshWinPath  = Join-Path $env:USERPROFILE ".ssh"
@@ -592,22 +506,13 @@ $wslGitconfigPath = ("/mnt/{0}{1}" -f $gitconfigDrive, $gitconfigRelPath)
 
 Write-Log ("Git config (WSL): {0}" -f $wslGitconfigPath)
 
-# Resolve Windows .ollama folder as a WSL path for the volume mount
-$ollamaWinPath = Join-Path $env:USERPROFILE ".ollama"
-if (-not (Test-Path -Path $ollamaWinPath)) {
-    New-Item -ItemType Directory -Path $ollamaWinPath | Out-Null
-}
-$ollamaDrive   = $ollamaWinPath.Substring(0, 1).ToLower()
-$ollamaRelPath = $ollamaWinPath.Substring(2) -replace '\\', '/'
-$wslOllamaPath = ("/mnt/{0}{1}" -f $ollamaDrive, $ollamaRelPath)
+# Resolve Windows .continue folder as a WSL path for the volume mount
+$continueWinPath = Join-Path $env:USERPROFILE ".continue"
+$continueDrive   = $continueWinPath.Substring(0, 1).ToLower()
+$continueRelPath = $continueWinPath.Substring(2) -replace '\\', '/'
+$wslContinuePath = ("/mnt/{0}{1}" -f $continueDrive, $continueRelPath)
 
-Write-Log ("Ollama dir (WSL): {0}" -f $wslOllamaPath)
-
-# Resolve Windows host IP from within WSL and construct default host Ollama URL.
-$wslGateway = (wsl -d $DistroName -u root -- ip route show default 2>$null) -replace '^default via (\S+).*','$1'
-if (-not $wslGateway) { $wslGateway = 'host.docker.internal' }
-$hostOllamaUrl = "http://${wslGateway}:11434"
-Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
+Write-Log ("Continue (WSL):   {0}" -f $wslContinuePath)
 
     # Ensure Docker is still responsive before performing network/container ops
     if (-not (Test-DockerResponsive -Distro $DistroName)) {
@@ -630,55 +535,6 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
     if (-not $netExists) {
         Write-Log "Creating Docker network lotr-net..."
         wsl -d $DistroName -u root -- docker network create lotr-net | Out-Null
-    }
-
-    # ROCm GPU device flags for container runtime (dev + ai containers).
-    if ($GpuVariant -eq 'rocm') {
-        $rocmEnvRocprofDisable = 'ROCPROFILER_REGISTER_ENABLED=0'
-        $kfdExists = wsl -d $DistroName -u root -- bash -c 'test -e /dev/kfd && echo yes || echo no' 2>$null
-        $driExists = wsl -d $DistroName -u root -- bash -c 'test -d /dev/dri && echo yes || echo no' 2>$null
-        if ($kfdExists -match 'yes' -and $driExists -match 'yes') {
-            $gpuDeviceFlags = @('--device', '/dev/kfd', '--device', '/dev/dri', '--group-add', 'video', '--group-add', 'render')
-            Write-Log "ROCm mode: /dev/kfd and /dev/dri found -- adding native device flags."
-        } else {
-            # WSL2 ROCDXG path: /dev/dxg + librocdxg.so
-            $dxgExists       = wsl -d $DistroName -u root -- bash -c 'test -c /dev/dxg        && echo yes || echo no' 2>$null
-            $libdxcoreExists = wsl -d $DistroName -u root -- bash -c 'test -f /usr/lib/wsl/lib/libdxcore.so && echo yes || echo no' 2>$null
-            $librocdxgExists = wsl -d $DistroName -u root -- bash -c 'test -f /opt/rocm/lib/librocdxg.so   && echo yes || echo no' 2>$null
-            if ($dxgExists -match 'yes' -and $libdxcoreExists -match 'yes' -and $librocdxgExists -match 'yes') {
-                Write-Log "ROCm mode (ROCDXG/WSL2): /dev/dxg + librocdxg.so found -- using DXG device path."
-                $wslInterop = wsl -d $DistroName -u root -- bash -c 'for s in /run/WSL/*_interop; do [ -S "$s" ] && echo "$s"; done | sort -t/ -k4 -n | head -1' 2>$null
-                $wslInterop = $wslInterop.Trim()
-                if (-not $wslInterop) { $wslInterop = '/run/WSL/1_interop' }
-                Write-Log "WSL_INTEROP=$wslInterop"
-                $gpuDeviceFlags = @(
-                    '--device',        '/dev/dxg',
-                    '--volume',        '/usr/lib/wsl/lib:/usr/lib/wsl/lib:ro',
-                    '--volume',        '/usr/lib/wsl/lib/libdxcore.so:/usr/lib/libdxcore.so:ro',
-                    '--volume',        '/usr/lib/wsl/lib/libd3d12.so:/usr/lib/libd3d12.so:ro',
-                    '--volume',        '/usr/lib/wsl/lib/libd3d12core.so:/usr/lib/libd3d12core.so:ro',
-                    '--volume',        '/opt/rocm/lib/librocdxg.so:/opt/rocm/lib/librocdxg.so:ro',
-                    '--volume',        '/opt/rocm/lib/librocdxg.so:/usr/lib/librocdxg.so:ro',
-                    '--volume',        '/run/WSL:/run/WSL',
-                    '--cap-add',       'SYS_PTRACE',
-                    '--cap-add',       'SYS_ADMIN',
-                    '--security-opt',  'seccomp=unconfined',
-                    '--ipc',           'host',
-                    '--shm-size',      '8g'
-                )
-                # Keep env vars as separate scalars so splatting doesn't mangle them
-                $rocmEnvLdPreload     = ''
-                $rocmEnvLdLibraryPath = 'LD_LIBRARY_PATH=/opt/rocm/lib:/usr/lib/wsl/lib'
-                $rocmEnvHsaDxg        = 'HSA_ENABLE_DXG_DETECTION=1'
-                $rocmEnvHsaGfx        = 'HSA_OVERRIDE_GFX_VERSION=11.0.0'
-                $rocmEnvWslInterop    = "WSL_INTEROP=$wslInterop"
-            } elseif ($dxgExists -match 'yes') {
-                Write-Log "ROCm mode: /dev/dxg present but librocdxg.so not installed."
-                Write-Log "  Run setup-wsl-docker.ps1 again to install ROCDXG."
-            } else {
-                Write-Log "ROCm mode: /dev/kfd, /dev/dri, and /dev/dxg all absent. Starting without device flags; GPU will not be visible in container."
-            }
-        }
     }
 
     # ------------------------------------------------------------------
@@ -764,17 +620,14 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
                 Write-Log "WSL_INTEROP=$wslInterop"
                 $gpuDeviceFlags = @(
                     '--device',        '/dev/dxg',
+                    '--volume',        '/opt/rocm:/opt/rocm:ro',
                     '--volume',        '/usr/lib/wsl/lib:/usr/lib/wsl/lib:ro',
-                    '--volume',        '/usr/lib/wsl/lib/libdxcore.so:/usr/lib/libdxcore.so:ro',
-                    '--volume',        '/usr/lib/wsl/lib/libd3d12.so:/usr/lib/libd3d12.so:ro',
-                    '--volume',        '/usr/lib/wsl/lib/libd3d12core.so:/usr/lib/libd3d12core.so:ro',
                     '--volume',        '/run/WSL:/run/WSL',
-                    '--volume',        '/opt/rocm/lib/librocdxg.so:/usr/lib/librocdxg.so:ro',
                     '--env',           'HSA_ENABLE_DXG_DETECTION=1',
                     '--env',           "WSL_INTEROP=$wslInterop",
                     '--env',           'OLLAMA_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama',
                     '--env',           'LD_LIBRARY_PATH=/usr/local/lib/ollama/rocm:/usr/local/lib/ollama:/opt/rocm/lib:/usr/lib/wsl/lib',
-                    '--env',           'LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so',
+                    '--env',           'LD_PRELOAD=/opt/rocm/lib/libhsa-runtime64.so.1:/opt/rocm/lib/librocdxg.so:/usr/lib/wsl/lib/libdxcore.so:/usr/lib/wsl/lib/libd3d12.so:/usr/lib/wsl/lib/libd3d12core.so',
                     '--cap-add',       'SYS_PTRACE',
                     '--cap-add',       'SYS_ADMIN',
                     '--security-opt',  'seccomp=unconfined',
@@ -949,38 +802,35 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
 
     # ---------------------------------------------------------------------------
     # Start headroom proxy container (port 8787 -> host Ollama on port 11434)
-    # only when explicitly enabled.
+    # Compresses LLM traffic from VS Code Copilot before it reaches Ollama.
+    # Always stops any existing instance so config changes are picked up.
+    # Run setup-headroom.ps1 once to pull the image before first use.
     # ---------------------------------------------------------------------------
-    if ($EnableHeadroom) {
-        $headroomImage = 'ghcr.io/chopratejas/headroom:latest'
-        $imageExists = wsl -d $DistroName -u root -- docker image inspect $headroomImage --format '{{.Id}}' 2>$null
-        if ($imageExists) {
-            # Resolve the WSL default-route gateway (= Windows host IP from inside WSL).
-            # host.docker.internal inside lotr-net resolves to the Docker bridge, not the
-            # Windows host, so we pass the gateway IP directly instead.
-            $wslGateway = (wsl -d $DistroName -u root -- ip route show default 2>$null) -replace '^default via (\S+).*','$1'
-            if (-not $wslGateway) { $wslGateway = 'host.docker.internal' }
-            Write-Log ("Headroom upstream Ollama: http://${wslGateway}:11434")
+    $headroomImage = 'ghcr.io/chopratejas/headroom:latest'
+    $imageExists = wsl -d $DistroName -u root -- docker image inspect $headroomImage --format '{{.Id}}' 2>$null
+    if ($imageExists) {
+        # Resolve the WSL default-route gateway (= Windows host IP from inside WSL).
+        # host.docker.internal inside lotr-net resolves to the Docker bridge, not the
+        # Windows host, so we pass the gateway IP directly instead.
+        $wslGateway = (wsl -d $DistroName -u root -- ip route show default 2>$null) -replace '^default via (\S+).*','$1'
+        if (-not $wslGateway) { $wslGateway = 'host.docker.internal' }
+        Write-Log ("Headroom upstream Ollama: http://${wslGateway}:11434")
 
-            wsl -d $DistroName -u root -- docker rm -f lotr-headroom 2>$null | Out-Null
-            wsl -d $DistroName -u root -- docker run `
-                --detach `
-                --name lotr-headroom `
-                --network lotr-net `
-                --publish 8787:8787 `
-                $headroomImage `
-                --openai-api-url "http://${wslGateway}:11434" --no-telemetry
-            if ($LASTEXITCODE -eq 0) {
-                Write-Log "Headroom proxy container started on port 8787."
-            } else {
-                Write-Log ("WARNING: Headroom container start failed (exit {0}); continuing." -f $LASTEXITCODE)
-            }
+        wsl -d $DistroName -u root -- docker rm -f lotr-headroom 2>$null | Out-Null
+        wsl -d $DistroName -u root -- docker run `
+            --detach `
+            --name lotr-headroom `
+            --network lotr-net `
+            --publish 8787:8787 `
+            $headroomImage `
+            --openai-api-url "http://${wslGateway}:11434" --no-telemetry
+        if ($LASTEXITCODE -eq 0) {
+            Write-Log "Headroom proxy container started on port 8787."
         } else {
-            Write-Log "Headroom image not found; run setup-headroom.ps1 to pull it. Skipping."
+            Write-Log ("WARNING: Headroom container start failed (exit {0}); continuing." -f $LASTEXITCODE)
         }
     } else {
-        wsl -d $DistroName -u root -- docker rm -f lotr-headroom 2>$null | Out-Null
-        Write-Log 'Headroom disabled (pass -EnableHeadroom to start it).'
+        Write-Log "Headroom image not found; run setup-headroom.ps1 to pull it. Skipping."
     }
 
     # -it: interactive + pseudo-TTY
@@ -988,73 +838,42 @@ Write-Log ("Host Ollama URL:  {0}" -f $hostOllamaUrl)
     # -v:   repo -> /workspace; Windows .ssh (ppk source) -> /root/.ssh:rw;
     #        named volume lotr-ssh-keys -> /root/.ssh_keys (Linux fs, chmod works, persistent);
     #        .gitconfig -> /root/.gitconfig:ro
+    #        .continue  -> /host-continue:rw (for sync_continue make target)
     # -w:   set working directory inside container
     # --network lotr-net: shared network so dev container can reach mcp at http://lotr-mcp:3100/sse
-    # Default ON: server_docker_build (used by `make speed`) requires the host
-    # docker socket to build images from inside the ephemeral dev container.
-    # Use -NoMountDockerSocket to opt out (e.g. untrusted/throwaway sessions).
-    $dockerSocketFlags = @()
-    if (-not $NoMountDockerSocket) {
-        $dockerSocketFlags += '--volume'
-        $dockerSocketFlags += '/var/run/docker.sock:/var/run/docker.sock'
+    if (-not $StartAiOnly) {
+        wsl -d $DistroName -u root -- docker run `
+            --rm `
+            --interactive `
+            --tty `
+            --network lotr-net `
+            --add-host=host.docker.internal:host-gateway `
+            --env "OLLAMA_URL=$ollamaUrlEnv" `
+            --env "OLLAMA_ORIGINS=$ollamaOriginsEnv" `
+            @displayFlags `
+            --volume  "${wslRepoRoot}:/workspace" `
+            @modelVolumeFlags `
+            --volume  "${wslSshPath}:/root/.ssh:rw" `
+            @(
+                if ($MountDockerSocket) { '--volume'; '/var/run/docker.sock:/var/run/docker.sock' }
+            ) `
+            --volume  "lotr-ssh-keys:/root/.ssh_keys" `
+            --volume  "${wslGitconfigPath}:/root/.gitconfig:ro" `
+            --volume  "${wslContinuePath}:/host-continue:rw" `
+            --workdir "/workspace/build" `
+            $Tag `
+            /bin/bash
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log ("Container exited with code {0}." -f $LASTEXITCODE)
+            exit $LASTEXITCODE
+        }
+
+        Write-Log "Container session ended."
     }
-
-    # Build additional --env flags for ROCm env vars (only set when rocm path was taken)
-    $rocmEnvFlags = @()
-    if ($rocmEnvLdPreload)     { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvLdPreload }
-    if ($rocmEnvLdLibraryPath) { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvLdLibraryPath }
-    if ($rocmEnvHsaDxg)        { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvHsaDxg }
-    if ($rocmEnvHsaGfx)        { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvHsaGfx }
-    if ($rocmEnvWslInterop)    { $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvWslInterop }
-    if ($rocmEnvRocprofDisable){ $rocmEnvFlags += '--env'; $rocmEnvFlags += $rocmEnvRocprofDisable }
-
-    # Combine gpu device flags + rocm env flags into a bash-safe argument string
-    # so that values containing '=' and ':' survive the wsl -- boundary.
-    $allGpuArgs = ($gpuDeviceFlags + $rocmEnvFlags) -join ' '
-
-    if ($CommandArg) {
-        Write-Log ("Executing command '{0}' in container '{1}'..." -f $CommandArg, $Tag)
-        $baseArgs = "--rm --interactive --tty --network lotr-net --add-host=host.docker.internal:host-gateway" +
-            " --env OLLAMA_URL='$ollamaUrlEnv'" +
-            " --env OLLAMA_ORIGINS='$ollamaOriginsEnv'" +
-            " --env OLLAMA_HOST='$hostOllamaUrl'" +
-            " --env HOST_OLLAMA_URL='$hostOllamaUrl'" +
-            " --volume '${wslRepoRoot}:/workspace'" +
-            " --volume '${wslSshPath}:/root/.ssh:rw'" +
-            " --volume 'lotr-ssh-keys:/root/.ssh_keys'" +
-            " --volume '${wslGitconfigPath}:/root/.gitconfig:ro'" +
-            " --volume '${wslOllamaPath}:/root/.ollama:rw'" +
-            " --workdir /workspace/build"
-        $displayArgsStr = ($displayFlags) -join ' '
-        $dockerSockStr  = ($dockerSocketFlags) -join ' '
-        $modelVolStr    = ($modelVolumeFlags) -join ' '
-        $bashCmd = "docker run $baseArgs $displayArgsStr $allGpuArgs $dockerSockStr $modelVolStr $Tag /bin/bash -c '$CommandArg'"
-        wsl -d $DistroName -u root -- bash -c $bashCmd
-    } else {
-        Write-Log ("Starting interactive shell in container '{0}'..." -f $Tag)
-        $baseArgs = "--rm --interactive --tty --network lotr-net --add-host=host.docker.internal:host-gateway" +
-            " --env OLLAMA_URL='$ollamaUrlEnv'" +
-            " --env OLLAMA_ORIGINS='$ollamaOriginsEnv'" +
-            " --env OLLAMA_HOST='$hostOllamaUrl'" +
-            " --env HOST_OLLAMA_URL='$hostOllamaUrl'" +
-            " --volume '${wslRepoRoot}:/workspace'" +
-            " --volume '${wslSshPath}:/root/.ssh:rw'" +
-            " --volume 'lotr-ssh-keys:/root/.ssh_keys'" +
-            " --volume '${wslGitconfigPath}:/root/.gitconfig:ro'" +
-            " --volume '${wslOllamaPath}:/root/.ollama:rw'" +
-            " --workdir /workspace/build"
-        $displayArgsStr = ($displayFlags) -join ' '
-        $dockerSockStr  = ($dockerSocketFlags) -join ' '
-        $modelVolStr    = ($modelVolumeFlags) -join ' '
-        $bashCmd = "docker run $baseArgs $displayArgsStr $allGpuArgs $dockerSockStr $modelVolStr $Tag /bin/bash"
-        wsl -d $DistroName -u root -- bash -c $bashCmd
+    else {
+        Write-Log "StartAiOnly set; skipping interactive dev container shell."
     }
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Log ("Command exited with code {0}." -f $LASTEXITCODE)
-        exit $LASTEXITCODE
-    }
-    Write-Log "Command completed successfully."
 }
 
 Write-Log "docker.ps1 done."

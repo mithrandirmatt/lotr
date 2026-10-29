@@ -51,3 +51,6 @@ mono_crash.*.json
 # Caches
 build/docker/cache/*
 build/docker/cache/
+
+# Locally-generated JWT secret (persisted fallback when SECRET_KEY env var is unset)
+server/server/core/.jwt_secret_key

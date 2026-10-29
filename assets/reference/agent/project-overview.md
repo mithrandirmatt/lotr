@@ -22,7 +22,7 @@ The project is centered on faithfully representing LotR TCG rules, formats, deck
 Python services under `server/` and related code under `lotr/` provide the application and API surface. The agent should treat these areas as the control plane for game state, rules enforcement, and supporting services.
 
 ### ML and inference
-The repository includes LoRA and model-building workflows for `lotr-lora-rx7900xtx-agentic` and related models. These workflows target AMD hardware and use Ollama, custom Modelfile generation, and the local proxy path for runtime control.
+The repository includes LoRA and model-building workflows for `qwen35-9b_lotr_lora` and related models. These workflows target AMD hardware and use Ollama, custom Modelfile generation, and the local proxy path for runtime control.
 
 ### Development environment
 Development is intended to happen inside the Docker/WSL2 environment created by the scripts in `build/docker/`. One-off commands should use the repository's container execution flow instead of host-side development commands.
@@ -34,7 +34,7 @@ Development is intended to happen inside the Docker/WSL2 environment created by 
 - `lotr/` - application and domain code related to the game itself.
 - `frontend/` - admin UI and supporting frontend work.
 - `gotdot/` - Godot-related project assets and integration.
-- `scripts/` - utility scripts for embeddings, Ollama proxying, and maintenance.
+- `scripts/` - utility scripts for embeddings, maintenance, and the deprecated Ollama proxy (`ollama_proxy.py`, port 11436 - no longer used; Copilot talks to Ollama directly on port 11434, see `.vscode/settings.json`).
 - `tools/` - repository tooling such as indexing and query helpers.
 - `ml-project/` - ML pipelines, experiments, and evaluation assets.
 

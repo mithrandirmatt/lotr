@@ -5,6 +5,7 @@ const NAV = [
   { to: '/', label: '📊 Dashboard', end: true },
   { to: '/users', label: '👥 Users' },
   { to: '/cards', label: '🃏 Cards' },
+  { to: '/set-releases', label: '📅 Set Releases' },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {

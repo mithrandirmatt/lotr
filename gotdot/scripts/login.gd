@@ -28,6 +28,7 @@ var _email_regex := RegEx.new()
 
 @onready var _sign_in_email: LineEdit = $CanvasLayer/SignInBox/SignInForm/EmailInput
 @onready var _sign_in_password: LineEdit = $CanvasLayer/SignInBox/SignInForm/PasswordInput
+@onready var _remember_me_check: CheckBox = $CanvasLayer/SignInBox/SignInForm/RememberMeCheck
 @onready var _sign_in_btn: Button = $CanvasLayer/SignInBox/SignInForm/SignInBtn
 
 @onready var _mfa_code: LineEdit = $CanvasLayer/MfaBox/MfaForm/MfaCodeInput
@@ -121,6 +122,10 @@ func _on_sign_in_pressed() -> void:
 	if email.is_empty() or password.is_empty():
 		_show_notification("Please enter your email and password", true)
 		return
+
+	Api.remember_me = _remember_me_check.button_pressed
+	if not Api.remember_me:
+		Api.clear_saved_session()
 
 	_sign_in_btn.disabled = true
 	_show_notification("Signing in...", false)

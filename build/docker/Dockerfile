@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 # ============================================================
 # lotr project -- development image
 # Base: Ubuntu 24.04 LTS
@@ -19,8 +18,6 @@
 FROM ubuntu:24.04
 
 ARG GODOT_VERSION=4.4.1-stable
-ARG GPU_VARIANT=rocm
-ARG OLLAMA_VERSION=latest
 # Set GODOT_EDITOR=1 at build time to include the Godot editor binary.
 # The headless binary (godot) is always included for CI/export use.
 #   docker build --build-arg GODOT_EDITOR=1 -t lotr-dev build/docker/
@@ -31,18 +28,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    HSA_OVERRIDE_GFX_VERSION=11.0.0 \
-    HSA_ENABLE_DXG_DETECTION=1 \
-    LD_LIBRARY_PATH=/opt/rocm/lib:/usr/lib/wsl/lib
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # ------------------------------------------------------------
 # System packages
 # Install in a single layer to keep image size down.
 # ------------------------------------------------------------
-RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=lotr-dev-apt-lists,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     # Core build toolchain
     build-essential \
     gcc g++ \
@@ -97,53 +89,11 @@ RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locke
     default-jdk-headless \
     && rm -rf /var/lib/apt/lists/*
 
-# ROCm userland is baked into the dev image for parity with lotr-ai.
-# WSL still provides the kernel-side DXG device and /usr/lib/wsl/lib bridge libs.
-RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=lotr-dev-apt-lists,target=/var/lib/apt/lists,sharing=locked \
-    if [ "$GPU_VARIANT" = "rocm" ]; then \
-        mkdir -p /etc/apt/keyrings && \
-        for _url in \
-            "https://repo.radeon.com/rocm/rocm.gpg.key" \
-            "https://repo.amd.com/rocm/rocm.gpg.key" \
-            "https://repo.radeon.com/amdgpu/rocm.gpg.key"; do \
-          curl --retry 3 --retry-delay 5 -fsSL "$_url" \
-              | gpg --dearmor -o /etc/apt/keyrings/rocm.gpg 2>/dev/null \
-            && break || true; \
-        done && \
-        [ -s /etc/apt/keyrings/rocm.gpg ] || { echo "ERROR: failed to obtain ROCm GPG key"; exit 1; } && \
-        printf 'deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/latest noble main\n' \
-            > /etc/apt/sources.list.d/rocm.list && \
-        apt-get update && \
-        apt-get install -y --no-install-recommends \
-            hsa-rocr7.2.4 \
-            hipcc7.2.4 \
-            rocm-cmake7.2.4 \
-            rocm-hip-sdk7.2.4 \
-            rocm-hip-runtime-dev7.2.4 \
-            rocblas-dev7.2.4 \
-            rocrand-dev7.2.4 \
-            hipblas-dev7.2.4 \
-            hipblaslt-dev7.2.4 \
-            hipsparse-dev7.2.4 \
-            rocminfo7.2.4 && \
-        rm -rf /var/lib/apt/lists/* && \
-        echo '/opt/rocm/lib' > /etc/ld.so.conf.d/rocm.conf && ldconfig; \
-            ln -sf /opt/rocm-7.2.4/lib/libamdhip64.so.7.2.70204 /usr/lib/libamdhip64.so.7.2.70204 && \
-            ln -sf /opt/rocm-7.2.4/lib/libamdhip64.so.7 /usr/lib/libamdhip64.so.7 && \
-            ln -sf /opt/rocm-7.2.4/lib/libamdhip64.so /usr/lib/libamdhip64.so && \
-            mkdir -p /usr/lib/cmake && ln -sf /opt/rocm-7.2.4/lib/cmake/hip-lang /usr/lib/cmake/hip-lang; \
-    else \
-        echo '/opt/rocm/lib' > /etc/ld.so.conf.d/rocm.conf; \
-    fi
-
 # ------------------------------------------------------------
 # Node.js 22 LTS (for admin panel / frontend dev)
 # Uses NodeSource official repo to get a current LTS release.
 # ------------------------------------------------------------
-RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=lotr-dev-apt-lists,target=/var/lib/apt/lists,sharing=locked \
-    set -eux; \
+RUN set -eux; \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; \
     apt-get install -y --no-install-recommends nodejs; \
     rm -rf /var/lib/apt/lists/*
@@ -154,9 +104,7 @@ RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locke
 # completeness (buildx, compose plugin). This adds Docker's apt repo and
 # installs the required packages.
 # ------------------------------------------------------------
-RUN --mount=type=cache,id=lotr-dev-apt-cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=lotr-dev-apt-lists,target=/var/lib/apt/lists,sharing=locked \
-    set -eux; \
+RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends ca-certificates curl gnupg lsb-release; \
     mkdir -p /etc/apt/keyrings; \
@@ -186,15 +134,10 @@ RUN set -eux; \
 
 # ------------------------------------------------------------
 # Godot 4 export templates (headless export requires these)
-# NOTE: GitHub release tags use a dash (e.g. "4.4.1-stable"), but Godot's
-# runtime looks up export templates in a directory named with dots
-# (e.g. "4.4.1.stable"). Installing under the dash-named directory only
-# causes "No export template found" errors during `godot --export-release`.
 # ------------------------------------------------------------
 RUN set -eux; \
     TEMPLATES_FILE="Godot_v${GODOT_VERSION}_export_templates.tpz"; \
-    GODOT_VERSION_DOTTED="$(echo ${GODOT_VERSION} | tr '-' '.')"; \
-    TEMPLATES_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION_DOTTED}"; \
+    TEMPLATES_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}"; \
     curl -fsSL \
         "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${TEMPLATES_FILE}" \
         -o /tmp/templates.tpz; \
@@ -232,16 +175,14 @@ fi
 # ------------------------------------------------------------
 
 # Git tooling
-RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install --break-system-packages --ignore-installed \
+RUN python3 -m pip install --break-system-packages --ignore-installed \
     gitpython \
     pre-commit \
     commitizen \
     pygit2
 
 # Web crawling / HTTP
-RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install --break-system-packages --ignore-installed \
+RUN python3 -m pip install --break-system-packages --ignore-installed \
     requests \
     httpx[http2] \
     aiohttp \
@@ -254,16 +195,12 @@ RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=loc
     webdriver-manager \
     tldextract \
     chardet
-# Hugging Face hub for model downloads
-RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install --break-system-packages --ignore-installed huggingface_hub
 
 # Install Playwright browser binaries (Chromium + Firefox, headless)
 RUN python3 -m playwright install --with-deps chromium firefox
 
 # Data / scripting utilities
-RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install --break-system-packages --ignore-installed \
+RUN python3 -m pip install --break-system-packages --ignore-installed \
     pyyaml \
     toml \
     tomli \
@@ -277,63 +214,11 @@ RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=loc
     uvicorn
 
 # Code quality
-RUN --mount=type=cache,id=lotr-dev-pip-cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install --break-system-packages --ignore-installed \
+RUN python3 -m pip install --break-system-packages --ignore-installed \
     black \
     isort \
     flake8 \
     mypy
-
-# AI helper dependencies (used by ai_update target)
-RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install --break-system-packages --ignore-installed \
-        numpy \
-        faiss-cpu \
-        langchain \
-        langchain-community \
-        ollama
-
-# Install PyTorch variant by GPU build target.
-RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    if [ "$GPU_VARIANT" = "rocm" ]; then \
-        python3 -m pip install --break-system-packages --ignore-installed \
-            --index-url https://download.pytorch.org/whl/rocm7.2 \
-            torch torchvision torchaudio; \
-    else \
-        python3 -m pip install --break-system-packages --ignore-installed \
-            torch torchvision torchaudio; \
-    fi
-
-# Install zstd (required to extract Ollama .tar.zst releases)
-RUN apt-get update && apt-get install -y zstd
-
-# Install Ollama binary for local LLM inference.
-# Use GitHub release artifacts directly so version selection is deterministic.
-RUN set -eux; \
-    case "$(uname -m)" in \
-        x86_64) ARCH=amd64 ;; \
-        aarch64) ARCH=arm64 ;; \
-        *) ARCH="$(uname -m)" ;; \
-    esac; \
-    if [ "${OLLAMA_VERSION}" = "latest" ]; then \
-        OLLAMA_VERSION_RESOLVED=$(curl -fsSL "https://api.github.com/repos/ollama/ollama/releases/latest" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/'); \
-    else \
-        OLLAMA_VERSION_RESOLVED="${OLLAMA_VERSION}"; \
-    fi; \
-    echo "Installing Ollama ${OLLAMA_VERSION_RESOLVED} for arch ${ARCH} (GPU_VARIANT=${GPU_VARIANT})"; \
-    curl --fail --show-error --location --retry 3 \
-        -o /tmp/ollama-base.tar.zst \
-        "https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION_RESOLVED}/ollama-linux-${ARCH}.tar.zst"; \
-    zstd -d /tmp/ollama-base.tar.zst --stdout | tar -xf - -C /usr/local; \
-    rm -f /tmp/ollama-base.tar.zst; \
-    if [ "${GPU_VARIANT}" = "rocm" ]; then \
-        curl --fail --show-error --location --retry 3 \
-            -o /tmp/ollama-rocm.tar.zst \
-            "https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION_RESOLVED}/ollama-linux-${ARCH}-rocm.tar.zst"; \
-        zstd -d /tmp/ollama-rocm.tar.zst --stdout | tar -xf - -C /usr/local; \
-        rm -f /tmp/ollama-rocm.tar.zst; \
-    fi; \
-    ollama --version
 
 # ------------------------------------------------------------
 # Node.js (LTS) -- required for React admin panel (Vite + TypeScript)
@@ -350,12 +235,6 @@ RUN set -eux; \
 # not a .pth pointer to a source path that won't exist at runtime.
 COPY server/ /opt/server-src/
 RUN python3 -m pip install --break-system-packages --ignore-installed /opt/server-src
-
-# Copy VS Code extension source and build it inside the image (if present)
-COPY .vscode /workspace/.vscode
-RUN if [ -d /workspace/.vscode/extensions/ai ]; then \
-    cd /workspace/.vscode/extensions/ai && npm install && npm run compile; \
-fi
 
 # ------------------------------------------------------------
 # Shell -- enable bash-completion (including make target completion)

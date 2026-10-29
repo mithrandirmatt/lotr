@@ -163,6 +163,75 @@ def _normalize_quant_outtype(outtype: str) -> str:
     return outtype.strip().upper()
 
 
+def _sanitize_gguf_metadata(output_gguf: Path, llama_cpp_dir: Path) -> None:
+    """Repair GGUF metadata that convert_hf_to_gguf.py derives from the base
+    model's config.json but that no longer matches the tensors actually
+    present after a LoRA merge.
+
+    Qwen3.5's config.json carries mtp_num_hidden_layers=1 for an auxiliary
+    multi-token-prediction head, but AutoModelForCausalLM (used above to
+    merge/save the model) declares `_keys_to_ignore_on_load_unexpected =
+    [r"^mtp.*"]`, so the merged checkpoint never contains those weights.
+    convert_hf_to_gguf.py still trusts config.json and writes
+    `<arch>.nextn_predict_layers=1` plus an inflated `<arch>.block_count`
+    (num_hidden_layers + mtp_num_hidden_layers) into the GGUF, so llama.cpp
+    expects `blk.<n>.nextn.*` tensors that were never exported and fails with
+    "tensor ... not found" at load time. Detect that mismatch and correct
+    both fields in place; no-op if the GGUF already matches its tensors
+    (e.g. non-Qwen3.5 architectures, or a real MTP head).
+    """
+    gguf_py = llama_cpp_dir / "gguf-py"
+    if gguf_py.exists() and str(gguf_py) not in sys.path:
+        sys.path.insert(0, str(gguf_py))
+    import re
+
+    import gguf
+    from gguf.scripts.gguf_new_metadata import MetadataDetails, copy_with_new_metadata
+
+    reader = gguf.GGUFReader(str(output_gguf), "r")
+    arch_field = reader.get_field(gguf.Keys.General.ARCHITECTURE)
+    if arch_field is None:
+        return
+    arch = arch_field.contents()
+
+    tensor_names = [t.name for t in reader.tensors]
+    blk_indices = {
+        int(m.group(1))
+        for name in tensor_names
+        for m in [re.match(r"blk\.(\d+)\.", name)]
+        if m
+    }
+    actual_block_count = (max(blk_indices) + 1) if blk_indices else 0
+    has_nextn_tensors = any(".nextn." in name for name in tensor_names)
+
+    new_metadata: dict[str, MetadataDetails] = {}
+    remove_metadata: list[str] = []
+
+    nextn_key = f"{arch}.nextn_predict_layers"
+    nextn_field = reader.get_field(nextn_key)
+    if nextn_field is not None and not has_nextn_tensors:
+        print(f"[fix] {nextn_key}={nextn_field.contents()} but no blk.N.nextn.* tensors exist; removing.")
+        remove_metadata.append(nextn_key)
+
+    block_count_key = gguf.Keys.LLM.BLOCK_COUNT.format(arch=arch)
+    block_count_field = reader.get_field(block_count_key)
+    declared_block_count = block_count_field.contents() if block_count_field is not None else None
+    if declared_block_count is not None and actual_block_count and declared_block_count != actual_block_count:
+        print(f"[fix] {block_count_key}={declared_block_count} but {actual_block_count} blk.N tensor groups exist; correcting.")
+        new_metadata[block_count_key] = MetadataDetails(gguf.GGUFValueType.UINT32, actual_block_count)
+
+    if not new_metadata and not remove_metadata:
+        return
+
+    tmp_path = output_gguf.with_suffix(output_gguf.suffix + ".metafix.tmp")
+    tmp_path.unlink(missing_ok=True)
+    writer = gguf.GGUFWriter(str(tmp_path), arch, endianess=reader.endianess)
+    copy_with_new_metadata(reader, writer, new_metadata, remove_metadata=remove_metadata)
+    del reader
+    tmp_path.replace(output_gguf)
+    print(f"[fix] Rewrote {output_gguf} with corrected metadata.")
+
+
 def _read_available_cpu_bytes() -> int:
     meminfo = Path("/proc/meminfo")
     if meminfo.exists():
@@ -340,6 +409,9 @@ def main() -> None:
         tmp_f16.unlink(missing_ok=True)
 
     print(f"GGUF export completed: {output_gguf}")
+
+    print("[INFO] Sanitizing GGUF metadata (checking for stray MTP/nextn/block_count mismatches)...")
+    _sanitize_gguf_metadata(output_gguf, llama_cpp_dir)
 
     # Save fingerprint for future skip detection
     _save_gguf_fingerprint(cache_dir, adapter_dir, base_model, args.outtype)

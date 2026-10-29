@@ -149,9 +149,15 @@ def parse_block_file(html_path, block_name):
             'lotro_additions': [],
         }
 
-        # Split chunk on <h3> tags to get per-section content
+        # Split chunk on <h3> tags to get per-section content.
+        # Modern wiki markup emits an extra empty anchor span before the real
+        # "mw-headline" span (e.g. <h3><span id="..."></span><span
+        # class="mw-headline" id="...">Free Peoples (25 cards)</span>...),
+        # and some headline text is wrapped in <b>...</b>. Match the
+        # mw-headline span specifically rather than "the first span".
         h3_pattern = re.compile(
-            r'<h3>[^<]*<span[^>]*>([^<]+)</span>', re.DOTALL
+            r'<h3>(?:<span[^>]*></span>)?<span[^>]*class="mw-headline"[^>]*>(?:<b>)?([^<]+)(?:</b>)?</span>',
+            re.DOTALL
         )
         h3_matches = list(h3_pattern.finditer(chunk))
 

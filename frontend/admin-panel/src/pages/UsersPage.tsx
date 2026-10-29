@@ -4,6 +4,7 @@ import {
   adminAdjustTolkiens,
   adminToggleModerator,
   adminDeleteUser,
+  adminResetUser,
 } from '../api/client'
 import type { AdminUserSummary } from '../api/types'
 
@@ -72,6 +73,80 @@ function DeleteModal({ user, onConfirm, onCancel }: DeleteModalProps) {
             onClick={handleDelete}
           >
             {loading ? 'Deleting…' : 'Delete permanently'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Reset confirmation modal ──────────────────────────────────────────────────
+
+interface ResetModalProps {
+  user: AdminUserSummary
+  onConfirm: () => Promise<void>
+  onCancel: () => void
+}
+
+function ResetModal({ user, onConfirm, onCancel }: ResetModalProps) {
+  const [confirmId, setConfirmId] = useState('')
+  const [confirmUsername, setConfirmUsername] = useState('')
+  const [confirmEmail, setConfirmEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const isValid =
+    confirmId === user.id &&
+    confirmUsername === user.username &&
+    confirmEmail.toLowerCase() === user.email.toLowerCase()
+
+  async function handleReset() {
+    setLoading(true)
+    setError('')
+    try {
+      await onConfirm()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Reset failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2 style={{ color: 'var(--color-danger)' }}>⚠ Reset Account</h2>
+        <p>
+          This wipes <strong>{user.username}</strong>'s entire card collection, decks, and
+          pending starter/booster grants, resetting their Tolkien balance and re-granting the
+          same fresh-start bundle a brand-new account receives. Their login is not affected.
+          This cannot be undone.
+        </p>
+        <p>Type the following to confirm:</p>
+
+        {error && <div className="error-banner">{error}</div>}
+
+        <div className="form-group">
+          <label>User ID: <code style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{user.id}</code></label>
+          <input value={confirmId} onChange={(e) => setConfirmId(e.target.value)} placeholder="Paste user ID" />
+        </div>
+        <div className="form-group">
+          <label>Username: <code style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{user.username}</code></label>
+          <input value={confirmUsername} onChange={(e) => setConfirmUsername(e.target.value)} placeholder="Type username" />
+        </div>
+        <div className="form-group">
+          <label>Email: <code style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{user.email}</code></label>
+          <input value={confirmEmail} onChange={(e) => setConfirmEmail(e.target.value)} placeholder="Type email" />
+        </div>
+
+        <div className="modal-actions">
+          <button className="btn-ghost" onClick={onCancel} disabled={loading}>Cancel</button>
+          <button
+            className="btn-danger"
+            disabled={!isValid || loading}
+            onClick={handleReset}
+          >
+            {loading ? 'Resetting…' : 'Reset account'}
           </button>
         </div>
       </div>
@@ -151,6 +226,7 @@ export default function UsersPage() {
   const [success, setSuccess] = useState('')
   const [adjustingId, setAdjustingId] = useState<string | null>(null)
   const [deletingUser, setDeletingUser] = useState<AdminUserSummary | null>(null)
+  const [resettingUser, setResettingUser] = useState<AdminUserSummary | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -199,6 +275,18 @@ export default function UsersPage() {
     setSuccess(`User ${user.username} deleted.`)
     setTimeout(() => setSuccess(''), 3000)
     load()
+  }
+
+  async function handleResetConfirmed(user: AdminUserSummary) {
+    const updated = await adminResetUser(user.id, {
+      confirm_user_id: user.id,
+      confirm_username: user.username,
+      confirm_email: user.email,
+    })
+    setResettingUser(null)
+    updateUser(updated)
+    setSuccess(`${user.username}'s account was reset to a fresh start.`)
+    setTimeout(() => setSuccess(''), 3000)
   }
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -316,6 +404,13 @@ export default function UsersPage() {
                         </button>
                       )}
                       <button
+                        className="btn-ghost btn-sm"
+                        onClick={() => setResettingUser(user)}
+                        title="Wipe collection/decks and start fresh"
+                      >
+                        Reset
+                      </button>
+                      <button
                         className="btn-danger btn-sm"
                         onClick={() => setDeletingUser(user)}
                       >
@@ -353,6 +448,14 @@ export default function UsersPage() {
           user={deletingUser}
           onConfirm={() => handleDeleteConfirmed(deletingUser)}
           onCancel={() => setDeletingUser(null)}
+        />
+      )}
+
+      {resettingUser && (
+        <ResetModal
+          user={resettingUser}
+          onConfirm={() => handleResetConfirmed(resettingUser)}
+          onCancel={() => setResettingUser(null)}
         />
       )}
     </>

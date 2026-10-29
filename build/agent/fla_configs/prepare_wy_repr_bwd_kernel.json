@@ -1,0 +1,11 @@
+{
+  "kernel_name": "prepare_wy_repr_bwd_kernel",
+  "triton_version": "3.7.1",
+  "_comment": "Pinned for AMD RDNA3 (RX 7900 XTX / gfx1100): autotune config (num_warps=2, num_stages=4) hung 3+ hours during AMDGCN codegen. (num_warps=2, num_stages=2) was the fastest observed candidate at 21.7s. See fla/ops/gated_delta_rule/wy_fast.py's existing Blackwell instability guard for this same kernel (upstream issue #913) -- no equivalent guard exists yet for AMD.",
+  "default_config": {
+    "kwargs": {},
+    "num_warps": 2,
+    "num_stages": 2,
+    "num_ctas": 1
+  }
+}

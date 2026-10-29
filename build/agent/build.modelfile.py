@@ -31,57 +31,62 @@ def load_system_prompt(repo_root: Path) -> str:
     else:
         base_prompt = prompt_path.read_text(encoding="utf-8").strip()
 
-    training_corpus = load_agent_training_corpus(repo_root)
+    corpus_index = load_agent_training_corpus_index(repo_root)
     sections = [base_prompt]
-    if training_corpus:
-        sections.append("## Agent Training Corpus\n\n" + training_corpus)
+    if corpus_index:
+        sections.append(corpus_index)
     return "\n\n".join(section.strip() for section in sections if section.strip())
 
 
-def load_agent_training_corpus(repo_root: Path) -> str:
+def load_agent_training_corpus_index(repo_root: Path) -> str:
+    """Build a lightweight index (path + one-line description) of the agent
+    reference docs instead of concatenating their full contents into the
+    permanent SYSTEM prompt. Baking every doc in verbatim made every single
+    request pay for tens of thousands of fixed tokens regardless of
+    relevance; the model has file-read tools and should pull in only the
+    doc(s) actually needed for the task at hand.
+    """
     reference_dir = repo_root / "assets" / "reference" / "agent"
     if not reference_dir.exists():
         return ""
 
-    priority_names = [
-        "agent.system.md",
-        "project-overview.md",
-        "training-triggers.md",
-        "training-maintenance.md",
-        "trigger-workflow.md",
-        "reinforcement-lotr.md",
-        "reinforcement-generic.md",
-        "rules-reference.md",
-        "game-plan.md",
-        "todo.md",
-        "issues-current.md",
-        "issues-completed.md",
-        "issues-tracker.md",
-        "issues.md",
-    ]
-
-    sections: list[str] = []
-    seen_paths: set[Path] = set()
-
-    for name in priority_names:
-        path = reference_dir / name
-        if path.is_file():
-            sections.append(format_agent_reference_doc(path, repo_root))
-            seen_paths.add(path.resolve())
-
+    entries: list[str] = []
     for path in sorted(reference_dir.rglob("*.md")):
-        resolved_path = path.resolve()
-        if resolved_path in seen_paths:
-            continue
-        sections.append(format_agent_reference_doc(path, repo_root))
+        relative_path = path.relative_to(repo_root).as_posix()
+        entries.append(f"- `{relative_path}` — {describe_reference_doc(path)}")
 
-    return "\n\n---\n\n".join(section for section in sections if section.strip()).strip()
+    if not entries:
+        return ""
+
+    return (
+        "## Agent Reference Document Index\n\n"
+        "The documents below hold detailed rules, plans, and project history. "
+        "They are NOT preloaded here -- read only the ones relevant to the "
+        "current task with your file-read tool before acting on it.\n\n"
+        + "\n".join(entries)
+    )
 
 
-def format_agent_reference_doc(path: Path, repo_root: Path) -> str:
-    relative_path = path.relative_to(repo_root).as_posix()
-    content = path.read_text(encoding="utf-8").strip()
-    return f"## Source: {relative_path}\n\n{content}"
+def describe_reference_doc(path: Path) -> str:
+    """First non-empty, non-frontmatter line of a doc (heading text), used
+    as its index summary."""
+    try:
+        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        return "(no description)"
+
+    start = 0
+    if lines and lines[0].strip() == "---":
+        for i, line in enumerate(lines[1:], start=1):
+            if line.strip() == "---":
+                start = i + 1
+                break
+
+    for line in lines[start:]:
+        line = line.strip()
+        if line and line != "---":
+            return line.lstrip("#").strip()
+    return "(no description)"
 
 
 def sanitize_for_modelfile_system(prompt: str) -> str:

@@ -1,0 +1,345 @@
+echo "=== Running agent_build in smoke-test (lite) mode: max_steps=5, max_train_samples=20 ==="
+make -f agent/agent.mk agent_build \
+	AGENT_PROFILE="rx7900xtx-agentic" AGENT_MODEL_CONFIG="qwen35-9b" \
+	LORA_MAX_STEPS="5" LORA_MAX_TRAIN_SAMPLES="20"
+make[1]: Entering directory '/workspace/build'
+echo "Installing lotr_agent package into build venv..."
+echo "Setting Python path to include build directory"
+# Ensure the virtual environment exists in the agent directory
+mkdir -p /workspace/build/../build/agent/lotr_agent/venv
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+# Install once; skip when the package is already available in this venv
+if /workspace/build/../build/agent/lotr_agent/venv/bin/python -c "import importlib.metadata as m; m.version('lotr_agent')" >/dev/null 2>&1; then \
+	echo "lotr_agent already installed in venv, skipping reinstall."; \
+else \
+	{ ( while true; do echo "[pip] still working..."; sleep 20; done ) & hb=$!; MAX_JOBS=12 CMAKE_BUILD_PARALLEL_LEVEL=12 /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip install --progress-bar on --verbose -e /workspace/build/../build/agent/lotr_agent --break-system-packages; rc=$?; kill $hb >/dev/null 2>&1 || true; wait $hb 2>/dev/null || true; exit $rc; }; \
+fi
+echo "Installation completed"
+echo "Generating Modelfile for profile rx7900xtx-agentic using model config qwen35-9b..."
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+cd /workspace/build/../build/agent && /workspace/build/../build/agent/lotr_agent/venv/bin/python build.modelfile.py --repo_root "/workspace/build/.." --profile "rx7900xtx-agentic" --model_config "qwen35-9b"  --output "/workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic"
+echo "Installing agentic profile rx7900xtx-agentic into Ollama as lotr-agentic-rx7900xtx-agentic..."
+echo "Preferred Ollama host: http://172.28.240.1:11434"
+if [ ! -f /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic ]; then \
+	echo "Error: profile Modelfile missing at /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic"; exit 1; \
+fi
+ACTIVE_OLLAMA_HOST="http://172.28.240.1:11434"; \
+if [ "0" = "1" ]; then \
+	echo "Starting local Ollama daemon in container (forced)..."; \
+	OLLAMA_HOST="127.0.0.1:11434" ollama serve > /dev/null 2>&1 & \
+	sleep 2; \
+	ACTIVE_OLLAMA_HOST="http://127.0.0.1:11434"; \
+elif ! OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama list > /dev/null 2>&1; then \
+	echo "Preferred host $ACTIVE_OLLAMA_HOST is not reachable; starting local Ollama daemon in container..."; \
+	OLLAMA_HOST="127.0.0.1:11434" ollama serve > /dev/null 2>&1 & \
+	sleep 2; \
+	ACTIVE_OLLAMA_HOST="http://127.0.0.1:11434"; \
+fi; \
+echo "Using active Ollama host: $ACTIVE_OLLAMA_HOST"; \
+OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama create lotr-agentic-rx7900xtx-agentic -f /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic
+echo "Agentic profile model installation completed."
+echo "Preparing corpus/training artifacts for profile rx7900xtx-agentic..."
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+cd /workspace/build/../build/agent && /workspace/build/../build/agent/lotr_agent/venv/bin/python build.train.py --model "qwen35-9b" --quantization "4bit" --profile "rx7900xtx-agentic" --model_config "qwen35-9b" --data_dir "/workspace/build/.."
+mkdir -p "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic"
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+cd /workspace/build/../build/agent && /workspace/build/../build/agent/lotr_agent/venv/bin/python build.lora_fingerprint.py --repo_root "/workspace/build/.." --profile "rx7900xtx-agentic" --model_config "qwen35-9b" --corpus "/workspace/build/../do/agent/models/training/rx7900xtx-agentic-corpus.jsonl" --hf_base_model "" --allow_cpu "0" --torch_variant "auto" --output "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256.new"
+echo "Training LoRA adapter for profile rx7900xtx-agentic using model config qwen35-9b..."
+if [ -f "/workspace/build/../do/agent/models/lora/rx7900xtx-agentic/adapter_model.safetensors" ] && [ -f "/workspace/build/../do/agent/models/lora/rx7900xtx-agentic/adapter_config.json" ] && { [ ! -f "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256" ] || cmp -s "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256" "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256.new"; }; then \
+	if [ ! -f "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256" ]; then \
+		echo "Bootstrapping LoRA cache from existing adapter artifacts; skipping retrain."; \
+	else \
+		echo "LoRA inputs unchanged and adapter artifacts exist; skipping retrain."; \
+	fi; \
+	mv -f "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256.new" "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256"; \
+	touch "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.done"; \
+else \
+	make -f agent/agent.mk lora-train-run AGENT_PROFILE="rx7900xtx-agentic" AGENT_MODEL_CONFIG="qwen35-9b" AGENT_HF_BASE_MODEL="" LORA_ALLOW_CPU="0" AGENT_TORCH_VARIANT="auto"; \
+	mv -f "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256.new" "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256"; \
+	touch "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.done"; \
+fi
+make[2]: Entering directory '/workspace/build'
+echo "Preparing corpus/training artifacts for profile rx7900xtx-agentic..."
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+cd /workspace/build/../build/agent && /workspace/build/../build/agent/lotr_agent/venv/bin/python build.train.py --model "qwen35-9b" --quantization "4bit" --profile "rx7900xtx-agentic" --model_config "qwen35-9b" --data_dir "/workspace/build/.."
+echo "Training LoRA adapter for profile rx7900xtx-agentic using model config qwen35-9b..."
+if [ "0" = "1" ]; then \
+	echo "LORA_RECREATE_VENV=1 set; recreating LoRA venv..."; \
+	if [ -d "/workspace/build/../build/agent/lotr_agent/venv" ]; then \
+		rm -rf "/workspace/build/../build/agent/lotr_agent/venv" || \
+		mv "/workspace/build/../build/agent/lotr_agent/venv" "/workspace/build/../build/agent/lotr_agent/venv_stale.$"; \
+	fi; \
+fi
+if [ ! -x "/workspace/build/../build/agent/lotr_agent/venv/bin/python" ]; then \
+	echo "Creating LoRA venv..."; \
+	python3 -m venv /workspace/build/../build/agent/lotr_agent/venv; \
+else \
+	echo "Reusing existing LoRA venv."; \
+fi
+mkdir -p /workspace/build/../build/docker/cache/pip
+mkdir -p /workspace/build/../build/docker/cache/huggingface
+mkdir -p /workspace/build/../build/docker/cache/torch
+cd /workspace/build/../build/agent && if [ "1" = "1" ] && { [ "auto" = "rocm" ] || { [ "auto" = "auto" ] && { [ -c /dev/kfd ] || [ -c /dev/dxg ]; }; }; }; then \
+	if [ -f "/workspace/build/../build/agent/lotr_agent/venv/.bnb_rocm_ready" ]; then \
+		echo "ROCm bitsandbytes bootstrap already completed for this venv."; \
+	else \
+		echo "Ensuring ROCm-capable bitsandbytes (source build) for quantized loading..."; \
+		if ! command -v hipcc >/dev/null 2>&1; then \
+			echo "Error: hipcc not found in container; cannot build ROCm bitsandbytes backend."; \
+			echo "Install ROCm development toolchain in build/docker/Dockerfile (hipcc + ROCm CMake config), then rerun."; \
+			exit 1; \
+		fi; \
+		export HIP_PATH=/opt/rocm; \
+		rm -rf "/tmp/bnb-rocm-build"; \
+		git clone --depth 1 --branch rocm_enabled https://github.com/ROCm/bitsandbytes.git "/tmp/bnb-rocm-build"; \
+		HIP_DEVLIBS=$(find /opt/rocm*/lib/llvm/lib/clang/*/lib/amdgcn/bitcode -name 'hip.bc' 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo ""); \
+		if [ -z "$HIP_DEVLIBS" ]; then \
+			HIP_DEVLIBS=$(find /usr/lib/llvm-* -name 'hip.bc' 2>/dev/null | head -1 | xargs dirname 2>/dev/null); \
+		fi; \
+		HIP_LLVM_VER=$(echo "$HIP_DEVLIBS" | grep -oP 'clang/\K[0-9]+' | head -1 || echo "22"); \
+		HIP_CLANG=$(find /opt/rocm*/lib/llvm/bin -name 'clang++' 2>/dev/null | head -1 || command -v "clang++-$HIP_LLVM_VER" 2>/dev/null || command -v clang++-17 2>/dev/null || ls /usr/bin/clang++-[0-9]* 2>/dev/null | sort -V | head -1); \
+		HIP_LLVM_BINDIR=$(dirname "$HIP_CLANG" 2>/dev/null || true); \
+		ROCM_ROOT=$(readlink -f /opt/rocm 2>/dev/null || true); \
+		if [ -z "$ROCM_ROOT" ] || [ ! -d "$ROCM_ROOT" ]; then \
+			ROCM_ROOT=$(find /opt -maxdepth 1 -type d -name 'rocm-*' 2>/dev/null | sort -V | tail -1); \
+		fi; \
+		if [ -z "$ROCM_ROOT" ] || [ ! -d "$ROCM_ROOT" ]; then \
+			ROCM_ROOT=/usr; \
+		fi; \
+		HIPBLAS_CFG=$(find /usr /opt/rocm /opt/rocm-* \( -name 'hipblasConfig.cmake' -o -name 'hipblas-config.cmake' \) 2>/dev/null | head -1); \
+		HIPBLAS_DIR=$(dirname "$HIPBLAS_CFG" 2>/dev/null || true); \
+		if [ -n "$HIPBLAS_CFG" ]; then \
+			ROCM_ROOT=$(dirname $(dirname $(dirname "$HIPBLAS_DIR" 2>/dev/null) 2>/dev/null) 2>/dev/null); \
+		fi; \
+		if [ -z "$HIPBLAS_CFG" ]; then \
+			HIPBLAS_LIB=$(find "$ROCM_ROOT" /usr /opt/rocm /opt/rocm-* -name 'libhipblas.so' 2>/dev/null | head -1); \
+			if [ -n "$HIPBLAS_LIB" ]; then \
+				HIPBLAS_DIR=/tmp/hipblas-cmake; \
+				mkdir -p "$HIPBLAS_DIR"; \
+				printf '%s\n' \
+					'set(hipblas_FOUND TRUE)' \
+					'if(NOT TARGET roc::hipblas)' \
+					'  add_library(roc::hipblas SHARED IMPORTED)' \
+					"  set_target_properties(roc::hipblas PROPERTIES IMPORTED_LOCATION \"$HIPBLAS_LIB\")" \
+					'endif()' \
+					'if(NOT TARGET hipblas::hipblas)' \
+					'  add_library(hipblas::hipblas INTERFACE IMPORTED)' \
+					'  target_link_libraries(hipblas::hipblas INTERFACE roc::hipblas)' \
+					'endif()' \
+					> "$HIPBLAS_DIR/hipblas-config.cmake"; \
+				printf '%s\n' \
+					'set(PACKAGE_VERSION "0")' \
+					'set(PACKAGE_VERSION_COMPATIBLE TRUE)' \
+					'set(PACKAGE_VERSION_EXACT TRUE)' \
+					> "$HIPBLAS_DIR/hipblas-config-version.cmake"; \
+			else \
+				echo "Error: hipblasConfig.cmake and libhipblas.so were not found in this image."; \
+				exit 1; \
+			fi; \
+		fi; \
+		HIPRAND_LIB=$(find "$ROCM_ROOT" /usr /opt/rocm /opt/rocm-* -name 'libhiprand.so' 2>/dev/null | head -1); \
+		if [ -n "$HIPRAND_LIB" ]; then \
+			HIPRAND_DIR=/tmp/hiprand-cmake; \
+			mkdir -p "$HIPRAND_DIR"; \
+			printf '%s\n' \
+				'set(hiprand_FOUND TRUE)' \
+				'if(NOT TARGET hip::hiprand)' \
+				'  add_library(hip::hiprand SHARED IMPORTED)' \
+				"  set_target_properties(hip::hiprand PROPERTIES IMPORTED_LOCATION \"$HIPRAND_LIB\")" \
+				'endif()' \
+				'if(NOT TARGET hiprand::hiprand)' \
+				'  add_library(hiprand::hiprand INTERFACE IMPORTED)' \
+				'  target_link_libraries(hiprand::hiprand INTERFACE hip::hiprand)' \
+				'endif()' \
+				> "$HIPRAND_DIR/hiprand-config.cmake"; \
+			printf '%s\n' \
+				'set(PACKAGE_VERSION "0")' \
+				'set(PACKAGE_VERSION_COMPATIBLE TRUE)' \
+				'set(PACKAGE_VERSION_EXACT TRUE)' \
+				> "$HIPRAND_DIR/hiprand-config-version.cmake"; \
+		else \
+			echo "Error: hiprand config and libhiprand.so were not found in this image."; \
+			exit 1; \
+		fi; \
+			HIPSPARSE_CFG=$(find /usr /opt/rocm /opt/rocm-* \( -name 'hipsparseConfig.cmake' -o -name 'hipsparse-config.cmake' \) 2>/dev/null | head -1); \
+			HIPSPARSE_DIR=$(dirname "$HIPSPARSE_CFG" 2>/dev/null || true); \
+			if [ -z "$HIPSPARSE_CFG" ]; then \
+				HIPSPARSE_LIB=$(find "$ROCM_ROOT" /usr /opt/rocm /opt/rocm-* -name 'libhipsparse.so' 2>/dev/null | head -1); \
+				if [ -n "$HIPSPARSE_LIB" ]; then \
+					HIPSPARSE_DIR=/tmp/hipsparse-cmake; \
+					mkdir -p "$HIPSPARSE_DIR"; \
+					printf '%s\n' \
+						'set(hipsparse_FOUND TRUE)' \
+						'if(NOT TARGET roc::hipsparse)' \
+						'  add_library(roc::hipsparse SHARED IMPORTED)' \
+						"  set_target_properties(roc::hipsparse PROPERTIES IMPORTED_LOCATION \"$HIPSPARSE_LIB\")" \
+						'endif()' \
+						'if(NOT TARGET hipsparse::hipsparse)' \
+						'  add_library(hipsparse::hipsparse INTERFACE IMPORTED)' \
+						'  target_link_libraries(hipsparse::hipsparse INTERFACE roc::hipsparse)' \
+						'endif()' \
+						> "$HIPSPARSE_DIR/hipsparse-config.cmake"; \
+					printf '%s\n' \
+						'set(PACKAGE_VERSION "0")' \
+						'set(PACKAGE_VERSION_COMPATIBLE TRUE)' \
+						'set(PACKAGE_VERSION_EXACT TRUE)' \
+						> "$HIPSPARSE_DIR/hipsparse-config-version.cmake"; \
+				else \
+					echo "Error: hipsparse config and libhipsparse.so were not found in this image."; \
+					exit 1; \
+				fi; \
+			fi; \
+		HIP_LANG_DIR=$(find "$ROCM_ROOT" /usr -name 'hip-lang-config.cmake' 2>/dev/null | head -1 | xargs dirname 2>/dev/null); \
+		if [ -z "$ROCM_ROOT" ] || [ ! -d "$ROCM_ROOT" ]; then \
+			echo "Error: unable to resolve ROCm root from hipblas CMake location."; \
+			exit 1; \
+		fi; \
+		HIP_INCLUDE_DIR="$ROCM_ROOT/include"; \
+		if [ -d "$HIP_INCLUDE_DIR/hipblas" ] && [ ! -e /usr/include/hipblas ]; then \
+			ln -s "$HIP_INCLUDE_DIR/hipblas" /usr/include/hipblas; \
+		fi; \
+		HIP_CMAKE_PREFIX=$(dirname "$HIPBLAS_DIR" 2>/dev/null || true); \
+		HIPRAND_CMAKE_PREFIX=$(dirname "$HIPRAND_DIR" 2>/dev/null || true); \
+		HIPSPARSE_CMAKE_PREFIX=$(dirname "$HIPSPARSE_DIR" 2>/dev/null || true); \
+		if [ -z "$HIP_LANG_DIR" ]; then \
+			echo "Warning: hip-lang-config.cmake was not found during preflight; relying on CMake package discovery paths."; \
+		fi; \
+		if [ -z "$HIP_DEVLIBS" ] || [ -z "$HIP_CLANG" ]; then \
+			echo "Error: unable to resolve ROCm LLVM device libs or clang compiler for HIP build."; \
+			exit 1; \
+		fi; \
+		cd "/tmp/bnb-rocm-build" && \
+			PATH="$HIP_LLVM_BINDIR:$PATH" CPATH="$HIP_INCLUDE_DIR:$CPATH" CPLUS_INCLUDE_PATH="$HIP_INCLUDE_DIR:$CPLUS_INCLUDE_PATH" ROCM_PATH="$ROCM_ROOT" ROCM_HOME="$ROCM_ROOT" HIP_PATH="$ROCM_ROOT" \
+			cmake -DCOMPUTE_BACKEND=hip \
+				-DCMAKE_PREFIX_PATH="$HIP_CMAKE_PREFIX;$HIPRAND_CMAKE_PREFIX;$HIPSPARSE_CMAKE_PREFIX;$ROCM_ROOT/lib/cmake;$ROCM_ROOT;/opt/rocm;/opt/rocm/lib/cmake;/usr/lib/x86_64-linux-gnu/cmake;/usr/lib/cmake" \
+				-DCMAKE_INCLUDE_PATH="$HIP_INCLUDE_DIR" \
+				-Dhipblas_DIR="$HIPBLAS_DIR" \
+				-Dhiprand_DIR="$HIPRAND_DIR" \
+				-Dhipsparse_DIR="$HIPSPARSE_DIR" \
+				-DCMAKE_HIP_COMPILER_ROCM_ROOT="$ROCM_ROOT" \
+				-DCMAKE_HIP_COMPILER=$HIP_CLANG \
+				-DCMAKE_CXX_COMPILER=$HIP_CLANG \
+				-DAMDGPU_TARGETS="gfx900;gfx906;gfx908;gfx90a;gfx1030;gfx1100;gfx1101;gfx1102;gfx1103" \
+				"-DCMAKE_HIP_FLAGS=--rocm-path=$ROCM_ROOT --rocm-device-lib-path=$HIP_DEVLIBS -I$HIP_INCLUDE_DIR" \
+				"-DCMAKE_CXX_FLAGS=-D__HIP_PLATFORM_AMD__ -I$HIP_INCLUDE_DIR" \
+				"-DCMAKE_HIP_ARCHITECTURES=gfx1100" \
+				-DHIP_PATH="$ROCM_ROOT" \
+				-DROCM_PATH="$ROCM_ROOT" \
+				-DCMAKE_EXE_LINKER_FLAGS="-Wl,--allow-shlib-undefined" \
+				-S . -B build && \
+			cmake --build build -j"12"; \
+		if ! find "/tmp/bnb-rocm-build/build" "/tmp/bnb-rocm-build/bitsandbytes" -type f -name 'libbitsandbytes_rocm*.so' 2>/dev/null | grep -q .; then \
+			echo "Error: ROCm bitsandbytes library (libbitsandbytes_rocm*.so) was not produced."; \
+			echo "Aborting to avoid falling back to CPU-only bitsandbytes."; \
+			exit 1; \
+		fi; \
+		/workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip uninstall -y bitsandbytes >/dev/null 2>&1 || true; \
+		{ ( while true; do echo "[pip] still working..."; sleep 20; done ) & hb=$!; MAX_JOBS=12 CMAKE_BUILD_PARALLEL_LEVEL=12 /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip install --progress-bar on --verbose "/tmp/bnb-rocm-build" --break-system-packages; rc=$?; kill $hb >/dev/null 2>&1 || true; wait $hb 2>/dev/null || true; exit $rc; }; \
+		if ! ls "/workspace/build/../build/agent/lotr_agent/venv/lib/python3.12/site-packages/bitsandbytes/libbitsandbytes_rocm"*.so >/dev/null 2>&1; then \
+			echo "Error: Installed bitsandbytes package is still missing ROCm shared library in site-packages."; \
+			exit 1; \
+		fi; \
+		touch "/workspace/build/../build/agent/lotr_agent/venv/.bnb_rocm_ready"; \
+	fi; \
+fi
+echo "Python package installer: /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip"
+echo "Installer progress flags: --progress-bar on --verbose"
+echo "Compile jobs for build fallback: 12"
+cd /workspace/build/../build/agent && if [ "auto" = "rocm" ] || { [ "auto" = "auto" ] && { [ -c /dev/kfd ] || [ -c /dev/dxg ]; }; }; then \
+	if /workspace/build/../build/agent/lotr_agent/venv/bin/python -c "import importlib; import torch; hip = getattr(torch.version, 'hip', None); assert hip and str(hip).startswith('7.2'); importlib.import_module('torch._dynamo')" 2>/dev/null; then \
+		echo "ROCm torch bootstrap already healthy."; \
+	else \
+		echo "Bootstrapping ROCm torch wheel (7.2) before LoRA dependency install..."; \
+		/workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip uninstall -y torch torchvision torchaudio >/dev/null 2>&1 || true; \
+		{ ( while true; do echo "[pip] still working..."; sleep 20; done ) & hb=$!; MAX_JOBS=12 CMAKE_BUILD_PARALLEL_LEVEL=12 /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip install --progress-bar on --verbose --prefer-binary --only-binary=:all: --cache-dir /workspace/build/../build/docker/cache/pip --upgrade --force-reinstall --index-url https://download.pytorch.org/whl/rocm7.2 torch --break-system-packages; rc=$?; kill $hb >/dev/null 2>&1 || true; wait $hb 2>/dev/null || true; exit $rc; }; \
+	fi; \
+fi
+cd /workspace/build/../build/agent && if [ "auto" = "rocm" ] || { [ "auto" = "auto" ] && { [ -c /dev/kfd ] || [ -c /dev/dxg ]; }; }; then \
+	{ ( while true; do echo "[pip] still working..."; sleep 20; done ) & hb=$!; MAX_JOBS=12 CMAKE_BUILD_PARALLEL_LEVEL=12 /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip install --progress-bar on --verbose --prefer-binary --only-binary=:all: --cache-dir /workspace/build/../build/docker/cache/pip --index-url https://download.pytorch.org/whl/rocm7.2 --extra-index-url https://pypi.org/simple -r /workspace/build/../build/agent/requirements-lora.txt --break-system-packages; rc=$?; kill $hb >/dev/null 2>&1 || true; wait $hb 2>/dev/null || true; exit $rc; }; \
+else \
+	{ ( while true; do echo "[pip] still working..."; sleep 20; done ) & hb=$!; MAX_JOBS=12 CMAKE_BUILD_PARALLEL_LEVEL=12 /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip install --progress-bar on --verbose --prefer-binary --only-binary=:all: --cache-dir /workspace/build/../build/docker/cache/pip -r /workspace/build/../build/agent/requirements-lora.txt --break-system-packages; rc=$?; kill $hb >/dev/null 2>&1 || true; wait $hb 2>/dev/null || true; exit $rc; }; \
+fi
+# Text-only LoRA path: prevent optional vision/audio backends from breaking imports.
+/workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip uninstall -y torchvision torchaudio >/dev/null 2>&1 || true
+cd /workspace/build/../build/agent && if [ "auto" = "rocm" ] || { [ "auto" = "auto" ] && { [ -c /dev/kfd ] || [ -c /dev/dxg ]; }; }; then \
+	if /workspace/build/../build/agent/lotr_agent/venv/bin/python -c "import importlib; import torch; hip = getattr(torch.version, 'hip', None); assert hip and str(hip).startswith('7.2'); importlib.import_module('torch._dynamo')" 2>/dev/null; then \
+		echo "ROCm 7.2 text-training stack healthy ($(/workspace/build/../build/agent/lotr_agent/venv/bin/python -c 'import torch; print(torch.__version__, torch.version.hip)')), skipping reinstall."; \
+	else \
+		echo "Repairing ROCm 7.2 text-training stack for LoRA training..."; \
+		/workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip uninstall -y torchvision torchaudio >/dev/null 2>&1 || true; \
+		/workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip uninstall -y torch >/dev/null 2>&1 || true; \
+		echo "Installing fresh ROCm torch wheel (7.2) ..."; \
+		{ ( while true; do echo "[pip] still working..."; sleep 20; done ) & hb=$!; MAX_JOBS=12 CMAKE_BUILD_PARALLEL_LEVEL=12 /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip install --progress-bar on --verbose --prefer-binary --only-binary=:all: --cache-dir /workspace/build/../build/docker/cache/pip --upgrade --force-reinstall --index-url https://download.pytorch.org/whl/rocm7.2 torch --break-system-packages; rc=$?; kill $hb >/dev/null 2>&1 || true; wait $hb 2>/dev/null || true; exit $rc; }; \
+		if ! /workspace/build/../build/agent/lotr_agent/venv/bin/python -c "import importlib; importlib.import_module('torch._dynamo')" 2>/dev/null; then \
+			echo "Torch repair failed: missing torch/_dynamo after reinstall."; \
+			exit 1; \
+		fi; \
+	fi; \
+fi
+cd /workspace/build/../build/agent && HF_HOME="/workspace/build/../build/docker/cache/huggingface" TORCH_HOME="/workspace/build/../build/docker/cache/torch" /workspace/build/../build/agent/lotr_agent/venv/bin/python build.finetune.py --repo_root "/workspace/build/.." --profile "rx7900xtx-agentic" --model_config "qwen35-9b"  --corpus "/workspace/build/../do/agent/models/training/rx7900xtx-agentic-corpus.jsonl" --output_dir "/workspace/build/../do/agent/models/lora/rx7900xtx-agentic"  --max_steps "5" --max_train_samples "20"
+make[2]: Leaving directory '/workspace/build'
+mv: cannot stat '/workspace/build/../do/agent/models/cache/rx7900xtx-agentic/lora-train.sha256.new': No such file or directory
+echo "Exporting LoRA profile rx7900xtx-agentic to merged GGUF..."
+echo "GGUF quantization outtype: q4_k_m"
+if [ ! -d "/workspace/build/../do/agent/models/lora/rx7900xtx-agentic" ]; then \
+	echo "Error: LoRA adapter directory missing at /workspace/build/../do/agent/models/lora/rx7900xtx-agentic"; exit 1; \
+fi
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+if ! /workspace/build/../build/agent/lotr_agent/venv/bin/python -c "import transformers, peft, torch, sentencepiece, google.protobuf" >/dev/null 2>&1; then \
+	echo "Installing GGUF export dependencies..."; \
+	{ ( while true; do echo "[pip] still working..."; sleep 20; done ) & hb=$!; /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip install --progress-bar on --verbose transformers peft accelerate sentencepiece protobuf gguf --break-system-packages; rc=$?; kill $hb >/dev/null 2>&1 || true; wait $hb 2>/dev/null || true; exit $rc; }; \
+fi
+mkdir -p "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic"
+cd /workspace/build/../build/agent && /workspace/build/../build/agent/lotr_agent/venv/bin/python build.lora_export_gguf.py --repo_root "/workspace/build/.." --profile "rx7900xtx-agentic" --model_config "qwen35-9b"  --adapter_dir "/workspace/build/../do/agent/models/lora/rx7900xtx-agentic" --merged_dir "/workspace/build/../do/agent/models/lora-merged/rx7900xtx-agentic" --output_gguf "/workspace/build/../do/agent/models/lotr-lora-rx7900xtx-agentic-q4_k_m.gguf" --outtype "q4_k_m" --llama_cpp_dir "/workspace/build/../build/docker/cache/llama.cpp" --cache_dir "/workspace/build/../do/agent/models/cache/rx7900xtx-agentic"
+echo "Installing LoRA profile rx7900xtx-agentic into Ollama as lotr-lora-rx7900xtx-agentic from GGUF..."
+echo "Preferred Ollama host: http://172.28.240.1:11434"
+if [ ! -f /workspace/build/../do/agent/models/lotr-lora-rx7900xtx-agentic-q4_k_m.gguf ]; then \
+	echo "Error: merged GGUF not found at /workspace/build/../do/agent/models/lotr-lora-rx7900xtx-agentic-q4_k_m.gguf"; exit 1; \
+fi
+ACTIVE_OLLAMA_HOST="http://172.28.240.1:11434"; \
+LOCAL_OLLAMA_HOST="http://127.0.0.1:11435"; \
+LOCAL_OLLAMA_BIND="127.0.0.1:11435"; \
+LOCAL_OLLAMA_LOG="/workspace/build/../do/agent/models/ollama-lora-serve.log"; \
+if [ "0" = "1" ]; then \
+	echo "Starting local Ollama daemon in container (forced)..."; \
+	pkill -x ollama >/dev/null 2>&1 || true; \
+	( cd "/workspace/build/../do/agent/models" && nohup env OLLAMA_HOST="$LOCAL_OLLAMA_BIND" ollama serve > "$LOCAL_OLLAMA_LOG" 2>&1 & ); \
+	sleep 2; \
+	ACTIVE_OLLAMA_HOST="$LOCAL_OLLAMA_HOST"; \
+elif ! OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama list > /dev/null 2>&1; then \
+	echo "Preferred host $ACTIVE_OLLAMA_HOST is not reachable; starting local Ollama daemon in container..."; \
+	pkill -x ollama >/dev/null 2>&1 || true; \
+	( cd "/workspace/build/../do/agent/models" && nohup env OLLAMA_HOST="$LOCAL_OLLAMA_BIND" ollama serve > "$LOCAL_OLLAMA_LOG" 2>&1 & ); \
+	sleep 2; \
+	ACTIVE_OLLAMA_HOST="$LOCAL_OLLAMA_HOST"; \
+fi; \
+if [ "$ACTIVE_OLLAMA_HOST" = "$LOCAL_OLLAMA_HOST" ] || [ "$ACTIVE_OLLAMA_HOST" = "http://localhost:11435" ]; then \
+	for i in 1 2 3 4 5 6 7 8 9 10; do \
+		if OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama list > /dev/null 2>&1; then \
+			break; \
+		fi; \
+		sleep 1; \
+	done; \
+	if ! OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama list > /dev/null 2>&1; then \
+		echo "Error: local Ollama daemon did not become ready at $ACTIVE_OLLAMA_HOST"; \
+		exit 1; \
+	fi; \
+	echo "Local ollama daemon cwd: $(pwdx $(pgrep -n -x ollama) 2>/dev/null || echo unknown)"; \
+fi; \
+echo "Using active Ollama host: $ACTIVE_OLLAMA_HOST"; \
+CREATE_RC=0; \
+TMP_GGUF_MODELFILE="/workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic.lora.gguf.$$"; \
+echo "FROM /workspace/do/agent/models/lotr-lora-rx7900xtx-agentic-q4_k_m.gguf" > "$TMP_GGUF_MODELFILE"; \
+OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama create lotr-lora-rx7900xtx-agentic -f "$TMP_GGUF_MODELFILE"; \
+CREATE_RC=$?; \
+rm -f "$TMP_GGUF_MODELFILE"; \
+if [ $CREATE_RC -ne 0 ] && [ -f "$LOCAL_OLLAMA_LOG" ]; then \
+	echo "----- local ollama serve log (tail) -----"; \
+	tail -n 120 "$LOCAL_OLLAMA_LOG"; \
+	echo "----- end local ollama serve log -----"; \
+fi; \
+test $CREATE_RC -eq 0
+echo "LoRA profile model installation completed."
+echo "\n=== Full build workflow completed for model config qwen35-9b (profile rx7900xtx-agentic) ==="
+echo "Agentic corpus metadata: /workspace/build/../do/agent/models/training/rx7900xtx-agentic-metadata.json"
+make[1]: Leaving directory '/workspace/build'

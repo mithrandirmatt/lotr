@@ -1,0 +1,213 @@
+[gd_scene load_steps=3 format=3 uid="uid://lotr_deck_editor"]
+
+[ext_resource type="Script" path="res://scripts/deck_editor.gd" id="1_deck_editor"]
+[ext_resource type="Script" path="res://scripts/dnd_card_list.gd" id="2_dnd_card_list"]
+
+; ── Deck Editor Screen ────────────────────────────────────────────────────
+; Second screen of the two-screen deck builder flow: edits the deck whose id
+; was handed off via Api.selected_deck_id. Shows "In Deck" / "Available"
+; pools (drag-drop, double-click add/remove, single-click preview), a
+; scrollable rarity/card-type/culture filter panel on the right, and a card
+; preview panel.
+
+[node name="DeckEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_deck_editor")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.07, 0.15, 1)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="BackBtn" type="Button" parent="CanvasLayer"]
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 170.0
+offset_bottom = 56.0
+flat = true
+text = "< Back to Decks"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer"]
+offset_left = 0.0
+offset_top = 12.0
+offset_right = 1280.0
+offset_bottom = 60.0
+text = "Editing: (none)"
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+horizontal_alignment = 1
+
+[node name="Notification" type="Label" parent="CanvasLayer"]
+offset_left = 0.0
+offset_top = 58.0
+offset_right = 1280.0
+offset_bottom = 82.0
+text = ""
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="MainRow" type="HBoxContainer" parent="CanvasLayer"]
+offset_left = 20.0
+offset_top = 96.0
+offset_right = 1260.0
+offset_bottom = 700.0
+theme_override_constants/separation = 16
+
+[node name="CenterColumn" type="VBoxContainer" parent="CanvasLayer/MainRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="LegalityLabel" type="Label" parent="CanvasLayer/MainRow/CenterColumn"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="PoolsRow" type="HBoxContainer" parent="CanvasLayer/MainRow/CenterColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="SelectedPanel" type="VBoxContainer" parent="CanvasLayer/MainRow/CenterColumn/PoolsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SelectedLabel" type="Label" parent="CanvasLayer/MainRow/CenterColumn/PoolsRow/SelectedPanel"]
+layout_mode = 2
+text = "In Deck (0)"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="SelectedList" type="ItemList" parent="CanvasLayer/MainRow/CenterColumn/PoolsRow/SelectedPanel"]
+custom_minimum_size = Vector2(0, 520)
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_dnd_card_list")
+
+[node name="AvailablePanel" type="VBoxContainer" parent="CanvasLayer/MainRow/CenterColumn/PoolsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="AvailableLabel" type="Label" parent="CanvasLayer/MainRow/CenterColumn/PoolsRow/AvailablePanel"]
+layout_mode = 2
+text = "Available"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="AvailableList" type="ItemList" parent="CanvasLayer/MainRow/CenterColumn/PoolsRow/AvailablePanel"]
+custom_minimum_size = Vector2(0, 520)
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_dnd_card_list")
+
+[node name="PreviewPanel" type="PanelContainer" parent="CanvasLayer/MainRow"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="PreviewBox" type="VBoxContainer" parent="CanvasLayer/MainRow/PreviewPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ThumbnailArea" type="Control" parent="CanvasLayer/MainRow/PreviewPanel/PreviewBox"]
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
+
+[node name="RarityBg" type="ColorRect" parent="CanvasLayer/MainRow/PreviewPanel/PreviewBox/ThumbnailArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5, 0.5, 0.5, 0.25)
+
+[node name="Thumbnail" type="TextureRect" parent="CanvasLayer/MainRow/PreviewPanel/PreviewBox/ThumbnailArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlaceholderLabel" type="Label" parent="CanvasLayer/MainRow/PreviewPanel/PreviewBox/ThumbnailArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Click a card to preview it"
+autowrap_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 0.7)
+
+[node name="NameLabel" type="Label" parent="CanvasLayer/MainRow/PreviewPanel/PreviewBox"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="MetaLabel" type="Label" parent="CanvasLayer/MainRow/PreviewPanel/PreviewBox"]
+layout_mode = 2
+text = ""
+theme_override_font_sizes/font_size = 14
+
+[node name="DescriptionLabel" type="Label" parent="CanvasLayer/MainRow/PreviewPanel/PreviewBox"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="FiltersPanel" type="VBoxContainer" parent="CanvasLayer/MainRow"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="FiltersTitle" type="Label" parent="CanvasLayer/MainRow/FiltersPanel"]
+layout_mode = 2
+text = "Filters"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+
+[node name="FiltersScroll" type="ScrollContainer" parent="CanvasLayer/MainRow/FiltersPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="FiltersBox" type="VBoxContainer" parent="CanvasLayer/MainRow/FiltersPanel/FiltersScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[connection signal="pressed" from="CanvasLayer/BackBtn" to="." method="_on_back_pressed"]
+[connection signal="item_selected" from="CanvasLayer/MainRow/CenterColumn/PoolsRow/SelectedPanel/SelectedList" to="." method="_on_selected_item_selected"]
+[connection signal="item_activated" from="CanvasLayer/MainRow/CenterColumn/PoolsRow/SelectedPanel/SelectedList" to="." method="_on_selected_item_activated"]
+[connection signal="card_dropped" from="CanvasLayer/MainRow/CenterColumn/PoolsRow/SelectedPanel/SelectedList" to="." method="_on_card_dropped"]
+[connection signal="item_selected" from="CanvasLayer/MainRow/CenterColumn/PoolsRow/AvailablePanel/AvailableList" to="." method="_on_available_item_selected"]
+[connection signal="item_activated" from="CanvasLayer/MainRow/CenterColumn/PoolsRow/AvailablePanel/AvailableList" to="." method="_on_available_item_activated"]
+[connection signal="card_dropped" from="CanvasLayer/MainRow/CenterColumn/PoolsRow/AvailablePanel/AvailableList" to="." method="_on_card_dropped"]

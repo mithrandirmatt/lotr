@@ -1,0 +1,42 @@
+echo "Installing lotr_agent package into build venv..."
+echo "Setting Python path to include build directory"
+# Ensure the virtual environment exists in the agent directory
+mkdir -p /workspace/build/../build/agent/lotr_agent/venv
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+# Install once; skip when the package is already available in this venv
+if /workspace/build/../build/agent/lotr_agent/venv/bin/python -c "import importlib.metadata as m; m.version('lotr_agent')" >/dev/null 2>&1; then \
+	echo "lotr_agent already installed in venv, skipping reinstall."; \
+else \
+	{ ( while true; do echo "[pip] still working..."; sleep 20; done ) & hb=$!; MAX_JOBS=12 CMAKE_BUILD_PARALLEL_LEVEL=12 /workspace/build/../build/agent/lotr_agent/venv/bin/python -m pip install --progress-bar on --verbose -e /workspace/build/../build/agent/lotr_agent --break-system-packages; rc=$?; kill $hb >/dev/null 2>&1 || true; wait $hb 2>/dev/null || true; exit $rc; }; \
+fi
+echo "Installation completed"
+echo "Preparing corpus/training artifacts for profile rx7900xtx-agentic..."
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+cd /workspace/build/../build/agent && /workspace/build/../build/agent/lotr_agent/venv/bin/python build.train.py --model "qwen35-9b" --quantization "4bit" --profile "rx7900xtx-agentic" --model_config "qwen35-9b" --data_dir "/workspace/build/.."
+echo "Generating Modelfile for profile rx7900xtx-agentic using model config qwen35-9b..."
+python3 -m venv /workspace/build/../build/agent/lotr_agent/venv
+cd /workspace/build/../build/agent && /workspace/build/../build/agent/lotr_agent/venv/bin/python build.modelfile.py --repo_root "/workspace/build/.." --profile "rx7900xtx-agentic" --model_config "qwen35-9b"  --output "/workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic"
+echo "Installing agentic profile rx7900xtx-agentic into Ollama as lotr-agentic-rx7900xtx-agentic..."
+echo "Preferred Ollama host: http://172.28.240.1:11434"
+if [ ! -f /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic ]; then \
+	echo "Error: profile Modelfile missing at /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic"; exit 1; \
+fi
+ACTIVE_OLLAMA_HOST="http://172.28.240.1:11434"; \
+if [ "0" = "1" ]; then \
+	echo "Starting local Ollama daemon in container (forced)..."; \
+	OLLAMA_HOST="127.0.0.1:11434" ollama serve > /dev/null 2>&1 & \
+	sleep 2; \
+	ACTIVE_OLLAMA_HOST="http://127.0.0.1:11434"; \
+elif ! OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama list > /dev/null 2>&1; then \
+	echo "Preferred host $ACTIVE_OLLAMA_HOST is not reachable; starting local Ollama daemon in container..."; \
+	OLLAMA_HOST="127.0.0.1:11434" ollama serve > /dev/null 2>&1 & \
+	sleep 2; \
+	ACTIVE_OLLAMA_HOST="http://127.0.0.1:11434"; \
+fi; \
+echo "Using active Ollama host: $ACTIVE_OLLAMA_HOST"; \
+OLLAMA_HOST="$ACTIVE_OLLAMA_HOST" ollama create lotr-agentic-rx7900xtx-agentic -f /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic
+echo "Agentic profile model installation completed."
+echo "\n=== Agentic build workflow completed for profile rx7900xtx-agentic ==="
+echo "Corpus metadata: /workspace/build/../do/agent/models/training/rx7900xtx-agentic-metadata.json"
+echo "Profile Modelfile: /workspace/build/../do/agent/models/Modelfile.rx7900xtx-agentic"
+echo "Ollama model name: lotr-agentic-rx7900xtx-agentic"

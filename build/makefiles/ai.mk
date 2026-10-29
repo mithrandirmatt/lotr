@@ -10,12 +10,13 @@ OLLAMA_SRC_MODEL ?= sorc/qwen3.5-claude-4.6-opus:latest
 OLLAMA_CAP_MODEL ?= sorc/qwen3.5-claude-4.6-opus:copilot
 
 # ollama_cap_model: create a VS Code Copilot-optimised variant of the model.
-# num_ctx=65536  -- raises available context for complex multi-file sessions.
-# thinking       -- allow concise reasoning for complex prompts.
+# num_ctx=32768  -- tells VS Code the context window is 32k so it compresses
+#                   conversation history at ~21k tokens (66%) automatically.
+# /no_think      -- disables Qwen3 thinking blocks (saves tokens before answering).
 # num_predict=2048 -- prevents runaway output ("Response too long" errors).
 ollama_cap_model:
 	$(call log_build,Creating Copilot model $(OLLAMA_CAP_MODEL) via $(OLLAMA_BASE)...)
-	@printf '{"model":"%s","from":"%s","system":"Use concise reasoning for complex tasks. Keep final answers direct and actionable.","parameters":{"num_ctx":65536,"num_predict":2048}}' \
+	@printf '{"model":"%s","from":"%s","system":"Think concisely if needed. Use at most 2 thinking blocks per response.","parameters":{"num_ctx":32768,"num_predict":2048}}' \
 	    "$(OLLAMA_CAP_MODEL)" "$(OLLAMA_SRC_MODEL)" | \
 	    curl -sSL --fail-with-body -X POST "$(OLLAMA_BASE)/api/create" \
 	        -H 'Content-Type: application/json' \
@@ -51,23 +52,3 @@ ai_headroom:
 	@curl -sSL --max-time 3 "$(HEADROOM_URL)/stats" 2>/dev/null | python3 -c "import sys,json; raw=sys.stdin.read().strip(); d=json.loads(raw) if raw else None; r=d.get('requests',{}) if d else None; t=d.get('tokens',{}) if d else None; print('  Requests  :',r.get('total','?')) or print('  Tokens in :',t.get('input','?')) or print('  Tokens out:',t.get('output','?')) or print('  Saved     :',t.get('saved','?')) or print('  Savings % :',str(t.get('savings_percent','?'))+'%') if d else print('  (proxy not running -- start with: docker.ps1 run)')"
 	@echo ""
 	$(call log_ok,Done.)
-
-
-ai_npm_install:
-	$(call log_build,Installing npm dependencies for VS Code extension...)
-	@cd .vscode/extensions/ai && npm install
-	$(call log_ok,Done.)
-
-## ---------------------------------------------------------------------------
-## Local LLM index & helper
-## ---------------------------------------------------------------------------
-
-# Rebuild the repo embeddings and start the interactive helper.
-# Usage: ``make ai:update``
-ai_update:
-	@echo "Rebuilding repository embeddings…"
-	python3 ../scripts/embed_repo.py
-	@echo "Starting LLM helper…"
-	# Run in background so make exits immediately
-		nohup python3 ../scripts/llm_helper.py > /dev/null 2>&1 &
-	@echo "LLM helper running (PID $$!). Use Ctrl+C to stop."

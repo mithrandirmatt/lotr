@@ -58,6 +58,20 @@ export interface AdminTolkienAdjustRequest {
   reason?: string
 }
 
+export interface SetReleaseSummary {
+  id: string
+  set_number: number
+  set_code: string | null
+  name: string
+  is_active: boolean
+  is_locked_active: boolean
+  activated_at: string | null
+}
+
+export interface SetReleaseListResponse {
+  items: SetReleaseSummary[]
+}
+
 export interface AdminUserDeleteRequest {
   confirm_user_id: string
   confirm_username: string

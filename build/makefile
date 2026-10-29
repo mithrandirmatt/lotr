@@ -48,11 +48,11 @@ clean:
 #   - server/.venv, dist, lotr_server.egg-info, .pytest_cache -- server
 #     build/install/test artifacts
 #   - .speed-cache         -- make speed's own cache directory
+#   - the agent/LLM fine-tuning pipeline (do/agent/models, build venv,
+#     pip/huggingface/torch caches, cached llama.cpp checkout) -- delegated
+#     to `make agent_clean` (build/agent/agent.mk), invoked below.
 #
 # Deliberately does NOT touch:
-#   - the agent/LLM fine-tuning pipeline (do/agent/models, build/do/agent,
-#     build/docker/cache/agent) -- use `make agent_clean` for that; those
-#     artifacts are expensive to regenerate and are not part of `make speed`.
 #   - server/lotr.db -- runtime application data, not a build artifact.
 #   - .github/agents/generated/ -- commit-ready generated files, not a
 #     throwaway build cache.
@@ -81,7 +81,9 @@ super_clean:
 	@echo "Removing make speed cache..."
 	$(call SAFE_RM,$(REPO_ROOT)/.speed-cache)
 
-	$(call log_warning,Note: agent/LLM fine-tuning artifacts (do/agent/models) are NOT touched -- use 'make agent_clean' for that.)
+	@echo "Removing agent/LLM fine-tuning build artifacts (do/agent/models, build venv, pip/huggingface/torch caches, llama.cpp cache)..."
+	$(MAKE) agent_clean
+
 	$(call log_ok,Finished $@.)
 all:
 	$(call log_build,** Calling $@... **)

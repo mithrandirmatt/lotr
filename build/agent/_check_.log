@@ -1,0 +1,10 @@
+echo "Cleaning agent caches for a fresh build..."
+rm -rf /workspace/build/../build/docker/cache/pip
+rm -rf /workspace/build/../build/docker/cache/huggingface
+rm -rf /workspace/build/../build/docker/cache/torch
+if [ -d "/workspace/build/../build/agent/lotr_agent/venv" ]; then \
+	rm -rf "/workspace/build/../build/agent/lotr_agent/venv" || \
+	mv "/workspace/build/../build/agent/lotr_agent/venv" "/workspace/build/../build/agent/lotr_agent/venv_stale.$"; \
+fi
+rm -rf /workspace/build/../build/agent/lotr_agent/venv_stale*
+echo "Agent cache cleanup complete."
